@@ -34,7 +34,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 **Plans**: TBD
 
 Plans:
-- [ ] 01-01: Docker Compose, environment setup, Prisma schema + migrations
+- [x] 01-01: Docker Compose, environment setup, Prisma schema + migrations
 - [ ] 01-02: Fastify app factory, shared plugins skeleton, Jest + Supertest test harness
 - [ ] 01-03: Neo4j driver singleton, error handler, health route
 
@@ -165,7 +165,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 1/3 | In progress | - |
 | 2. Authentication | 0/3 | Not started | - |
 | 3. Profiles & Companies | 0/3 | Not started | - |
 | 4. Jobs | 0/3 | Not started | - |
