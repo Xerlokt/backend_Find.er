@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CANDIDATE
+  RECRUITER
+  ADMIN
+}
+
+enum Modality {
+  REMOTE
+  HYBRID
+  IN_PERSON
+}
+
+enum SwipeDirection {
+  LIKE
+  DISLIKE
+}
+
+enum ChatInitiator {
+  MATCH
+  CREDIT
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String?
+  googleId     String?   @unique
+  avatarUrl    String?
+  role         Role
+  createdAt    DateTime  @default(now())
+
+  candidateProfile CandidateProfile?
+  recruiterProfile RecruiterProfile?
+  sentMessages     Message[]         @relation("SentMessages")
+}
+
+model CandidateProfile {
+  id                  String     @id @default(uuid())
+  userId              String     @unique
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  bio                 String?
+  lat                 Float?
+  lng                 Float?
+  professionId        String
+  skills              String[]
+  preferredModalities Modality[]
+  searchRadiusKm      Int        @default(50)
+
+  swipes Swipe[]
+  chats  Chat[]
+}
+
+model RecruiterProfile {
+  id        String  @id @default(uuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+}
+
+model Company {
+  id            String    @id @default(uuid())
+  name          String
+  logoUrl       String?
+  description   String?
+  rating        Float     @default(0)
+  plan          String    @default("FREE")
+  planExpiresAt DateTime?
+  credits       Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  recruiters         RecruiterProfile[]
+  jobs               Job[]
+  chats              Chat[]
+  creditTransactions CreditTransaction[]
+}
+
+model Job {
+  id             String    @id @default(uuid())
+  companyId      String
+  company        Company   @relation(fields: [companyId], references: [id])
+  title          String
+  description    String
+  professionId   String
+  salaryMin      Float?
+  salaryMax      Float?
+  lat            Float?
+  lng            Float?
+  modality       Modality
+  requiredSkills String[]
+  expiresAt      DateTime
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  swipes Swipe[]
+  chats  Chat[]
+}
+
+model Swipe {
+  id          String           @id @default(uuid())
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id])
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id])
+  direction   SwipeDirection
+  swipedAt    DateTime         @default(now())
+
+  @@unique([candidateId, jobId])
+}
+
+model Chat {
+  id          String           @id @default(uuid())
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id])
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id])
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  initiatedBy ChatInitiator
+  expiresAt   DateTime?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+
+  messages Message[]
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  chatId    String
+  chat      Chat      @relation(fields: [chatId], references: [id])
+  senderId  String
+  sender    User      @relation("SentMessages", fields: [senderId], references: [id])
+  content   String
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+}
+
+model CreditTransaction {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+}
