@@ -63,6 +63,23 @@
 - [ ] **ADMIN-02**: Admin pode adicionar créditos a empresas
 - [ ] **ADMIN-03**: Rotas admin protegidas por role ADMIN
 
+### Security (SEC)
+
+- [ ] **SEC-01**: Todas as queries ao DB usam Prisma ORM (sem raw SQL com interpolação de strings) — previne SQL injection
+- [ ] **SEC-02**: Inputs de usuário validados e sanitizados via Zod em todos os endpoints
+- [ ] **SEC-03**: Operações de crédito e swipe executadas em transações atômicas — previne race conditions
+- [ ] **SEC-04**: Senhas armazenadas com bcrypt (salt rounds ≥ 12)
+- [ ] **SEC-05**: Rate limiting em rotas sensíveis (login, register, swipe)
+- [ ] **SEC-06**: JWT de curta duração (access token ≤ 15min), refresh token com rotação
+- [ ] **SEC-07**: Headers de segurança HTTP via @fastify/helmet
+
+### Architecture (ARCH)
+
+- [ ] **ARCH-01**: Cada módulo segue Clean Architecture — routes → service → repository (sem pular camadas)
+- [ ] **ARCH-02**: Services não importam diretamente clientes de DB — dependência injetada via repositórios
+- [ ] **ARCH-03**: Responsabilidade única por classe/função (SOLID - SRP)
+- [ ] **ARCH-04**: Módulos não importam diretamente de outros módulos — comunicação via interfaces
+
 ---
 
 ## v2 (Deferred)
@@ -88,12 +105,48 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| AUTH-01 → AUTH-06 | — | Pending |
-| CAND-01 → CAND-03 | — | Pending |
-| COMP-01 → COMP-03 | — | Pending |
-| JOB-01 → JOB-04 | — | Pending |
-| SWIPE-01 → SWIPE-04 | — | Pending |
-| REC-01 → REC-03 | — | Pending |
-| CREDIT-01 → CREDIT-04 | — | Pending |
-| CHAT-01 → CHAT-04 | — | Pending |
-| ADMIN-01 → ADMIN-03 | — | Pending |
+| AUTH-01 | Phase 2 | Pending |
+| AUTH-02 | Phase 2 | Pending |
+| AUTH-03 | Phase 2 | Pending |
+| AUTH-04 | Phase 2 | Pending |
+| AUTH-05 | Phase 2 | Pending |
+| AUTH-06 | Phase 2 | Pending |
+| CAND-01 | Phase 3 | Pending |
+| CAND-02 | Phase 3 | Pending |
+| CAND-03 | Phase 6 | Pending |
+| COMP-01 | Phase 3 | Pending |
+| COMP-02 | Phase 3 | Pending |
+| COMP-03 | Phase 3 | Pending |
+| JOB-01 | Phase 4 | Pending |
+| JOB-02 | Phase 4 | Pending |
+| JOB-03 | Phase 4 | Pending |
+| JOB-04 | Phase 4 | Pending |
+| SWIPE-01 | Phase 5 | Pending |
+| SWIPE-02 | Phase 5 | Pending |
+| SWIPE-03 | Phase 5 | Pending |
+| SWIPE-04 | Phase 5 | Pending |
+| REC-01 | Phase 6 | Pending |
+| REC-02 | Phase 6 | Pending |
+| REC-03 | Phase 6 | Pending |
+| CREDIT-01 | Phase 7 | Pending |
+| CREDIT-02 | Phase 7 | Pending |
+| CREDIT-03 | Phase 7 | Pending |
+| CREDIT-04 | Phase 7 | Pending |
+| CHAT-01 | Phase 8 | Pending |
+| CHAT-02 | Phase 8 | Pending |
+| CHAT-03 | Phase 8 | Pending |
+| CHAT-04 | Phase 8 | Pending |
+| ADMIN-01 | Phase 3 | Pending |
+| ADMIN-02 | Phase 3 | Pending |
+| ADMIN-03 | Phase 3 | Pending |
+| SEC-01 | All Phases | Pending |
+| SEC-02 | All Phases | Pending |
+| SEC-03 | Phase 5, 7 | Pending |
+| SEC-04 | Phase 2 | Pending |
+| SEC-05 | Phase 2 | Pending |
+| SEC-06 | Phase 2 | Pending |
+| SEC-07 | Phase 1 | Pending |
+| ARCH-01 | All Phases | Pending |
+| ARCH-02 | All Phases | Pending |
+| ARCH-03 | All Phases | Pending |
+| ARCH-04 | All Phases | Pending |

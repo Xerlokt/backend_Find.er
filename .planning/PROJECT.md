@@ -48,6 +48,8 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 - **TDD**: Cada feature implementada com teste primeiro (Jest + Supertest)
 - **DB de Teste**: Testes de integração usam DB real via Docker Compose (sem mocks de banco)
 - **Arquitetura**: Monolito modular — módulos isolados mas sem microserviços na v1
+- **Clean Architecture + SOLID**: Services desacoplados de infra, repositórios como abstração, inversão de dependência, responsabilidade única por classe/módulo
+- **Segurança**: Proteção obrigatória contra OWASP Top 10 — SQL injection (via Prisma ORM), XSS (sanitização de input), race conditions (transações atômicas no DB), autenticação segura (bcrypt, JWT curto), rate limiting em rotas sensíveis
 
 ## Key Decisions
 
