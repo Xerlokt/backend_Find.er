@@ -16,6 +16,7 @@ const config: Config = {
     '^@modules/(.*)$': '<rootDir>/src/modules/$1',
   },
   // setup.ts is imported directly in each integration test file (see tests/integration/*)
+  globalSetup: '<rootDir>/tests/jest.global-setup.ts',
   testTimeout: 30000,
 }
 
