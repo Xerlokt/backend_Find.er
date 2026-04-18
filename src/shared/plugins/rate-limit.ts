@@ -9,6 +9,7 @@ export default fp(async function rateLimitPlugin(app: FastifyInstance) {
     timeWindow: '1 minute',
     keyGenerator: (request) => request.ip,
     errorResponseBuilder: (_request, context) => ({
+      statusCode: context.statusCode ?? 429,
       error: 'Too Many Requests',
       retryAfter: Math.ceil(context.ttl / 1000),
     }),

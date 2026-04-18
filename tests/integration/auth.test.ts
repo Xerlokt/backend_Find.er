@@ -210,14 +210,16 @@ describe('POST /auth/google', () => {
   beforeEach(() => {
     verifyIdTokenSpy = jest
       .spyOn(OAuth2Client.prototype, 'verifyIdToken')
-      .mockResolvedValue({
-        getPayload: () => ({
-          sub: 'google-uid-123',
-          email: 'googleuser@example.com',
-          name: 'Google Test User',
-          picture: undefined,
-        }),
-      } as any)
+      .mockImplementation(() =>
+        Promise.resolve({
+          getPayload: () => ({
+            sub: 'google-uid-123',
+            email: 'googleuser@example.com',
+            name: 'Google Test User',
+            picture: undefined,
+          }),
+        } as any),
+      )
   })
 
   afterEach(() => {

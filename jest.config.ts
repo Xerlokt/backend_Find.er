@@ -17,6 +17,7 @@ const config: Config = {
   },
   // setup.ts is imported directly in each integration test file (see tests/integration/*)
   globalSetup: '<rootDir>/tests/jest.global-setup.ts',
+  setupFiles: ['<rootDir>/tests/jest.setup-env.ts'],
   testTimeout: 30000,
 }
 

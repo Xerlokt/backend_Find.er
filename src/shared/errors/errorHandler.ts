@@ -38,10 +38,16 @@ export function errorHandler(
     }
   }
 
-  // Fastify validation errors (schema-level)
+  // Fastify validation errors (schema-level) and plain thrown objects (e.g. @fastify/rate-limit
+  // v10 throws the errorResponseBuilder result directly — it's a plain object, not an Error)
   if ('statusCode' in error && typeof (error as FastifyError).statusCode === 'number') {
     const statusCode = (error as FastifyError).statusCode as number
-    reply.status(statusCode).send({ error: error.message })
+    const isPlainObject = !(error instanceof Error)
+    if (isPlainObject) {
+      reply.status(statusCode).send(error)
+    } else {
+      reply.status(statusCode).send({ error: (error as FastifyError).message })
+    }
     return
   }
 
