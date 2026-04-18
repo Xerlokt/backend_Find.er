@@ -9,6 +9,9 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
+    // DATABASE_URL must be set in the environment (see .env.example).
+    // Prisma v7 removed url from schema.prisma — connection URL is configured here only.
+    // For test runs, DATABASE_URL_TEST is swapped in via tests/jest.global-setup.ts.
     url: process.env["DATABASE_URL"],
   },
 });

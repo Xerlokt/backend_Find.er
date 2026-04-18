@@ -4,6 +4,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Note: Prisma v7 removed the `url` field from schema.prisma.
+  // The DATABASE_URL is supplied via prisma.config.ts (datasource.url).
+  // Ensure DATABASE_URL is set in your environment before running any prisma CLI commands.
 }
 
 enum Role {
