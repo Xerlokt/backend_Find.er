@@ -3,6 +3,7 @@ import { buildApp } from '../../src/app'
 import supertest from 'supertest'
 import { createUser, createRefreshToken } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
+import { OAuth2Client } from 'google-auth-library'
 
 describe('Auth Routes — Integration', () => {
   // ── POST /auth/register ───────────────────────────────────────────────
@@ -200,5 +201,86 @@ describe('Auth Routes — Integration', () => {
 
       await app.close()
     })
+  })
+})
+
+describe('POST /auth/google', () => {
+  let verifyIdTokenSpy: jest.SpyInstance
+
+  beforeEach(() => {
+    verifyIdTokenSpy = jest
+      .spyOn(OAuth2Client.prototype, 'verifyIdToken')
+      .mockResolvedValue({
+        getPayload: () => ({
+          sub: 'google-uid-123',
+          email: 'googleuser@example.com',
+          name: 'Google Test User',
+          picture: undefined,
+        }),
+      } as any)
+  })
+
+  afterEach(() => {
+    verifyIdTokenSpy.mockRestore()
+  })
+
+  it('201 com { accessToken, refreshToken } para idToken válido (usuário novo)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const response = await supertest(app.server)
+      .post('/auth/google')
+      .send({ idToken: 'any-token', role: 'CANDIDATE' })
+
+    expect(response.status).toBe(201)
+    expect(response.body).toHaveProperty('accessToken')
+    expect(response.body).toHaveProperty('refreshToken')
+    await app.close()
+  })
+
+  it('201 para segundo login com mesmo googleId (usuário existente)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    // Primeiro login cria o usuário
+    await supertest(app.server)
+      .post('/auth/google')
+      .send({ idToken: 'any-token', role: 'CANDIDATE' })
+
+    // Segundo login encontra o usuário existente
+    const response = await supertest(app.server)
+      .post('/auth/google')
+      .send({ idToken: 'any-token', role: 'CANDIDATE' })
+
+    expect(response.status).toBe(201)
+    expect(response.body).toHaveProperty('accessToken')
+    await app.close()
+  })
+
+  it('400 quando role é ADMIN (D-09)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const response = await supertest(app.server)
+      .post('/auth/google')
+      .send({ idToken: 'any-token', role: 'ADMIN' })
+
+    expect(response.status).toBe(400)
+    await app.close()
+  })
+
+  it('401 INVALID_CREDENTIALS para idToken inválido', async () => {
+    verifyIdTokenSpy.mockRejectedValueOnce(new Error('Token invalid or expired'))
+
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const response = await supertest(app.server)
+      .post('/auth/google')
+      .send({ idToken: 'bad-token', role: 'CANDIDATE' })
+
+    expect(response.status).toBe(401)
+    expect(response.body.code).toBe('INVALID_CREDENTIALS')
+    await app.close()
   })
 })
