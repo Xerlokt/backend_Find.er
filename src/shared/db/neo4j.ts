@@ -4,10 +4,13 @@ let driver: Driver
 
 export function getNeo4jDriver(): Driver {
   if (!driver) {
-    driver = neo4j.driver(
-      process.env.NEO4J_URI!,
-      neo4j.auth.basic(process.env.NEO4J_USER!, process.env.NEO4J_PASSWORD!),
-    )
+    const uri = process.env.NEO4J_URI
+    const user = process.env.NEO4J_USER
+    const password = process.env.NEO4J_PASSWORD
+    if (!uri || !user || !password) {
+      throw new Error('NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD must all be set')
+    }
+    driver = neo4j.driver(uri, neo4j.auth.basic(user, password))
   }
   return driver
 }
