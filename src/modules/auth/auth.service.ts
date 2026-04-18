@@ -14,7 +14,9 @@ export interface TokenPair {
   refreshToken: string
 }
 
-const DUMMY_HASH = '$2b$12$invalidhashpadding00000000000000000000000000000000000000'
+// Generated via: bcryptjs.hashSync('__dummy__', 12)
+// Verify: length === 60 and starts with '$2b$12$'
+const DUMMY_HASH = '$2b$12$LVfxFJGoT4lbSwHhLU8kCOy8xQpBLaIH5TNXLilzj5Wky3l2KBKP2'
 
 export function generateRefreshToken(): { rawToken: string; tokenHash: string } {
   const rawToken = randomBytes(32).toString('hex')
