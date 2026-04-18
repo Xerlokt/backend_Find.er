@@ -63,8 +63,10 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     return reply.status(204).send()
   })
 
-  // POST /auth/google — sem rate limit customizado (60/min global) — rota pública (sem authenticate)
-  app.post('/google', async (request, reply) => {
+  // POST /auth/google — 5 req/min (login-equivalent, D-10)
+  app.post('/google', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const body = GoogleBodySchema.parse(request.body)
     const tokens = await service.loginWithGoogle(body)
     return reply.status(201).send(tokens)
