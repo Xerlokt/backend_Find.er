@@ -127,7 +127,8 @@ export class AuthService {
       return
     }
 
-    await this.repo.revokeRefreshToken(stored.id)
+    // Revogar toda a família — invalida todas as sessões ativas (D-02)
+    await this.repo.revokeRefreshTokenFamily(stored.familyId)
   }
 
   async loginWithGoogle(input: {
