@@ -36,4 +36,8 @@ export class AuthRepository {
       data: { revokedAt: new Date() },
     })
   }
+
+  async findUserById(id: string) {
+    return prisma.user.findUnique({ where: { id } })
+  }
 }

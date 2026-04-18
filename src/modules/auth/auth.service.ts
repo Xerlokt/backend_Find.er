@@ -73,4 +73,45 @@ export class AuthService {
 
     return { accessToken, refreshToken: rawToken }
   }
+
+  async refresh(rawToken: string): Promise<TokenPair> {
+    const tokenHash = hashToken(rawToken)
+    const stored = await this.repo.findRefreshTokenByHash(tokenHash)
+
+    if (!stored) {
+      throw new AppError('Invalid token', 401, 'UNAUTHORIZED')
+    }
+
+    if (stored.revokedAt !== null) {
+      // Replay attack — revogar toda a família (D-02)
+      await this.repo.revokeRefreshTokenFamily(stored.familyId)
+      throw new AppError('Token revoked', 401, 'TOKEN_EXPIRED')
+    }
+
+    if (stored.expiresAt < new Date()) {
+      throw new AppError('Token expired', 401, 'TOKEN_EXPIRED')
+    }
+
+    // Rotação single-use: revogar token atual, emitir novo na mesma família
+    await this.repo.revokeRefreshToken(stored.id)
+
+    const user = await this.repo.findUserById(stored.userId)
+    if (!user) {
+      throw new AppError('User not found', 401, 'UNAUTHORIZED')
+    }
+
+    return this.generateTokenPair(user.id, user.role as string, stored.familyId)
+  }
+
+  async logout(rawToken: string): Promise<void> {
+    const tokenHash = hashToken(rawToken)
+    const stored = await this.repo.findRefreshTokenByHash(tokenHash)
+
+    if (!stored || stored.revokedAt !== null) {
+      // Token inexistente ou já revogado — idempotente, não lançar erro
+      return
+    }
+
+    await this.repo.revokeRefreshToken(stored.id)
+  }
 }
