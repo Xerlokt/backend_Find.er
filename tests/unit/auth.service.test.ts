@@ -2,6 +2,13 @@ import { AuthService } from '../../src/modules/auth/auth.service'
 import { AuthRepository } from '../../src/modules/auth/auth.repository'
 import bcrypt from 'bcryptjs'
 import { AppError } from '../../src/shared/errors/AppError'
+import { OAuth2Client } from 'google-auth-library'
+
+jest.mock('google-auth-library', () => ({
+  OAuth2Client: jest.fn().mockImplementation(() => ({
+    verifyIdToken: jest.fn(),
+  })),
+}))
 
 // Mock do AuthRepository — sem DB em testes unitários
 const makeRepo = (): jest.Mocked<AuthRepository> => ({
@@ -11,6 +18,8 @@ const makeRepo = (): jest.Mocked<AuthRepository> => ({
   findRefreshTokenByHash: jest.fn(),
   revokeRefreshToken: jest.fn(),
   revokeRefreshTokenFamily: jest.fn(),
+  findUserById: jest.fn(),
+  findOrCreateGoogleUser: jest.fn(),
 } as unknown as jest.Mocked<AuthRepository>)
 
 // Mock do app.jwt.sign — retorna token fake mas estruturado
@@ -112,6 +121,50 @@ describe('AuthService', () => {
         expect.objectContaining({ id: 'user-1', role: 'CANDIDATE' }),
         expect.any(Object)
       )
+    })
+  })
+
+  describe('loginWithGoogle', () => {
+    let mockVerifyIdToken: jest.Mock
+
+    beforeEach(() => {
+      mockVerifyIdToken = (new OAuth2Client() as any).verifyIdToken
+      mockVerifyIdToken.mockReset()
+    })
+
+    it('retorna { accessToken, refreshToken } para idToken válido', async () => {
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          sub: 'google-uid-abc',
+          email: 'google@example.com',
+          name: 'Google User',
+          picture: undefined,
+        }),
+      })
+      repo.findOrCreateGoogleUser = jest.fn().mockResolvedValue({
+        user: { id: 'user-2', email: 'google@example.com', role: 'CANDIDATE' },
+        isNew: true,
+      })
+      repo.createRefreshToken.mockResolvedValue({ id: 'rt-2' } as any)
+
+      const result = await service.loginWithGoogle({
+        idToken: 'valid-id-token',
+        role: 'CANDIDATE',
+      })
+
+      expect(result).toHaveProperty('accessToken')
+      expect(result).toHaveProperty('refreshToken')
+      expect(repo.findOrCreateGoogleUser).toHaveBeenCalledWith(
+        expect.objectContaining({ googleId: 'google-uid-abc', email: 'google@example.com' })
+      )
+    })
+
+    it('lança INVALID_CREDENTIALS quando verifyIdToken falha', async () => {
+      mockVerifyIdToken.mockRejectedValue(new Error('Token invalid'))
+
+      await expect(
+        service.loginWithGoogle({ idToken: 'bad-token', role: 'CANDIDATE' })
+      ).rejects.toMatchObject({ statusCode: 401, code: 'INVALID_CREDENTIALS' })
     })
   })
 })
