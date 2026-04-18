@@ -4,7 +4,11 @@
       "Skill(gsd-new-project)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Skill(gsd-code-review)"
+      "Skill(gsd-code-review)",
+      "Skill(gsd-discuss-phase)",
+      "WebSearch",
+      "Skill(gsd-plan-phase)",
+      "Skill(gsd-code-review-fix)"
     ]
   }
 }
