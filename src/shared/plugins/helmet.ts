@@ -4,6 +4,8 @@ import { FastifyInstance } from 'fastify'
 
 export default fp(async function helmetPlugin(app: FastifyInstance) {
   await app.register(helmet, {
-    contentSecurityPolicy: false, // disabled in dev; configure per-env in later phases
+    contentSecurityPolicy: process.env.NODE_ENV === 'production'
+      ? undefined  // use helmet defaults in production
+      : false,     // disabled in dev to allow Vite/HMR etc.
   })
 })
