@@ -2,8 +2,12 @@ import { randomBytes, createHash } from 'crypto'
 import bcrypt from 'bcryptjs'
 import { FastifyInstance } from 'fastify'
 import { Role } from '@prisma/client'
+import { OAuth2Client } from 'google-auth-library'
 import { AuthRepository } from './auth.repository'
 import { AppError } from '../../shared/errors/AppError'
+
+// Singleton Google OAuth2 client — instanciado uma vez por módulo
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 export interface TokenPair {
   accessToken: string
@@ -113,5 +117,40 @@ export class AuthService {
     }
 
     await this.repo.revokeRefreshToken(stored.id)
+  }
+
+  async loginWithGoogle(input: {
+    idToken: string
+    role: 'CANDIDATE' | 'RECRUITER'
+  }): Promise<TokenPair> {
+    let googlePayload: { sub: string; email: string; name?: string; picture?: string }
+
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: input.idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      })
+      const payload = ticket.getPayload()!
+      googlePayload = {
+        sub: payload.sub,
+        email: payload.email!,
+        name: payload.name,
+        picture: payload.picture,
+      }
+    } catch {
+      // google-auth-library lança Error genérico — não subclasse tipada (Pitfall 3)
+      throw new AppError('Invalid Google token', 401, 'INVALID_CREDENTIALS')
+    }
+
+    const { user } = await this.repo.findOrCreateGoogleUser({
+      googleId: googlePayload.sub,
+      email: googlePayload.email,
+      name: googlePayload.name,
+      avatarUrl: googlePayload.picture,
+      role: input.role,
+    })
+
+    const familyId = randomBytes(16).toString('hex')
+    return this.generateTokenPair(user!.id, user!.role as string, familyId)
   }
 }

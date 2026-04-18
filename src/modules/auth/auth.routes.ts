@@ -18,6 +18,11 @@ const RefreshBodySchema = z.object({
   refreshToken: z.string().min(1),
 })
 
+const GoogleBodySchema = z.object({
+  idToken: z.string().min(1),
+  role: z.enum(['CANDIDATE', 'RECRUITER']), // ADMIN excluído — D-09
+})
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   const repo = new AuthRepository()
   const service = new AuthService(repo, app)
@@ -56,5 +61,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const body = RefreshBodySchema.parse(request.body)
     await service.logout(body.refreshToken)
     return reply.status(204).send()
+  })
+
+  // POST /auth/google — sem rate limit customizado (60/min global) — rota pública (sem authenticate)
+  app.post('/google', async (request, reply) => {
+    const body = GoogleBodySchema.parse(request.body)
+    const tokens = await service.loginWithGoogle(body)
+    return reply.status(201).send(tokens)
   })
 }

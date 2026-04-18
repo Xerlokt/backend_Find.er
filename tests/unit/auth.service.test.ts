@@ -4,12 +4,6 @@ import bcrypt from 'bcryptjs'
 import { AppError } from '../../src/shared/errors/AppError'
 import { OAuth2Client } from 'google-auth-library'
 
-jest.mock('google-auth-library', () => ({
-  OAuth2Client: jest.fn().mockImplementation(() => ({
-    verifyIdToken: jest.fn(),
-  })),
-}))
-
 // Mock do AuthRepository — sem DB em testes unitários
 const makeRepo = (): jest.Mocked<AuthRepository> => ({
   findUserByEmail: jest.fn(),
@@ -125,15 +119,18 @@ describe('AuthService', () => {
   })
 
   describe('loginWithGoogle', () => {
-    let mockVerifyIdToken: jest.Mock
+    let verifyIdTokenSpy: jest.SpyInstance
 
     beforeEach(() => {
-      mockVerifyIdToken = (new OAuth2Client() as any).verifyIdToken
-      mockVerifyIdToken.mockReset()
+      verifyIdTokenSpy = jest.spyOn(OAuth2Client.prototype, 'verifyIdToken')
+    })
+
+    afterEach(() => {
+      verifyIdTokenSpy.mockRestore()
     })
 
     it('retorna { accessToken, refreshToken } para idToken válido', async () => {
-      mockVerifyIdToken.mockResolvedValue({
+      verifyIdTokenSpy.mockResolvedValue({
         getPayload: () => ({
           sub: 'google-uid-abc',
           email: 'google@example.com',
@@ -160,7 +157,7 @@ describe('AuthService', () => {
     })
 
     it('lança INVALID_CREDENTIALS quando verifyIdToken falha', async () => {
-      mockVerifyIdToken.mockRejectedValue(new Error('Token invalid'))
+      verifyIdTokenSpy.mockRejectedValue(new Error('Token invalid'))
 
       await expect(
         service.loginWithGoogle({ idToken: 'bad-token', role: 'CANDIDATE' })
