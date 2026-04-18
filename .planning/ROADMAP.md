@@ -10,7 +10,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Foundation** - Project scaffolding, Docker, Prisma schema, test infrastructure
+- [x] **Phase 1: Foundation** - Project scaffolding, Docker, Prisma schema, test infrastructure
 - [ ] **Phase 2: Authentication** - JWT + Google OAuth2, refresh tokens, route guards
 - [ ] **Phase 3: Profiles & Companies** - Candidate profiles, company accounts, admin user management
 - [ ] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
@@ -36,7 +36,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 Plans:
 - [x] 01-01: Docker Compose, environment setup, Prisma schema + migrations
 - [x] 01-02: Fastify app factory, shared plugins skeleton, Jest + Supertest test harness
-- [ ] 01-03: Neo4j driver singleton, error handler, health route
+- [x] 01-03: Neo4j driver singleton, error handler, health route
 
 ### Phase 2: Authentication
 **Goal**: Users can securely create accounts and access protected routes using JWT or Google
@@ -165,7 +165,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/3 | In progress | - |
+| 1. Foundation | 3/3 | Complete | 2026-04-18 |
 | 2. Authentication | 0/3 | Not started | - |
 | 3. Profiles & Companies | 0/3 | Not started | - |
 | 4. Jobs | 0/3 | Not started | - |
