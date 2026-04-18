@@ -1,6 +1,7 @@
 import { prisma } from '../../src/shared/db/prisma'
 import bcrypt from 'bcryptjs'
 import { Modality, Role } from '@prisma/client'
+import { createHash, randomBytes } from 'crypto'
 
 export async function createUser(overrides: Partial<{
   email: string
@@ -69,4 +70,26 @@ export async function createJob(companyId: string, overrides: Partial<{
       expiresAt: overrides.expiresAt ?? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
     },
   })
+}
+
+export async function createRefreshToken(userId: string, overrides: Partial<{
+  tokenHash: string
+  familyId: string
+  expiresAt: Date
+  revokedAt: Date | null
+}> = {}) {
+  const rawToken = randomBytes(32).toString('hex')
+  const tokenHash = overrides.tokenHash
+    ?? createHash('sha256').update(rawToken).digest('hex')
+
+  const stored = await prisma.refreshToken.create({
+    data: {
+      tokenHash,
+      familyId: overrides.familyId ?? randomBytes(16).toString('hex'),
+      userId,
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      revokedAt: overrides.revokedAt ?? null,
+    },
+  })
+  return { stored, rawToken }
 }

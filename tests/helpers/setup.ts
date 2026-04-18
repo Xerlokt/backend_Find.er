@@ -16,6 +16,7 @@ afterAll(async () => {
 
 afterEach(async () => {
   // Delete in FK-safe order: children before parents
+  await prisma.refreshToken.deleteMany()   // RefreshToken before User (FK)
   await prisma.message.deleteMany()
   await prisma.chat.deleteMany()
   await prisma.swipe.deleteMany()
