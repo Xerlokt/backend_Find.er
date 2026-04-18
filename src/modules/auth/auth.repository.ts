@@ -1,5 +1,5 @@
 import { prisma } from '../../shared/db/prisma'
-import { Role } from '@prisma/client'
+import { Role, User } from '@prisma/client'
 
 export class AuthRepository {
   async findUserByEmail(email: string) {
@@ -47,38 +47,38 @@ export class AuthRepository {
     name?: string
     avatarUrl?: string
     role: 'CANDIDATE' | 'RECRUITER'
-  }): Promise<{ user: Awaited<ReturnType<typeof prisma.user.findUnique>>; isNew: boolean }> {
-    // Tentar encontrar por googleId primeiro (já vinculado)
-    const byGoogleId = await prisma.user.findUnique({
-      where: { googleId: data.googleId },
-    })
-    if (byGoogleId) {
-      return { user: byGoogleId, isNew: false }
-    }
+  }): Promise<{ user: User; isNew: boolean }> {
+    return prisma.$transaction(async (tx) => {
+      // Tentar encontrar por googleId primeiro (já vinculado)
+      const byGoogleId = await tx.user.findUnique({
+        where: { googleId: data.googleId },
+      })
+      if (byGoogleId) return { user: byGoogleId, isNew: false }
 
-    // D-06: email existente → vincular googleId ao usuário existente (upsert por email)
-    const existing = await prisma.user.findUnique({ where: { email: data.email } })
-    if (existing) {
-      const updated = await prisma.user.update({
-        where: { id: existing.id },
+      // D-06: email existente → vincular googleId ao usuário existente (upsert por email)
+      const existing = await tx.user.findUnique({ where: { email: data.email } })
+      if (existing) {
+        const updated = await tx.user.update({
+          where: { id: existing.id },
+          data: {
+            googleId: data.googleId,
+            avatarUrl: data.avatarUrl ?? existing.avatarUrl,
+          },
+        })
+        return { user: updated, isNew: false }
+      }
+
+      // D-05: primeira autenticação Google → criar novo usuário
+      const created = await tx.user.create({
         data: {
+          email: data.email,
           googleId: data.googleId,
-          avatarUrl: data.avatarUrl ?? existing.avatarUrl,
+          avatarUrl: data.avatarUrl,
+          role: data.role as Role,
+          // passwordHash: null — conta Google não tem senha local
         },
       })
-      return { user: updated, isNew: false }
-    }
-
-    // D-05: primeira autenticação Google → criar novo usuário
-    const created = await prisma.user.create({
-      data: {
-        email: data.email,
-        googleId: data.googleId,
-        avatarUrl: data.avatarUrl,
-        role: data.role as Role,
-        // passwordHash: null — conta Google não tem senha local
-      },
+      return { user: created, isNew: true }
     })
-    return { user: created, isNew: true }
   }
 }
