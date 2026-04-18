@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(gsd-new-project)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Skill(gsd-code-review)"
+    ]
+  }
+}
