@@ -110,10 +110,10 @@ describe('AuthService', () => {
 
       await service.login({ email: 'a@b.com', password: 'password123' })
 
-      // app.jwt.sign foi chamado com expiresIn: '15m' ou payload sem exp customizado
+      // app.jwt.sign foi chamado com expiresIn: '15m' (SEC-06)
       expect(app.jwt.sign).toHaveBeenCalledWith(
         expect.objectContaining({ id: 'user-1', role: 'CANDIDATE' }),
-        expect.any(Object)
+        expect.objectContaining({ expiresIn: '15m' })
       )
     })
   })
