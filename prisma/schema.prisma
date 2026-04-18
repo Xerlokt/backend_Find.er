@@ -43,6 +43,21 @@ model User {
   candidateProfile CandidateProfile?
   recruiterProfile RecruiterProfile?
   sentMessages     Message[]         @relation("SentMessages")
+  refreshTokens    RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  familyId  String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId])
 }
 
 model CandidateProfile {

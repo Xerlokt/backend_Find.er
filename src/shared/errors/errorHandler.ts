@@ -10,7 +10,7 @@ export function errorHandler(
 ): void {
   // AppError — domain errors with explicit status
   if (error instanceof AppError) {
-    reply.status(error.statusCode).send({ error: error.message })
+    reply.status(error.statusCode).send({ error: error.message, code: error.code })
     return
   }
 
