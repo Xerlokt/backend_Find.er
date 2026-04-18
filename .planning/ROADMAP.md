@@ -35,7 +35,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 
 Plans:
 - [x] 01-01: Docker Compose, environment setup, Prisma schema + migrations
-- [ ] 01-02: Fastify app factory, shared plugins skeleton, Jest + Supertest test harness
+- [x] 01-02: Fastify app factory, shared plugins skeleton, Jest + Supertest test harness
 - [ ] 01-03: Neo4j driver singleton, error handler, health route
 
 ### Phase 2: Authentication
