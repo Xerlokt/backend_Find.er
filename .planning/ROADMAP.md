@@ -41,7 +41,7 @@ Plans:
 ### Phase 2: Authentication
 **Goal**: Users can securely create accounts and access protected routes using JWT or Google
 **Depends on**: Phase 1
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, SEC-04, SEC-05, SEC-06
 **Success Criteria** (what must be TRUE):
   1. User can register with email/password and receive a JWT access token + refresh token
   2. User can log in with email/password and receive valid tokens
@@ -49,12 +49,12 @@ Plans:
   4. User can exchange a valid refresh token for a new access token
   5. User can log out and subsequent use of the refresh token is rejected
   6. A request to any protected route without a valid JWT receives 401
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: Auth service (register, login, token pair generation) — unit tests first
-- [ ] 02-02: Refresh token + logout flow, JWT plugin, authenticate hook — unit + integration tests
-- [ ] 02-03: Google OAuth2 plugin and callback route — integration tests
+- [ ] 02-01-PLAN.md — Schema RefreshToken, rate-limit plugin, errorHandler update, AuthRepository + AuthService (register + login) — TDD
+- [ ] 02-02-PLAN.md — AuthService (refresh + logout), auth.routes.ts, app.ts wiring, integration tests — TDD
+- [ ] 02-03-PLAN.md — Google OAuth2 (google-auth-library, loginWithGoogle, POST /auth/google) — TDD
 
 ### Phase 3: Profiles & Companies
 **Goal**: Candidates and recruiters have complete, editable profiles linked to companies; admins can manage users
@@ -166,7 +166,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-04-18 |
-| 2. Authentication | 0/3 | Not started | - |
+| 2. Authentication | 0/3 | Planned | - |
 | 3. Profiles & Companies | 0/3 | Not started | - |
 | 4. Jobs | 0/3 | Not started | - |
 | 5. Swipe | 0/3 | Not started | - |
