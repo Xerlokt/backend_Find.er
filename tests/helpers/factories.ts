@@ -1,0 +1,72 @@
+import { prisma } from '../../src/shared/db/prisma'
+import bcrypt from 'bcryptjs'
+import { Modality, Role } from '@prisma/client'
+
+export async function createUser(overrides: Partial<{
+  email: string
+  role: Role
+  passwordHash: string
+}> = {}) {
+  return prisma.user.create({
+    data: {
+      email: overrides.email ?? `user-${Date.now()}-${Math.random().toString(36).slice(2)}@test.com`,
+      role: overrides.role ?? 'CANDIDATE',
+      passwordHash: overrides.passwordHash ?? await bcrypt.hash('password123', 12),
+    },
+  })
+}
+
+export async function createCandidate(overrides: Partial<{
+  email: string
+  professionId: string
+  skills: string[]
+  preferredModalities: Modality[]
+}> = {}) {
+  const user = await createUser({ role: 'CANDIDATE', email: overrides.email })
+  const profile = await prisma.candidateProfile.create({
+    data: {
+      userId: user.id,
+      name: 'Test Candidate',
+      professionId: overrides.professionId ?? 'backend-dev',
+      skills: overrides.skills ?? ['Node.js', 'TypeScript'],
+      preferredModalities: overrides.preferredModalities ?? ['REMOTE'],
+      searchRadiusKm: 50,
+    },
+  })
+  return { user, profile }
+}
+
+export async function createCompany(overrides: Partial<{
+  name: string
+  plan: string
+  credits: number
+}> = {}) {
+  return prisma.company.create({
+    data: {
+      name: overrides.name ?? 'Test Company',
+      plan: overrides.plan ?? 'FREE',
+      credits: overrides.credits ?? 0,
+    },
+  })
+}
+
+export async function createJob(companyId: string, overrides: Partial<{
+  professionId: string
+  modality: Modality
+  requiredSkills: string[]
+  isActive: boolean
+  expiresAt: Date
+}> = {}) {
+  return prisma.job.create({
+    data: {
+      companyId,
+      title: 'Backend Developer',
+      description: 'We need a backend dev',
+      professionId: overrides.professionId ?? 'backend-dev',
+      modality: overrides.modality ?? 'REMOTE',
+      requiredSkills: overrides.requiredSkills ?? ['Node.js', 'TypeScript'],
+      isActive: overrides.isActive ?? true,
+      expiresAt: overrides.expiresAt ?? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    },
+  })
+}
