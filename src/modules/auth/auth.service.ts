@@ -5,6 +5,7 @@ import { Role } from '@prisma/client'
 import { OAuth2Client } from 'google-auth-library'
 import { AuthRepository } from './auth.repository'
 import { AppError } from '../../shared/errors/AppError'
+import { prisma } from '../../shared/db/prisma'
 
 // Singleton Google OAuth2 client — instanciado uma vez por módulo
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
@@ -82,31 +83,39 @@ export class AuthService {
 
   async refresh(rawToken: string): Promise<TokenPair> {
     const tokenHash = hashToken(rawToken)
-    const stored = await this.repo.findRefreshTokenByHash(tokenHash)
 
-    if (!stored) {
-      throw new AppError('Invalid token', 401, 'UNAUTHORIZED')
-    }
+    return prisma.$transaction(async (tx) => {
+      // Atomic find-and-revoke: only one concurrent request will get count === 1
+      const revoked = await tx.refreshToken.updateMany({
+        where: { tokenHash, revokedAt: null },
+        data: { revokedAt: new Date() },
+      })
+      const stored = await tx.refreshToken.findUnique({ where: { tokenHash } })
+      if (!stored) throw new AppError('Invalid token', 401, 'UNAUTHORIZED')
 
-    if (stored.revokedAt !== null) {
-      // Replay attack — revogar toda a família (D-02)
-      await this.repo.revokeRefreshTokenFamily(stored.familyId)
-      throw new AppError('Token revoked', 401, 'TOKEN_EXPIRED')
-    }
+      if (revoked.count === 0) {
+        // Replay attack — revogar toda a família (D-02)
+        await tx.refreshToken.updateMany({ where: { familyId: stored.familyId }, data: { revokedAt: new Date() } })
+        throw new AppError('Token revoked', 401, 'TOKEN_EXPIRED')
+      }
 
-    if (stored.expiresAt < new Date()) {
-      throw new AppError('Token expired', 401, 'TOKEN_EXPIRED')
-    }
+      if (stored.expiresAt < new Date()) throw new AppError('Token expired', 401, 'TOKEN_EXPIRED')
 
-    // Rotação single-use: revogar token atual, emitir novo na mesma família
-    await this.repo.revokeRefreshToken(stored.id)
+      const user = await tx.user.findUnique({ where: { id: stored.userId } })
+      if (!user) throw new AppError('User not found', 401, 'UNAUTHORIZED')
 
-    const user = await this.repo.findUserById(stored.userId)
-    if (!user) {
-      throw new AppError('User not found', 401, 'UNAUTHORIZED')
-    }
-
-    return this.generateTokenPair(user.id, user.role as string, stored.familyId)
+      const { rawToken: newRaw, tokenHash: newHash } = generateRefreshToken()
+      await tx.refreshToken.create({
+        data: {
+          tokenHash: newHash,
+          familyId: stored.familyId,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      })
+      const accessToken = this.app.jwt.sign({ id: user.id, role: user.role }, { expiresIn: '15m' })
+      return { accessToken, refreshToken: newRaw }
+    })
   }
 
   async logout(rawToken: string): Promise<void> {
@@ -153,6 +162,6 @@ export class AuthService {
     })
 
     const familyId = randomBytes(16).toString('hex')
-    return this.generateTokenPair(user!.id, user!.role as string, familyId)
+    return this.generateTokenPair(user.id, user.role as string, familyId)
   }
 }
