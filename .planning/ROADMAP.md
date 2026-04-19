@@ -11,8 +11,8 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Foundation** - Project scaffolding, Docker, Prisma schema, test infrastructure
-- [ ] **Phase 2: Authentication** - JWT + Google OAuth2, refresh tokens, route guards
-- [ ] **Phase 3: Profiles & Companies** - Candidate profiles, company accounts, admin user management
+- [x] **Phase 2: Authentication** - JWT + Google OAuth2, refresh tokens, route guards
+- [x] **Phase 3: Profiles & Companies** - Candidate profiles, company accounts, admin user management
 - [ ] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
 - [ ] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
 - [ ] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
@@ -70,9 +70,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Prisma migration (salaryExpectation), CandidateRepository + CandidateService + candidateRoutes (PUT/GET /candidates/me) — TDD
-- [ ] 03-02-PLAN.md — CompanyRepository + CompanyService + companyRoutes (POST /companies, GET /companies/:id, PATCH /companies/admin/:id/credits) — TDD
-- [ ] 03-03-PLAN.md — RecruiterRepository + RecruiterService + recruiterRoutes (PUT/GET /recruiters/me) + AdminService + adminRoutes (GET /admin/users, GET /admin/users/:id, PATCH /admin/companies/:id/credits) — TDD
+- [x] 03-01-PLAN.md — Prisma migration (salaryExpectation), CandidateRepository + CandidateService + candidateRoutes (PUT/GET /candidates/me) — TDD
+- [x] 03-02-PLAN.md — CompanyRepository + CompanyService + companyRoutes (POST /companies, GET /companies/:id, PATCH /companies/admin/:id/credits) — TDD
+- [x] 03-03-PLAN.md — RecruiterRepository + RecruiterService + recruiterRoutes (PUT/GET /recruiters/me) + AdminService + adminRoutes (GET /admin/users, GET /admin/users/:id, PATCH /admin/companies/:id/credits) — TDD
 
 ### Phase 4: Jobs
 **Goal**: Recruiters can manage the full lifecycle of job postings; expired jobs deactivate automatically
@@ -166,8 +166,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-04-18 |
-| 2. Authentication | 0/3 | Planned | - |
-| 3. Profiles & Companies | 0/3 | Planned | - |
+| 2. Authentication | 3/3 | Complete | 2026-04-18 |
+| 3. Profiles & Companies | 3/3 | Complete | 2026-04-19 |
 | 4. Jobs | 0/3 | Not started | - |
 | 5. Swipe | 0/3 | Not started | - |
 | 6. Recommendation | 0/3 | Not started | - |

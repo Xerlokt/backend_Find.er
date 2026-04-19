@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Plan 01-03 complete. Phase 1 Foundation DONE. Next: Phase 2 (Auth module)."
-last_updated: "2026-04-18T12:27:00.350Z"
-last_activity: 2026-04-18 -- Phase 02 execution started
+stopped_at: "Phase 03 complete. All 3 plans done. Next: Phase 4 (Jobs module)."
+last_updated: "2026-04-19T00:00:00.000Z"
+last_activity: 2026-04-19 -- Phase 03 execution complete
 progress:
   total_phases: 8
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 3
-  percent: 50
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
+  percent: 37
 ---
 
 # Project State
@@ -21,34 +21,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** Phase 02 — authentication
+**Current focus:** Phase 04 — Jobs module
 
 ## Current Position
 
-Phase: 02 (authentication) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 02
-Last activity: 2026-04-18 -- Phase 02 execution started
+Phase: 03 (profiles & companies) — COMPLETE
+Next: Phase 04 — Jobs
+Status: Ready to plan Phase 04
+Last activity: 2026-04-19 -- Phase 03 execution complete
 
-Progress: [██░░░░░░░░] 12%
+Progress: [███░░░░░░░] 37%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
-- Average duration: ~15min
-- Total execution time: ~0.75 hours
+- Total plans completed: 9
+- Average duration: ~20min
+- Total execution time: ~3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1. Foundation | 3 | ~45min | ~15min |
+| 2. Authentication | 3 | ~60min | ~20min |
+| 3. Profiles & Companies | 3 | ~75min | ~25min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01, 01-02, 01-03
+- Last 5 plans: 03-01, 03-02, 03-03
 - Trend: steady
 
 *Updated after each plan completion*
@@ -64,14 +66,15 @@ Recent decisions affecting current work:
 - 01-01: Prisma v7 datasource URL moved to prisma.config.ts (breaking change — url in schema datasource block is no longer supported)
 - 01-01: prisma-client-js generator kept in schema (still works in v7, generates to node_modules/@prisma/client)
 - 01-03: FastifyJWT module augmentation used for request.user typing instead of FastifyRequest directly — avoids conflict with @fastify/jwt's existing user property declaration
+- 03-02: PATCH /companies/admin/:id/credits lives in companyRoutes (prefix /companies), NOT a separate admin module — full URL is PATCH /companies/admin/:id/credits; ADMIN-02 canonical path is PATCH /admin/companies/:id/credits in adminRoutes
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- Docker Desktop Linux engine not running — migration deferred. User must start Docker Desktop then run: `docker compose up -d && npx prisma migrate dev --name init && npx prisma generate`. Integration test (health.test.ts) will turn GREEN once Docker is running.
+- Docker Desktop Linux engine not running — integration tests blocked. User must start Docker Desktop then run: `docker compose up -d && npx prisma migrate deploy && npx prisma generate`. All integration tests will turn GREEN once Docker is running.
 
 ## Deferred Items
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-18
-Stopped at: Plan 01-03 complete. Phase 1 Foundation DONE. Next: Phase 2 (Auth module).
-Resume file: .planning/phases/01-foundation/01-03-SUMMARY.md
+Last session: 2026-04-19
+Stopped at: Phase 03 complete. All 3 plans done. Next: Phase 4 (Jobs module).
+Resume file: .planning/phases/03-profiles-companies/03-03-SUMMARY.md
