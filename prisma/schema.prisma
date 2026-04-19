@@ -73,6 +73,7 @@ model CandidateProfile {
   skills              String[]
   preferredModalities Modality[]
   searchRadiusKm      Int        @default(50)
+  salaryExpectation   Float?
 
   swipes Swipe[]
   chats  Chat[]
