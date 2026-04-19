@@ -67,12 +67,12 @@ Plans:
   4. Admin can set and adjust a company's credit balance
   5. Admin routes return 403 for non-ADMIN roles
   6. Admin can list all users and view individual profiles
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: Candidate profile service + routes — unit + integration tests
-- [ ] 03-02: Company service + routes (admin-guarded company creation, credit balance) — unit + integration tests
-- [ ] 03-03: Recruiter profile service + routes, requireRole hook, admin user management routes
+- [ ] 03-01-PLAN.md — Prisma migration (salaryExpectation), CandidateRepository + CandidateService + candidateRoutes (PUT/GET /candidates/me) — TDD
+- [ ] 03-02-PLAN.md — CompanyRepository + CompanyService + companyRoutes (POST /companies, GET /companies/:id, PATCH /companies/admin/:id/credits) — TDD
+- [ ] 03-03-PLAN.md — RecruiterRepository + RecruiterService + recruiterRoutes (PUT/GET /recruiters/me) + AdminService + adminRoutes (GET /admin/users, GET /admin/users/:id, PATCH /admin/companies/:id/credits) — TDD
 
 ### Phase 4: Jobs
 **Goal**: Recruiters can manage the full lifecycle of job postings; expired jobs deactivate automatically
@@ -167,7 +167,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-04-18 |
 | 2. Authentication | 0/3 | Planned | - |
-| 3. Profiles & Companies | 0/3 | Not started | - |
+| 3. Profiles & Companies | 0/3 | Planned | - |
 | 4. Jobs | 0/3 | Not started | - |
 | 5. Swipe | 0/3 | Not started | - |
 | 6. Recommendation | 0/3 | Not started | - |
