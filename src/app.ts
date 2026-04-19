@@ -8,6 +8,8 @@ import { healthRoutes } from './modules/health/health.routes'
 import { authRoutes } from './modules/auth/auth.routes'
 import { candidateRoutes } from './modules/candidate/candidate.routes'
 import { companyRoutes } from './modules/company/company.routes'
+import { recruiterRoutes } from './modules/recruiter/recruiter.routes'
+import { adminRoutes } from './modules/admin/admin.routes'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -32,6 +34,8 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(authRoutes, { prefix: '/auth' })
   await app.register(candidateRoutes, { prefix: '/candidates' })
   await app.register(companyRoutes, { prefix: '/companies' })
+  await app.register(recruiterRoutes, { prefix: '/recruiters' })
+  await app.register(adminRoutes, { prefix: '/admin' })
 
   return app
 }
