@@ -6,6 +6,7 @@ import rateLimitPlugin from './shared/plugins/rate-limit'
 import { errorHandler } from './shared/errors/errorHandler'
 import { healthRoutes } from './modules/health/health.routes'
 import { authRoutes } from './modules/auth/auth.routes'
+import { candidateRoutes } from './modules/candidate/candidate.routes'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -28,6 +29,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   // Routes
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/auth' })
+  await app.register(candidateRoutes, { prefix: '/candidates' })
 
   return app
 }
