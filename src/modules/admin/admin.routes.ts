@@ -8,6 +8,11 @@ const AdjustCreditsAdminSchema = z.object({
   amount: z.number().int().positive(),
 })
 
+const ListUsersQuerySchema = z.object({
+  page:  z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+})
+
 export async function adminRoutes(app: FastifyInstance): Promise<void> {
   const service = new AdminService()
 
@@ -15,8 +20,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
   app.get('/users', {
     preHandler: [authenticate, requireRole('ADMIN')],
   }, async (request, reply) => {
-    const page = Number((request.query as any).page ?? 1)
-    const limit = Number((request.query as any).limit ?? 20)
+    const { page, limit } = ListUsersQuerySchema.parse(request.query)
     const users = await service.listUsers(page, limit)
     return reply.status(200).send(users)
   })
