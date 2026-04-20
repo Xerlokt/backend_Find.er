@@ -36,12 +36,18 @@ export class AdminService {
     return user
   }
 
-  async adjustCredits(companyId: string, amount: number) {
-    const company = await prisma.company.findUnique({ where: { id: companyId } })
-    if (!company) throw new AppError('Company not found', 404, 'NOT_FOUND')
-    return prisma.company.update({
-      where: { id: companyId },
-      data: { credits: { increment: amount } },
+  async adjustCredits(companyId: string, amount: number, reason = 'admin_grant') {
+    return prisma.$transaction(async (tx) => {
+      const company = await tx.company.findUnique({ where: { id: companyId } })
+      if (!company) throw new AppError('Company not found', 404, 'NOT_FOUND')
+      const updated = await tx.company.update({
+        where: { id: companyId },
+        data: { credits: { increment: amount } },
+      })
+      await tx.creditTransaction.create({
+        data: { companyId, amount, reason },
+      })
+      return updated
     })
   }
 }
