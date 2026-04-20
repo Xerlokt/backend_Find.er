@@ -1,6 +1,6 @@
 ---
 phase: 03-profiles-companies
-reviewed: 2026-04-19T00:00:00Z
+reviewed: 2026-04-20T00:00:00Z
 depth: standard
 files_reviewed: 20
 files_reviewed_list:
@@ -25,39 +25,42 @@ files_reviewed_list:
   - tests/unit/company.service.test.ts
   - tests/unit/recruiter.service.test.ts
 findings:
-  critical: 0
+  critical: 1
   warning: 4
   info: 5
-  total: 9
+  total: 10
 status: issues_found
 ---
 
 # Phase 03: Code Review Report
 
-**Reviewed:** 2026-04-19T00:00:00Z
+**Reviewed:** 2026-04-20T00:00:00Z
 **Depth:** standard
 **Files Reviewed:** 20
 **Status:** issues_found
 
 ## Summary
 
-Reviewed all source and test files for Phase 03 (Profiles & Companies). The architecture is clean and consistent across all three modules: routes → service → repository, with proper authentication hooks, Zod validation on every endpoint, and userId always sourced from the JWT (`request.user.id`). No security regressions were found. Sensitive fields (`passwordHash`, `googleId`) are correctly excluded in all admin queries.
+Reviewed all source and test files for Phase 03 (Profiles & Companies). The architecture is clean and consistent across all three modules: routes delegate to services which delegate to repositories, with proper authentication hooks, Zod validation on every endpoint, and userId always sourced from the JWT (`request.user.id`). No IDOR vulnerabilities were found. Sensitive fields (`passwordHash`, `googleId`) are correctly excluded in all admin queries.
 
-Four warnings were found: a race condition in the credit-adjustment guard, a missing 401 test for unauthenticated access, a missing `limit` upper-bound cap that allows unbounded pagination queries, and a `(request.query as any)` unsafe cast in admin routes. Five informational issues cover duplicate endpoint logic between `admin.routes` and `company.routes`, a missing index on `Company.credits`, pagination without total-count metadata, `as any` casts in test mocks, and the `createUser` factory defaulting to no password hash for ADMIN users in some integration tests.
+One critical issue was found: the credit-adjustment guard is not atomic — a race condition can drive company credits below zero under concurrent requests. This violates the project's own stated rule ("Transações atômicas para créditos"). Four warnings cover the unbounded pagination `limit` parameter, the `(request.query as any)` cast that silently produces `NaN`, the missing CreditTransaction audit record on credit grants, and missing 401 test coverage for unauthenticated access. Five informational items cover the duplicate credit endpoint, the `Company.plan` being an unvalidated string, missing pagination total-count, `as any` casts in test mocks, and a missing `getProfile` unit test in the recruiter suite.
 
 ---
 
-## Warnings
+## Critical Issues
 
-### WR-01: Race condition in `CompanyService.adjustCredits` — read-then-write without transaction
+### CR-01: Race condition in `CompanyService.adjustCredits` — credits can go negative under concurrent load
 
 **File:** `src/modules/company/company.service.ts:20-28`
 
-**Issue:** `adjustCredits` reads the current credit balance with `findById`, checks `company.credits + delta < 0`, then calls `adjustCredits` (which uses Prisma's `{ increment: delta }`). Because the guard and the write are two separate database round-trips, a concurrent request can pass the guard simultaneously for the same company and both writes succeed, potentially driving the balance below zero. The project's own security rules state "Transações atômicas para créditos e swipes (race conditions)".
+**Issue:** `adjustCredits` reads the current credit balance with `findById` (line 20), checks `company.credits + delta < 0` (line 24), then calls `repo.adjustCredits` (line 27) which uses Prisma's `{ increment: delta }`. Because the guard and the write are two separate database round-trips, two concurrent requests can both read the same balance, both pass the guard, and both writes succeed — driving credits below zero. The project's CLAUDE.md explicitly requires "Transações atômicas para créditos e swipes (race conditions)".
 
-**Fix:** Wrap the guard and write in a Prisma interactive transaction, or use a conditional update that enforces the floor atomically:
+The same structure appears in `AdminService.adjustCredits` (`src/modules/admin/admin.service.ts:39-45`): a separate `findUnique` followed by a bare `update`, again without a transaction.
+
+**Fix:** Wrap the guard and write in a Prisma interactive transaction in both service methods:
 
 ```typescript
+// src/modules/company/company.service.ts
 async adjustCredits(companyId: string, delta: number) {
   return prisma.$transaction(async (tx) => {
     const company = await tx.company.findUnique({ where: { id: companyId } })
@@ -73,15 +76,17 @@ async adjustCredits(companyId: string, delta: number) {
 }
 ```
 
-The same issue applies to `AdminService.adjustCredits` (`src/modules/admin/admin.service.ts:39-46`), which does not even have a guard — it only increments, so a race condition there would result in double-credits, not a balance underflow. That method should also be wrapped in a transaction if a CreditTransaction audit record is added later.
+Apply the same pattern to `AdminService.adjustCredits`.
 
 ---
 
-### WR-02: No upper bound on pagination `limit` parameter — allows unbounded DB scan
+## Warnings
+
+### WR-01: No upper bound on pagination `limit` parameter — allows unbounded DB scan
 
 **File:** `src/modules/admin/admin.routes.ts:19`
 
-**Issue:** The `limit` query parameter is parsed as `Number(request.query.limit ?? 20)` without any maximum cap. A caller can send `?limit=1000000` and force the service to attempt to load millions of rows in a single query. There is no Zod schema guarding these query parameters.
+**Issue:** The `limit` query parameter is parsed with `Number((request.query as any).limit ?? 20)` without any maximum cap. A caller sending `?limit=1000000` forces the service to attempt loading millions of rows in a single query. There is no Zod schema guarding these query parameters.
 
 **Fix:** Validate query parameters with Zod before use:
 
@@ -97,25 +102,48 @@ const { page, limit } = ListUsersQuerySchema.parse(request.query)
 
 ---
 
-### WR-03: `(request.query as any)` unsafe cast bypasses TypeScript type safety
+### WR-02: `(request.query as any)` cast — `NaN` silently accepted by Prisma, empty results returned
 
 **File:** `src/modules/admin/admin.routes.ts:18-19`
 
-**Issue:** Both `page` and `limit` are extracted via `(request.query as any).page` and `(request.query as any).limit`. This suppresses TypeScript's ability to catch typos or type errors, and `Number(undefined)` returns `NaN`, which would cause `skip: NaN` to be passed to Prisma — Prisma silently coerces `NaN` to `0`, making invalid inputs behave like `page=1`. If `limit` resolves to `NaN`, `take: NaN` also coerces to `0`, returning an empty result with no error.
+**Issue:** `page` and `limit` are extracted via `(request.query as any).page` and `(request.query as any).limit`. `Number(undefined)` returns `NaN`. When `limit` is `NaN`, Prisma silently coerces `take: NaN` to `take: 0` and returns an empty array with no error — a silent data loss to the client. When `page` is `NaN`, `skip: NaN` is coerced to `skip: 0`, returning the first page but masking the invalid input. This bypasses TypeScript type safety and eliminates compile-time typo detection.
 
-**Fix:** Solved together with WR-02 by using the `ListUsersQuerySchema` parse above, which handles coercion safely and eliminates all `as any` casts.
+**Fix:** Resolved together with WR-01 by using the `ListUsersQuerySchema` parse above, which handles coercion safely via `z.coerce.number()` and eliminates all `as any` casts.
 
 ---
 
-### WR-04: Integration tests for company routes do not test unauthenticated access (missing 401 assertion)
+### WR-03: CreditTransaction audit record is never written when credits are adjusted
+
+**File:** `src/modules/admin/admin.service.ts:39-45`
+**File:** `src/modules/company/company.service.ts:19-28`
+
+**Issue:** The schema defines a `CreditTransaction` model (schema.prisma lines 167-174) with `companyId`, `amount`, and `reason` fields, clearly intended as an audit trail. Neither `AdminService.adjustCredits` nor `CompanyService.adjustCredits` creates a `CreditTransaction` record. This means there is currently no persistent record of who granted credits, when, or how many. Any future billing or credit reconciliation feature will have no historical data.
+
+**Fix:** Create the audit record inside the same `$transaction` as the credit update (see CR-01):
+
+```typescript
+await tx.creditTransaction.create({
+  data: {
+    companyId,
+    amount: delta,
+    reason: 'admin_grant',
+  },
+})
+```
+
+The `adjustCredits` methods should accept an optional `reason` string parameter to support different call sites (admin grant vs. future automated deductions).
+
+---
+
+### WR-04: Integration tests do not cover unauthenticated access (missing 401 assertions)
 
 **File:** `tests/integration/company.test.ts` (all describe blocks)
 **File:** `tests/integration/candidate.test.ts` (all describe blocks)
 **File:** `tests/integration/recruiter.test.ts` (all describe blocks)
 
-**Issue:** None of the three integration test suites include a case that sends a request without an `Authorization` header to verify that the `authenticate` preHandler correctly rejects it with 401. The authorization layer is only tested via 403 cases (wrong role). If the `authenticate` hook were accidentally removed from a route, no test would catch it.
+**Issue:** None of the three integration test suites include a case that sends a request without an `Authorization` header. Authorization is only tested via 403 cases (wrong role). If the `authenticate` preHandler were accidentally removed from a route registration, no test would catch it.
 
-**Fix:** Add one 401 test per protected route family, for example in `company.test.ts`:
+**Fix:** Add one 401 test per protected route family. Example for `company.test.ts`:
 
 ```typescript
 it('401 para requisição sem Authorization header', async () => {
@@ -134,24 +162,28 @@ it('401 para requisição sem Authorization header', async () => {
 
 ## Info
 
-### IN-01: Duplicate credit-adjustment endpoint — `PATCH /admin/companies/:id/credits` and `PATCH /companies/admin/:id/credits`
+### IN-01: Duplicate credit-adjustment endpoint creates divergent implementations
 
 **File:** `src/modules/admin/admin.routes.ts:34-41`
 **File:** `src/modules/company/company.routes.ts:41-48`
 
-**Issue:** There are two separate endpoints that both adjust company credits, both protected by `requireRole('ADMIN')`. They differ only in URL path and they reach different service implementations (`AdminService.adjustCredits` vs `CompanyService.adjustCredits`). The `AdminService` version has no balance guard (only increments), while the `CompanyService` version does have a guard. This duplication will cause confusion about which is the canonical endpoint and may lead to one being maintained while the other drifts.
+**Issue:** Two separate endpoints adjust company credits, both protected by `requireRole('ADMIN')`:
+- `PATCH /admin/companies/:id/credits` — calls `AdminService.adjustCredits` (no balance guard)
+- `PATCH /companies/admin/:id/credits` — calls `CompanyService.adjustCredits` (has balance guard)
 
-**Fix:** Pick one canonical path, remove the other, and point both route files to the same service method.
+The two implementations already have divergent behavior: the company route enforces an underflow guard while the admin route does not. This duplication will cause confusion about the canonical endpoint and risk further divergence.
+
+**Fix:** Pick one canonical path, remove the other, and route both to the same service method (prefer `CompanyService.adjustCredits` as it has the guard).
 
 ---
 
-### IN-02: `Company.plan` is a plain `String` field — no enum enforcement
+### IN-02: `Company.plan` is an unvalidated `String` field — no enum enforcement
 
 **File:** `prisma/schema.prisma:96`
 
-**Issue:** The `plan` field on `Company` is typed as `String` with a default of `"FREE"`, but valid plan values (FREE, BASIC, PRO, etc.) are business logic. Without an enum, any string can be written — `"FREEEE"`, `""`, etc. This will become a bug magnet when plan-gated features are implemented.
+**Issue:** The `plan` field on `Company` is typed as `String` with a default of `"FREE"`. Any string can be written without DB-level rejection. This will become a bug source when plan-gated features are implemented.
 
-**Fix:** Define a Prisma enum and migrate:
+**Fix:** Define a Prisma enum and run a migration:
 
 ```prisma
 enum Plan {
@@ -168,13 +200,13 @@ model Company {
 
 ---
 
-### IN-03: Pagination response for `GET /admin/users` does not include total count
+### IN-03: `GET /admin/users` response does not include total count for pagination
 
 **File:** `src/modules/admin/admin.service.ts:5-19`
 
-**Issue:** `listUsers` returns only the array of users. Without a `total` count, UI clients cannot compute the number of pages or show a progress indicator. This is typically required from day one for admin UIs.
+**Issue:** `listUsers` returns only the array slice. Without a total count, clients cannot determine the total number of pages or render a pagination control.
 
-**Fix:** Return both items and total:
+**Fix:** Return both items and total in a single batch query:
 
 ```typescript
 async listUsers(page: number, limit: number) {
@@ -193,46 +225,38 @@ async listUsers(page: number, limit: number) {
 
 ---
 
-### IN-04: `as any` casts in unit test mocks reduce type safety of the test assertions
+### IN-04: `as any` casts in unit test mocks reduce type safety of assertions
 
 **File:** `tests/unit/candidate.service.test.ts:26,28`
 **File:** `tests/unit/company.service.test.ts:26,40`
 **File:** `tests/unit/recruiter.service.test.ts:27,31`
 
-**Issue:** Mock return values are cast with `as any` (e.g., `repo.upsertProfile.mockResolvedValue(expectedProfile as any)`). These casts cause TypeScript to accept incomplete mock objects. If the actual Prisma return type gains a required field, the tests will not catch the mismatch.
+**Issue:** Mock return values are cast with `as any` (e.g., `repo.upsertProfile.mockResolvedValue(expectedProfile as any)`). These casts cause TypeScript to accept structurally incomplete mock objects. If a required field is added to a Prisma model, the tests will not detect the mismatch.
 
-**Fix:** Use `satisfies` or provide the full required fields matching the Prisma-generated type. Alternatively, import the type and construct a complete stub:
+**Fix:** Import the Prisma-generated type and construct a complete stub, or use `satisfies`:
 
 ```typescript
 import type { CandidateProfile } from '@prisma/client'
 
-const expectedProfile: CandidateProfile = {
-  id: 'profile-1',
-  userId,
-  name: 'Test User',
-  bio: null,
-  lat: null,
-  lng: null,
-  professionId: 'backend-dev',
-  skills: ['Node.js'],
-  preferredModalities: ['REMOTE'],
-  searchRadiusKm: 50,
-  salaryExpectation: null,
-}
+const expectedProfile = {
+  id: 'profile-1', userId, name: 'Test User', bio: null, lat: null,
+  lng: null, professionId: 'backend-dev', skills: ['Node.js'],
+  preferredModalities: ['REMOTE' as const], searchRadiusKm: 50, salaryExpectation: null,
+} satisfies CandidateProfile
 ```
 
 ---
 
-### IN-05: `RecruiterService` unit tests are missing a `getProfile` describe block
+### IN-05: `RecruiterService.getProfile` has no unit test coverage
 
 **File:** `tests/unit/recruiter.service.test.ts`
 
-**Issue:** `RecruiterService.getProfile` is not covered by any unit test. The analogous methods in `CandidateService` and `CompanyService` both have unit test coverage. The integration test does cover the 404 path, but a unit test for `getProfile` with a found profile is absent.
+**Issue:** The `RecruiterService.getProfile` method is not covered by any unit test. The analogous methods in `CandidateService` and `CompanyService` both have unit test describe blocks. The integration test covers the 404 path, but a unit test for the found-profile path and the not-found error path is absent.
 
-**Fix:** Add a `describe('getProfile', ...)` block covering: (a) returns profile when found, (b) throws `AppError` 404 when `findProfileByUserId` returns `null`.
+**Fix:** Add a `describe('getProfile', ...)` block covering: (a) returns profile when `findProfileByUserId` returns a value, (b) throws `AppError` 404 `NOT_FOUND` when it returns `null`.
 
 ---
 
-_Reviewed: 2026-04-19T00:00:00Z_
+_Reviewed: 2026-04-20T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
