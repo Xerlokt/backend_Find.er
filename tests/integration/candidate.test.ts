@@ -4,6 +4,19 @@ import supertest from 'supertest'
 import { createUser } from '../helpers/factories'
 
 describe('Candidate Routes — Integration', () => {
+  // ── 401 unauthenticated access ─────────────────────────────────────────
+
+  it('401 para requisição sem Authorization header', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const response = await supertest(app.server)
+      .get('/candidates/me')
+
+    expect(response.status).toBe(401)
+    await app.close()
+  })
+
   // Helper: registra um candidato e retorna o accessToken
   async function loginAsCandidate(app: Awaited<ReturnType<typeof buildApp>>, email?: string): Promise<string> {
     const userEmail = email ?? `candidate-${Date.now()}@test.com`

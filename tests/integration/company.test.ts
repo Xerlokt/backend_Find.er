@@ -4,6 +4,19 @@ import supertest from 'supertest'
 import { createUser, createCompany } from '../helpers/factories'
 
 describe('Company Routes — Integration', () => {
+  // ── 401 unauthenticated access ─────────────────────────────────────────
+
+  it('401 para requisição sem Authorization header', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const response = await supertest(app.server)
+      .get('/companies/00000000-0000-0000-0000-000000000000')
+
+    expect(response.status).toBe(401)
+    await app.close()
+  })
+
   // Helper para login e obter token
   async function loginAs(email: string): Promise<string> {
     const app = await buildApp({ testing: true })

@@ -5,6 +5,19 @@ import { createUser, createCompany } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
 
 describe('Recruiter Routes — Integration', () => {
+  // ── 401 unauthenticated access ─────────────────────────────────────────
+
+  it('401 para requisição sem Authorization header', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const response = await supertest(app.server)
+      .get('/recruiters/me')
+
+    expect(response.status).toBe(401)
+    await app.close()
+  })
+
   // Helper: login de um usuário e retorna accessToken
   async function loginUser(app: Awaited<ReturnType<typeof buildApp>>, email: string, password = 'password123') {
     const response = await supertest(app.server)
