@@ -32,7 +32,6 @@ describe('JobService — integration', () => {
       const { user, profile } = await createRecruiterWithProfile(company.id, 'create1')
 
       const job = await service.createJob(user.id, {
-        companyId: company.id,
         title: 'Senior Dev',
         description: 'desc',
         professionId: 'backend-dev',
@@ -49,11 +48,9 @@ describe('JobService — integration', () => {
 
     it('404: throws when user has no recruiter profile', async () => {
       const userWithNoProfile = await createUser({ role: 'RECRUITER', email: 'no-profile@test.com' })
-      const company = await createCompany()
 
       await expect(
         service.createJob(userWithNoProfile.id, {
-          companyId: company.id,
           title: 'Dev',
           description: 'desc',
           professionId: 'backend-dev',

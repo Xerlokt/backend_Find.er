@@ -38,13 +38,12 @@ async function createRecruiterWithProfile(
   return { user, profile, token }
 }
 
-// Corpo válido de criação de vaga (companyId definido em cada teste)
-function buildValidJobBody(companyId: string) {
+// Corpo válido de criação de vaga — companyId NOT included (derived from recruiter profile server-side)
+function buildValidJobBody() {
   return {
     title: 'Senior Backend Dev',
     description: 'We need a senior backend developer',
     professionId: 'backend-dev',
-    companyId,
     modality: 'REMOTE',
     requiredSkills: ['Node.js', 'TypeScript'],
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -63,7 +62,7 @@ describe('POST /jobs', () => {
     const response = await supertest(app.server)
       .post('/jobs')
       .set('Authorization', `Bearer ${token}`)
-      .send(buildValidJobBody(company.id))
+      .send(buildValidJobBody())
 
     expect(response.status).toBe(201)
     expect(response.body).toHaveProperty('id')
@@ -78,7 +77,7 @@ describe('POST /jobs', () => {
     const company = await createCompany()
     const { token } = await createRecruiterWithProfile(app, company.id, 'post-400-title')
 
-    const body = buildValidJobBody(company.id)
+    const body = buildValidJobBody()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (body as any).title
 
@@ -98,7 +97,7 @@ describe('POST /jobs', () => {
     const company = await createCompany()
     const { token } = await createRecruiterWithProfile(app, company.id, 'post-400-skills')
 
-    const body = { ...buildValidJobBody(company.id), requiredSkills: [] }
+    const body = { ...buildValidJobBody(), requiredSkills: [] }
 
     const response = await supertest(app.server)
       .post('/jobs')
@@ -113,13 +112,33 @@ describe('POST /jobs', () => {
     const app = await buildApp({ testing: true })
     await app.ready()
 
-    const company = await createCompany()
+    const response = await supertest(app.server)
+      .post('/jobs')
+      .send(buildValidJobBody())
+
+    expect(response.status).toBe(401)
+    await app.close()
+  })
+
+  it('201 ignora companyId injetado no body — usa company do perfil do recruiter', async () => {
+    // Exploit path: recruiter sends a foreign companyId in body; server must ignore it
+    // and create the job under the recruiter's actual company (IDOR prevention — CR-01)
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const recruiterCompany = await createCompany()
+    const foreignCompany = await createCompany()
+    const { token } = await createRecruiterWithProfile(app, recruiterCompany.id, 'idor-exploit')
 
     const response = await supertest(app.server)
       .post('/jobs')
-      .send(buildValidJobBody(company.id))
+      .set('Authorization', `Bearer ${token}`)
+      .send({ ...buildValidJobBody(), companyId: foreignCompany.id })
 
-    expect(response.status).toBe(401)
+    expect(response.status).toBe(201)
+    // injected foreign companyId must be ignored; job belongs to recruiter's real company
+    expect(response.body.companyId).toBe(recruiterCompany.id)
+    expect(response.body.companyId).not.toBe(foreignCompany.id)
     await app.close()
   })
 
@@ -139,7 +158,7 @@ describe('POST /jobs', () => {
     const response = await supertest(app.server)
       .post('/jobs')
       .set('Authorization', `Bearer ${token}`)
-      .send(buildValidJobBody(company.id))
+      .send(buildValidJobBody())
 
     expect(response.status).toBe(403)
     await app.close()
