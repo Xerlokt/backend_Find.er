@@ -19,6 +19,8 @@ const CreateJobSchema = z.object({
   expiresAt: z.string().datetime(),
 })
 
+const JobParamsSchema = z.object({ id: z.string().uuid() })
+
 const UpdateJobSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().min(1).max(5000).optional(),
@@ -60,7 +62,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
   app.get('/:id', {
     preHandler: [authenticate, requireRole('RECRUITER')],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = JobParamsSchema.parse(request.params)
     const job = await service.getJobById(id)
     // rankings: [] — placeholder; Phase 6 preenche com candidatos pontuados por fit
     return reply.status(200).send({ ...job, rankings: [] })
@@ -70,7 +72,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
   app.patch('/:id', {
     preHandler: [authenticate, requireRole('RECRUITER')],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = JobParamsSchema.parse(request.params)
     const body = UpdateJobSchema.parse(request.body)
     const job = await service.updateJob(request.user.id, id, {
       ...body,
@@ -83,7 +85,7 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
   app.delete('/:id/deactivate', {
     preHandler: [authenticate, requireRole('RECRUITER')],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = JobParamsSchema.parse(request.params)
     const job = await service.deactivateJob(request.user.id, id)
     return reply.status(200).send(job)
   })
