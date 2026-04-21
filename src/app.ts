@@ -3,6 +3,7 @@ import helmetPlugin from './shared/plugins/helmet'
 import corsPlugin from './shared/plugins/cors'
 import jwtPlugin from './shared/plugins/jwt'
 import rateLimitPlugin from './shared/plugins/rate-limit'
+import { schedulerPlugin } from './shared/plugins/scheduler'
 import { errorHandler } from './shared/errors/errorHandler'
 import { healthRoutes } from './modules/health/health.routes'
 import { authRoutes } from './modules/auth/auth.routes'
@@ -36,6 +37,10 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(companyRoutes, { prefix: '/companies' })
   await app.register(recruiterRoutes, { prefix: '/recruiters' })
   await app.register(adminRoutes, { prefix: '/admin' })
+
+  if (!opts.testing) {
+    await app.register(schedulerPlugin)
+  }
 
   return app
 }
