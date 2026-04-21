@@ -83,12 +83,12 @@ Plans:
   2. Recruiter can edit job details and deactivate a job
   3. A job past its expiry date is automatically marked inactive (scheduler fires)
   4. Recruiter can view a job's detail page with a placeholder for the candidate ranking
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: Job service + repository (CRUD) — unit + integration tests
-- [ ] 04-02: Job expiry scheduler (cron via `@fastify/schedule`) — unit tests with fake clock
-- [ ] 04-03: Recruiter job-detail route (ranking placeholder returns empty list)
+- [ ] 04-01-PLAN.md — Prisma migration (recruiterId), JobRepository + JobService (CRUD + ownership) — TDD unit + integration tests
+- [ ] 04-02-PLAN.md — Job expiry scheduler (node-cron plugin, runExpiryCheck) — unit tests
+- [ ] 04-03-PLAN.md — Job HTTP routes (POST/PATCH/DELETE deactivate/GET mine/GET :id) + full integration tests
 
 ### Phase 5: Swipe
 **Goal**: Candidates can swipe on jobs, and the ranking view enforces LIKE/DISLIKE visibility rules
