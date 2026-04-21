@@ -4,10 +4,10 @@ import { AppError } from '../../shared/errors/AppError'
 export class JobService {
   constructor(private readonly repo: JobRepository) {}
 
-  async createJob(userId: string, data: CreateJobData) {
+  async createJob(userId: string, data: Omit<CreateJobData, 'companyId'>) {
     const profile = await this.repo.findRecruiterProfileByUserId(userId)
     if (!profile) throw new AppError('Recruiter profile not found', 404, 'NOT_FOUND')
-    return this.repo.create(profile.id, data)
+    return this.repo.create(profile.id, { ...data, companyId: profile.companyId })
   }
 
   async updateJob(userId: string, jobId: string, data: UpdateJobData) {

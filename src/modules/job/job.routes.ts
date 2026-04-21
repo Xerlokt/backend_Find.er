@@ -9,7 +9,7 @@ const CreateJobSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(5000),
   professionId: z.string().min(1),
-  companyId: z.string().uuid(),
+  // companyId removed — derived from recruiter profile in service (IDOR prevention)
   salaryMin: z.number().positive().optional(),
   salaryMax: z.number().positive().optional(),
   lat: z.number().min(-90).max(90).optional(),
