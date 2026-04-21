@@ -11,7 +11,13 @@
       "Skill(gsd-code-review-fix)",
       "Skill(gsd-execute-phase)",
       "Bash(npm run *)",
-      "Bash(npx jest *)"
+      "Bash(npx jest *)",
+      "Bash(curl *)",
+      "Bash(jq)",
+      "Bash(node seed-admin.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(npx prisma *)",
+      "Bash(PGPASSWORD=jobtinder psql -h localhost -U jobtinder -d jobtinder -c \"SELECT id, \\\\\"companyId\\\\\", amount, reason, \\\\\"createdAt\\\\\" FROM \\\\\"CreditTransaction\\\\\" ORDER BY \\\\\"createdAt\\\\\" DESC LIMIT 5;\")"
     ]
   }
 }
