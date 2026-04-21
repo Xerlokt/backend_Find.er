@@ -51,16 +51,21 @@ export async function createCompany(overrides: Partial<{
   })
 }
 
-export async function createJob(companyId: string, overrides: Partial<{
-  professionId: string
-  modality: Modality
-  requiredSkills: string[]
-  isActive: boolean
-  expiresAt: Date
-}> = {}) {
+export async function createJob(
+  companyId: string,
+  recruiterId: string,
+  overrides: Partial<{
+    professionId: string
+    modality: Modality
+    requiredSkills: string[]
+    isActive: boolean
+    expiresAt: Date
+  }> = {}
+) {
   return prisma.job.create({
     data: {
       companyId,
+      recruiterId,
       title: 'Backend Developer',
       description: 'We need a backend dev',
       professionId: overrides.professionId ?? 'backend-dev',
