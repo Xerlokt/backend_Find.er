@@ -52,7 +52,6 @@ describe('JobService', () => {
 
       await expect(
         service.createJob('user-1', {
-          companyId: 'company-1',
           title: 'Dev',
           description: 'desc',
           professionId: 'backend-dev',
@@ -64,7 +63,6 @@ describe('JobService', () => {
 
       await expect(
         service.createJob('user-1', {
-          companyId: 'company-1',
           title: 'Dev',
           description: 'desc',
           professionId: 'backend-dev',
@@ -81,7 +79,6 @@ describe('JobService', () => {
       const profile = makeProfile()
       const job = makeJob()
       const data = {
-        companyId: 'company-1',
         title: 'Backend Developer',
         description: 'We need a backend dev',
         professionId: 'backend-dev',
@@ -96,7 +93,7 @@ describe('JobService', () => {
       const result = await service.createJob('user-1', data)
 
       expect(repo.findRecruiterProfileByUserId).toHaveBeenCalledWith('user-1')
-      expect(repo.create).toHaveBeenCalledWith(profile.id, data)
+      expect(repo.create).toHaveBeenCalledWith(profile.id, { ...data, companyId: profile.companyId })
       expect(result).toEqual(job)
     })
 
@@ -104,7 +101,6 @@ describe('JobService', () => {
       const profile = makeProfile({ id: 'real-profile-id' })
       const job = makeJob({ recruiterId: 'real-profile-id' })
       const data = {
-        companyId: 'company-1',
         title: 'Dev',
         description: 'desc',
         professionId: 'backend-dev',
