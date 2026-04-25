@@ -163,6 +163,27 @@ describe('POST /jobs', () => {
     expect(response.status).toBe(403)
     await app.close()
   })
+
+  it('403 quando ADMIN chama o endpoint', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const passwordHash = await bcrypt.hash(PASSWORD, 12)
+    const admin = await createUser({
+      role: 'ADMIN',
+      email: 'admin-post-403@test.com',
+      passwordHash,
+    })
+    const token = await loginUser(app, admin.email)
+
+    const response = await supertest(app.server)
+      .post('/jobs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(buildValidJobBody())
+
+    expect(response.status).toBe(403)
+    await app.close()
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -241,6 +262,33 @@ describe('GET /jobs/:id', () => {
       .set('Authorization', `Bearer ${token}`)
 
     expect(response.status).toBe(404)
+    await app.close()
+  })
+
+  it('200 retorna vaga quando CANDIDATE autentica (qualquer usuário autenticado pode ler)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const company = await createCompany()
+    const { profile } = await createRecruiterWithProfile(app, company.id, 'get-id-candidate-200')
+    const job = await createJob(company.id, profile.id)
+
+    const passwordHash = await bcrypt.hash(PASSWORD, 12)
+    const candidate = await createUser({
+      role: 'CANDIDATE',
+      email: 'candidate-get-id-200@test.com',
+      passwordHash,
+    })
+    const candidateToken = await loginUser(app, candidate.email)
+
+    const response = await supertest(app.server)
+      .get(`/jobs/${job.id}`)
+      .set('Authorization', `Bearer ${candidateToken}`)
+
+    expect(response.status).toBe(200)
+    expect(response.body).toHaveProperty('id', job.id)
+    expect(response.body).toHaveProperty('rankings')
+    expect(Array.isArray(response.body.rankings)).toBe(true)
     await app.close()
   })
 })

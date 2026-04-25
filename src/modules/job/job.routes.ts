@@ -5,6 +5,12 @@ import { requireRole } from '../../shared/hooks/requireRole'
 import { JobRepository } from './job.repository'
 import { JobService } from './job.service'
 
+export interface RankingItem {
+  candidateId: string
+  fitScore: number
+  profile: Record<string, unknown> | null
+}
+
 const CreateJobSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1).max(5000),
@@ -60,12 +66,12 @@ export async function jobRoutes(app: FastifyInstance): Promise<void> {
 
   // GET /jobs/:id — detalhe da vaga com rankings: [] placeholder (Phase 6)
   app.get('/:id', {
-    preHandler: [authenticate, requireRole('RECRUITER')],
+    preHandler: [authenticate],
   }, async (request, reply) => {
     const { id } = JobParamsSchema.parse(request.params)
     const job = await service.getJobById(id)
     // rankings: [] — placeholder; Phase 6 preenche com candidatos pontuados por fit
-    return reply.status(200).send({ ...job, rankings: [] })
+    return reply.status(200).send({ ...job, rankings: [] as RankingItem[] })
   })
 
   // PATCH /jobs/:id — atualiza detalhes da vaga
