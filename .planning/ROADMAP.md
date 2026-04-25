@@ -13,7 +13,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - [x] **Phase 1: Foundation** - Project scaffolding, Docker, Prisma schema, test infrastructure
 - [x] **Phase 2: Authentication** - JWT + Google OAuth2, refresh tokens, route guards
 - [x] **Phase 3: Profiles & Companies** - Candidate profiles, company accounts, admin user management
-- [ ] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
+- [x] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
 - [ ] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
 - [ ] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
 - [ ] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
@@ -83,12 +83,13 @@ Plans:
   2. Recruiter can edit job details and deactivate a job
   3. A job past its expiry date is automatically marked inactive (scheduler fires)
   4. Recruiter can view a job's detail page with a placeholder for the candidate ranking
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Prisma migration (recruiterId), JobRepository + JobService (CRUD + ownership) — TDD unit + integration tests
-- [ ] 04-02-PLAN.md — Job expiry scheduler (node-cron plugin, runExpiryCheck) — unit tests
-- [ ] 04-03-PLAN.md — Job HTTP routes (POST/PATCH/DELETE deactivate/GET mine/GET :id) + full integration tests
+- [x] 04-01-PLAN.md — Prisma migration (recruiterId), JobRepository + JobService (CRUD + ownership) — TDD unit + integration tests
+- [x] 04-02-PLAN.md — Job expiry scheduler (node-cron plugin, runExpiryCheck) — unit tests
+- [x] 04-03-PLAN.md — Job HTTP routes (POST/PATCH/DELETE deactivate/GET mine/GET :id) + full integration tests
+- [x] 04-04-PLAN.md — Gap closure: GET /:id access control fix, RankingItem export, ADMIN 403 test
 
 ### Phase 5: Swipe
 **Goal**: Candidates can swipe on jobs, and the ranking view enforces LIKE/DISLIKE visibility rules
@@ -168,7 +169,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 1. Foundation | 3/3 | Complete | 2026-04-18 |
 | 2. Authentication | 3/3 | Complete | 2026-04-18 |
 | 3. Profiles & Companies | 3/3 | Complete | 2026-04-19 |
-| 4. Jobs | 0/3 | Not started | - |
+| 4. Jobs | 4/4 | Complete | 2026-04-25 |
 | 5. Swipe | 0/3 | Not started | - |
 | 6. Recommendation | 0/3 | Not started | - |
 | 7. Credits | 0/3 | Not started | - |
