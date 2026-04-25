@@ -12,7 +12,9 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Empresa pode criar conta, cadastrar vagas com requisitos detalhados — Validated in Phase 4: Jobs (JOB-01, JOB-02, JOB-03, JOB-04)
+- [x] Autenticação JWT + OAuth Google — Validated in Phase 2: Authentication (AUTH-01..AUTH-06)
+- [x] Candidato pode criar conta, completar perfil (skills, pretensão salarial, localização, modo de trabalho) — Validated in Phase 3: Profiles & Companies (CAND-01, CAND-02)
 
 ### Active
 
@@ -79,4 +81,4 @@ Este documento evolui a cada transição de fase e marco de milestone.
 4. Atualizar Context com estado atual
 
 ---
-*Last updated: 2026-04-17 after initialization*
+*Last updated: 2026-04-25 after Phase 04 completion*
