@@ -1,6 +1,7 @@
 ---
 phase: 04-jobs
 reviewed: 2026-04-21T20:20:02Z
+reviewed_gap_closure: 2026-04-25T00:00:00Z
 depth: standard
 files_reviewed: 13
 files_reviewed_list:
@@ -22,6 +23,11 @@ findings:
   warning: 3
   info: 2
   total: 6
+findings_after_gap_closure:
+  critical: 0
+  warning: 2
+  info: 3
+  total: 5
 status: issues_found
 ---
 
@@ -80,6 +86,8 @@ async createJob(userId: string, data: Omit<CreateJobData, 'companyId'>) {
 
 Update `CreateJobData` in `job.repository.ts` to keep `companyId` required (it must reach `prisma.job.create`), but the service must always supply it from the profile — never from the caller.
 
+**Status (gap closure 04-04):** FIXED. `companyId` is removed from `CreateJobSchema` (line 14-26 of updated file). The service already has `Omit<CreateJobData, 'companyId'>` and derives `companyId` from `profile.companyId`. Integration test at lines 123-143 of `job-routes.test.ts` confirms the exploit path is blocked.
+
 ---
 
 ## Warnings
@@ -104,6 +112,27 @@ async getJobById(jobId: string, userId: string) {
 
 Pass `request.user.id` from the route handler and add a test for the cross-recruiter 403 case.
 
+**Status (gap closure 04-04):** INTENTIONALLY REVISED. Per the swipe flow spec, `GET /jobs/:id` is now open to any authenticated user (CANDIDATE, RECRUITER, ADMIN). The `requireRole('RECRUITER')` guard has been removed and the "any authenticated user" policy is explicitly documented in the route comment and plan. The original concern about cross-company data exposure is acknowledged and accepted for Phase 4 job data (title, description, skills — no PII). The `rankings: []` placeholder is static and exposes no sensitive data. **DEFERRED risk:** When Phase 6 populates `rankings` with real candidate fitScore/profile data, the service MUST add role-based filtering before serving non-empty rankings to prevent CANDIDATE users from reading other candidates' scores. This deferral is tracked as WR-01-PHASE6 below.
+
+### WR-01-PHASE6: GET /jobs/:id will expose candidate rankings to all authenticated users in Phase 6
+
+**File:** `src/modules/job/job.routes.ts:68-75` and `src/modules/job/job.service.ts:32-36`
+
+**Issue:** `getJobById` (service, line 32) accepts no `userId` parameter. When Phase 6 replaces `rankings: []` with real `RankingItem[]` data, it will serve candidate `candidateId`, `fitScore`, and `profile` fields to any authenticated user — including CANDIDATE users who could read the rankings of competing candidates, and RECRUITER users from other companies reading another company's candidate pipeline.
+
+The service signature `getJobById(jobId: string)` has no identity context, making it structurally impossible to add per-caller filtering without a breaking signature change.
+
+**Fix:** Before Phase 6 populates rankings, update the service signature to accept `userId` and add role-based or ownership-based filtering:
+```typescript
+async getJobById(jobId: string, requestingUserId?: string) {
+  const job = await this.repo.findJobById(jobId)
+  if (!job) throw new AppError('Job not found', 404, 'NOT_FOUND')
+  // Phase 6: populate rankings only if requestingUserId belongs to the owning recruiter
+  return job
+}
+```
+Route handler must pass `request.user.id` and the route should gate `rankings` population behind an ownership check.
+
 ### WR-02: Route params not validated — non-UUID :id values reach the database
 
 **File:** `src/modules/job/job.routes.ts:63, 72, 86`
@@ -118,6 +147,8 @@ const JobParamsSchema = z.object({ id: z.string().uuid() })
 const { id } = JobParamsSchema.parse(request.params)
 ```
 
+**Status (gap closure 04-04):** FIXED. `JobParamsSchema` is defined at line 28 and used in all three handlers (GET /:id line 71, PATCH /:id line 81, DELETE /:id/deactivate line 94).
+
 ### WR-03: createJob integration test still sends companyId in body — test does not catch CR-01
 
 **File:** `tests/integration/job-routes.test.ts:42-52` and `tests/integration/job.test.ts:34-48`
@@ -125,6 +156,8 @@ const { id } = JobParamsSchema.parse(request.params)
 **Issue:** `buildValidJobBody` includes `companyId` in the request body, and `job.test.ts:34` passes `companyId` directly to `service.createJob`. Because the service currently accepts it without validation, these tests pass. However, they actively assert that `job.companyId === company.id`, which happens to be true only because the test sends the correct company's ID — the tests do not exercise the exploit path (a recruiter sending a different company's UUID). When CR-01 is fixed by removing `companyId` from the body, these tests will need to be updated.
 
 **Fix:** After fixing CR-01, update `buildValidJobBody` to omit `companyId`, and add a test that confirms a recruiter cannot override `companyId` by injecting a foreign company UUID in the body (expect the injected value to be ignored and the job to be created under the recruiter's actual company).
+
+**Status (gap closure 04-04):** FIXED. `buildValidJobBody` (line 42-51) no longer includes `companyId`. The IDOR exploit test at lines 123-143 confirms a foreign `companyId` injected in the body is ignored and the job is created under the recruiter's actual company.
 
 ---
 
@@ -153,6 +186,90 @@ The `findUnique` assertions below the count check are correct and sufficient as 
 
 ---
 
-_Reviewed: 2026-04-21T20:20:02Z_
+## Gap Closure 04-04 Review
+
+**Reviewed:** 2026-04-25T00:00:00Z
+**Files:** `src/modules/job/job.routes.ts`, `tests/integration/job-routes.test.ts`
+**Scope:** Removal of `requireRole('RECRUITER')` from GET /jobs/:id, addition of `RankingItem` export, and two new integration tests.
+
+### Findings Status After Gap Closure
+
+| Original Finding | Status |
+|------------------|--------|
+| CR-01: companyId IDOR | Fixed — removed from schema, exploit test added |
+| WR-01: GET /:id ownership | Intentionally revised — policy changed to "any authenticated user"; new risk WR-01-PHASE6 raised |
+| WR-02: route params not validated | Fixed — JobParamsSchema applied in all handlers |
+| WR-03: test sends companyId | Fixed — buildValidJobBody updated, exploit path tested |
+| IN-01: eslint-disable in scheduler | Open — not in scope of gap closure |
+| IN-02: brittle count assertion | Open — not in scope of gap closure |
+
+### New Issues Introduced by Gap Closure
+
+#### GC-WR-01: RankingItem interface declared in routes file — wrong layer for a shared type contract
+
+**File:** `src/modules/job/job.routes.ts:8-12`
+
+**Issue:** `RankingItem` is declared and exported from a routes file. Under the project's Clean Architecture rule ("routes → service → repository, no layer skipping, modules do not import directly from other modules"), Phase 6 consumers (likely a swipe or ranking module) will need to `import { RankingItem } from '../job/job.routes'`. Importing a type from another module's routes file violates module isolation and creates a coupling where a downstream module depends on the transport layer of an unrelated module.
+
+**Fix:** Move the interface to a dedicated types file or the repository/service boundary:
+```
+src/modules/job/job.types.ts
+```
+```typescript
+export interface RankingItem {
+  candidateId: string
+  fitScore: number
+  profile: Record<string, unknown> | null
+}
+```
+Re-export from `job.routes.ts` if needed for backward compatibility:
+```typescript
+export type { RankingItem } from './job.types'
+```
+This keeps the contract at the correct layer and avoids forcing Phase 6 to import from a routes file.
+
+**Severity:** Warning
+
+#### GC-IN-01: GET /jobs/:id candidate test does not assert rankings is empty
+
+**File:** `tests/integration/job-routes.test.ts:291`
+
+**Issue:** The CANDIDATE 200 test (line 268-293) asserts `Array.isArray(response.body.rankings)` but does not assert `response.body.rankings` equals `[]`. The RECRUITER 200 test at line 249 does assert `toEqual([])`. The inconsistency means the candidate test would pass even if the endpoint accidentally returned non-empty rankings (e.g., after a future partial Phase 6 implementation), masking a regression.
+
+**Fix:** Add the value assertion to match the existing RECRUITER test:
+```typescript
+expect(response.body.rankings).toEqual([])
+```
+
+**Severity:** Info
+
+#### GC-IN-02: No 401 test for GET /jobs/:id — authenticate-only guard is not regression-tested
+
+**File:** `tests/integration/job-routes.test.ts` — missing test
+
+**Issue:** GET /jobs/:id now uses `preHandler: [authenticate]` only, with no `requireRole` guard. The existing tests cover 200 (RECRUITER), 404, and 200 (CANDIDATE). There is no test confirming that an unauthenticated request (no Authorization header) returns 401. Without this test, removal of the `authenticate` hook would not be caught by the test suite.
+
+Other endpoints (e.g., POST /jobs) have explicit 401 tests (line 111-121). Consistency requires GET /jobs/:id to have one as well.
+
+**Fix:**
+```typescript
+it('401 quando não há Authorization header', async () => {
+  const app = await buildApp({ testing: true })
+  await app.ready()
+
+  const response = await supertest(app.server)
+    .get('/jobs/00000000-0000-0000-0000-000000000000')
+
+  expect(response.status).toBe(401)
+  await app.close()
+})
+```
+
+**Severity:** Info
+
+---
+
+_Reviewed: 2026-04-21T20:20:02Z (original)_
+_Gap closure reviewed: 2026-04-25T00:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
