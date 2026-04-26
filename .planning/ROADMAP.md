@@ -94,18 +94,18 @@ Plans:
 ### Phase 5: Swipe
 **Goal**: Candidates can swipe on jobs, and the ranking view enforces LIKE/DISLIKE visibility rules
 **Depends on**: Phase 4
-**Requirements**: SWIPE-01, SWIPE-02, SWIPE-03, SWIPE-04
+**Requirements**: SWIPE-01, SWIPE-02, SWIPE-03, SWIPE-04, SEC-03, SEC-05, ARCH-01, ARCH-04
 **Success Criteria** (what must be TRUE):
   1. Candidate can POST a LIKE or DISLIKE on a job and the swipe is persisted
   2. A second swipe on the same job by the same candidate is rejected with 409
   3. In the recruiter ranking view, candidates who swiped LIKE have their full profile visible
   4. In the recruiter ranking view, candidates who swiped DISLIKE have identity fields censored (name, photo hidden; rank position visible)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: Swipe service + repository — unit + integration tests
-- [ ] 05-02: Swipe routes (candidate swipe endpoint, duplicate guard) — integration tests
-- [ ] 05-03: Ranking view serialization (LIKE = full profile, DISLIKE = censored) — integration tests
+- [ ] 05-01-PLAN.md — SwipeRepository + SwipeService (recordSwipe + getFeed) + createSwipe factory — TDD unit tests
+- [ ] 05-02-PLAN.md — swipe.routes.ts (POST /swipes + GET /jobs/feed) + app.ts wiring + integration tests
+- [ ] 05-03-PLAN.md — SwipeService.getRanking (Haversine + LIKE/DISLIKE gate) + GET /jobs/:jobId/ranking route + integration tests
 
 ### Phase 6: Recommendation
 **Goal**: The Neo4j fit-score engine calculates match percentages and the candidate ranking is ordered by fit score
