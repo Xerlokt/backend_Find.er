@@ -113,4 +113,127 @@ describe('SwipeService', () => {
       expect(result).toHaveProperty('nextCursor')
     })
   })
+
+  describe('getRanking', () => {
+    const makeRecruiterProfile = (overrides: Partial<{ id: string }> = {}) => ({
+      id: overrides.id ?? 'recruiter-profile-1',
+      userId: 'rec-user-1',
+      companyId: 'company-1',
+    })
+
+    const makeJobWithCoords = (overrides: Partial<{ id: string; recruiterId: string; lat: number | null; lng: number | null }> = {}) => ({
+      id: overrides.id ?? 'job-1',
+      recruiterId: overrides.recruiterId ?? 'recruiter-profile-1',
+      isActive: true,
+      lat: overrides.lat ?? null,
+      lng: overrides.lng ?? null,
+      expiresAt: new Date(Date.now() + 86400000),
+    })
+
+    const makeSwipeWithCandidate = (overrides: Partial<{
+      candidateId: string
+      direction: 'LIKE' | 'DISLIKE'
+      candidateLat: number | null
+      candidateLng: number | null
+    }> = {}) => ({
+      candidateId: overrides.candidateId ?? 'cand-1',
+      jobId: 'job-1',
+      direction: (overrides.direction ?? 'LIKE') as SwipeDirection,
+      swipedAt: new Date(),
+      candidate: {
+        id: overrides.candidateId ?? 'cand-1',
+        name: 'Alice',
+        bio: 'A bio',
+        lat: overrides.candidateLat ?? null,
+        lng: overrides.candidateLng ?? null,
+        professionId: 'backend-dev',
+        skills: ['Node.js'],
+        preferredModalities: ['REMOTE'],
+        salaryExpectation: 5000,
+        user: { avatarUrl: 'https://example.com/avatar.jpg' },
+      },
+    })
+
+    it('lança AppError 403 FORBIDDEN quando usuário não tem perfil de recruiter', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(null)
+      await expect(service.getRanking('user-1', 'job-1')).rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' })
+      expect(repo.findSwipesByJobId).not.toHaveBeenCalled()
+    })
+
+    it('lança AppError 403 FORBIDDEN quando job.recruiterId !== recruiterProfile.id (ownership mismatch)', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile({ id: 'profile-A' }) as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords({ recruiterId: 'profile-B' }) as any)
+      await expect(service.getRanking('user-1', 'job-1')).rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' })
+      expect(repo.findSwipesByJobId).not.toHaveBeenCalled()
+    })
+
+    it('LIKE swipe: item retornado tem profile completo com todos os campos esperados', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([makeSwipeWithCandidate({ direction: 'LIKE' })] as any)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(result[0].profile).not.toBeNull()
+      expect(result[0].profile).toHaveProperty('name', 'Alice')
+      expect(result[0].profile).toHaveProperty('avatarUrl')
+      expect(result[0].profile).toHaveProperty('bio')
+      expect(result[0].profile).toHaveProperty('skills')
+      expect(result[0].profile).toHaveProperty('professionId')
+      expect(result[0].profile).toHaveProperty('preferredModalities')
+      expect(result[0].profile).toHaveProperty('salaryExpectation')
+    })
+
+    it('DISLIKE swipe: item retornado tem profile: null (identidade censurada)', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([makeSwipeWithCandidate({ direction: 'DISLIKE' })] as any)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(result[0].profile).toBeNull()
+    })
+
+    it('NUNCA retorna lat ou lng nos itens do ranking (privacidade de localização)', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([
+        makeSwipeWithCandidate({ direction: 'LIKE', candidateLat: -23.5, candidateLng: -46.6 }),
+        makeSwipeWithCandidate({ direction: 'DISLIKE', candidateLat: -23.5, candidateLng: -46.6 }),
+      ] as any)
+      const result = await service.getRanking('user-1', 'job-1')
+      for (const item of result) {
+        expect((item as any).lat).toBeUndefined()
+        expect((item as any).lng).toBeUndefined()
+        if (item.profile !== null) {
+          expect((item.profile as any).lat).toBeUndefined()
+          expect((item.profile as any).lng).toBeUndefined()
+        }
+      }
+    })
+
+    it('distanceKm é null quando candidato não tem coordenadas', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords({ lat: -23.5, lng: -46.6 }) as any)
+      repo.findSwipesByJobId.mockResolvedValue([makeSwipeWithCandidate({ candidateLat: null, candidateLng: null })] as any)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(result[0].distanceKm).toBeNull()
+    })
+
+    it('distanceKm é 0 quando candidato e vaga estão nas mesmas coordenadas', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords({ lat: -23.5, lng: -46.6 }) as any)
+      repo.findSwipesByJobId.mockResolvedValue([makeSwipeWithCandidate({ candidateLat: -23.5, candidateLng: -46.6 })] as any)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(result[0].distanceKm).toBe(0)
+    })
+
+    it('rank é 1-based e cresce com a posição no array', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([
+        makeSwipeWithCandidate({ candidateId: 'cand-A', direction: 'LIKE' }),
+        makeSwipeWithCandidate({ candidateId: 'cand-B', direction: 'DISLIKE' }),
+      ] as any)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(result[0].rank).toBe(1)
+      expect(result[1].rank).toBe(2)
+    })
+  })
 })
