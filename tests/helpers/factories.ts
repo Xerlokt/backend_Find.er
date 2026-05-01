@@ -98,3 +98,19 @@ export async function createRefreshToken(userId: string, overrides: Partial<{
   })
   return { stored, rawToken }
 }
+
+export async function createSwipe(
+  candidateId: string,
+  jobId: string,
+  overrides: Partial<{
+    direction: 'LIKE' | 'DISLIKE'
+  }> = {}
+) {
+  return prisma.swipe.create({
+    data: {
+      candidateId,
+      jobId,
+      direction: overrides.direction ?? 'LIKE',
+    },
+  })
+}
