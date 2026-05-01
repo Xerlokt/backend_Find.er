@@ -32,7 +32,9 @@ export async function swipeRoutes(app: FastifyInstance): Promise<void> {
   })
 }
 
-// Exported function 2: mounts GET /feed (and later GET /:jobId/ranking) under /jobs prefix
+const JobIdParamsSchema = z.object({ jobId: z.string().uuid() })
+
+// Exported function 2: mounts GET /feed and GET /:jobId/ranking under /jobs prefix
 // GET /feed MUST be registered before any parameterized route (Pitfall 1 — static before parameterized)
 export async function swipeJobRoutes(app: FastifyInstance): Promise<void> {
   const repo = new SwipeRepository()
@@ -46,5 +48,15 @@ export async function swipeJobRoutes(app: FastifyInstance): Promise<void> {
     const query = FeedQuerySchema.parse(request.query)
     const result = await service.getFeed(request.user.id, query.cursor, query.limit)
     return reply.status(200).send(result)
+  })
+
+  // GET /jobs/:jobId/ranking — RECRUITER only (D-03, T-05-09)
+  // Registered AFTER /feed to respect static-before-parameterized ordering (Pitfall 1)
+  app.get('/:jobId/ranking', {
+    preHandler: [authenticate, requireRole('RECRUITER')],
+  }, async (request, reply) => {
+    const { jobId } = JobIdParamsSchema.parse(request.params)
+    const ranking = await service.getRanking(request.user.id, jobId)
+    return reply.status(200).send(ranking)
   })
 }
