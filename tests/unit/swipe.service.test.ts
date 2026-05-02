@@ -2,6 +2,7 @@ import { SwipeService } from '../../src/modules/swipe/swipe.service'
 import { SwipeRepository } from '../../src/modules/swipe/swipe.repository'
 import { AppError } from '../../src/shared/errors/AppError'
 import { Prisma, SwipeDirection } from '@prisma/client'
+import { RecommendationRepository } from '../../src/modules/recommendation/recommendation.repository'
 
 // Mock do SwipeRepository — sem DB em testes unitários
 const makeRepo = (): jest.Mocked<SwipeRepository> => ({
@@ -12,6 +13,11 @@ const makeRepo = (): jest.Mocked<SwipeRepository> => ({
   findRecruiterProfileByUserId: jest.fn(),
   findJobById: jest.fn(),
 } as unknown as jest.Mocked<SwipeRepository>)
+
+const makeRecRepo = (): jest.Mocked<RecommendationRepository> => ({
+  computeFitScore: jest.fn(),
+  seedTaxonomy: jest.fn(),
+} as unknown as jest.Mocked<RecommendationRepository>)
 
 const makeCandidate = (overrides: Partial<{ id: string; userId: string; lat: number | null; lng: number | null }> = {}) => ({
   id: overrides.id ?? 'candidate-1',
@@ -38,12 +44,15 @@ const makeJob = (overrides: Partial<{ id: string; recruiterId: string; isActive:
 
 describe('SwipeService', () => {
   let repo: jest.Mocked<SwipeRepository>
+  let recRepo: jest.Mocked<RecommendationRepository>
   let service: SwipeService
 
   beforeEach(() => {
     repo = makeRepo()
-    service = new SwipeService(repo)
+    recRepo = makeRecRepo()
+    service = new SwipeService(repo, recRepo)
     jest.clearAllMocks()
+    recRepo.computeFitScore.mockResolvedValue(0)  // set AFTER clearAllMocks — preserve existing test behaviors
   })
 
   describe('recordSwipe', () => {
@@ -112,6 +121,17 @@ describe('SwipeService', () => {
       expect(result).toHaveProperty('data')
       expect(result).toHaveProperty('nextCursor')
     })
+
+    it('getFeed retorna fitScore por job chamando recommendation.computeFitScore (CAND-03)', async () => {
+      const candidate = makeCandidate({ id: 'cand-profile-id' })
+      const jobs = [{ id: 'job-1', professionId: 'backend-dev', requiredSkills: [], modality: 'REMOTE', salaryMin: null, salaryMax: null, lat: null, lng: null, createdAt: new Date() }]
+      repo.findCandidateProfileByUserId.mockResolvedValue(candidate as any)
+      repo.findFeedJobs.mockResolvedValue(jobs as any)
+      recRepo.computeFitScore.mockResolvedValue(55)
+      const result = await service.getFeed('user-1', undefined, 20)
+      expect(recRepo.computeFitScore).toHaveBeenCalledTimes(1)
+      expect(result.data[0]).toHaveProperty('fitScore', 55)
+    })
   })
 
   describe('getRanking', () => {
@@ -150,6 +170,7 @@ describe('SwipeService', () => {
         skills: ['Node.js'],
         preferredModalities: ['REMOTE'],
         salaryExpectation: 5000,
+        searchRadiusKm: 50,
         user: { avatarUrl: 'https://example.com/avatar.jpg' },
       },
     })
@@ -234,6 +255,62 @@ describe('SwipeService', () => {
       const result = await service.getRanking('user-1', 'job-1')
       expect(result[0].rank).toBe(1)
       expect(result[1].rank).toBe(2)
+    })
+
+    it('chama recommendation.computeFitScore para cada swipe e retorna fitScore correto', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([
+        makeSwipeWithCandidate({ candidateId: 'cand-A', direction: 'LIKE' }),
+        makeSwipeWithCandidate({ candidateId: 'cand-B', direction: 'DISLIKE' }),
+      ] as any)
+      recRepo.computeFitScore.mockResolvedValue(75)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(recRepo.computeFitScore).toHaveBeenCalledTimes(2)
+      expect(result[0].fitScore).toBe(75)
+      expect(result[1].fitScore).toBe(75)
+    })
+
+    it('ordena candidatos por fitScore DESC antes de atribuir rank', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([
+        makeSwipeWithCandidate({ candidateId: 'cand-low', direction: 'LIKE' }),
+        makeSwipeWithCandidate({ candidateId: 'cand-high', direction: 'LIKE' }),
+      ] as any)
+      // cand-low gets score 20, cand-high gets score 90
+      recRepo.computeFitScore
+        .mockResolvedValueOnce(20)  // first swipe (cand-low) gets 20
+        .mockResolvedValueOnce(90)  // second swipe (cand-high) gets 90
+      const result = await service.getRanking('user-1', 'job-1')
+      // After sorting DESC: cand-high (90) is rank 1, cand-low (20) is rank 2
+      expect(result[0].candidateId).toBe('cand-high')
+      expect(result[0].fitScore).toBe(90)
+      expect(result[0].rank).toBe(1)
+      expect(result[1].candidateId).toBe('cand-low')
+      expect(result[1].fitScore).toBe(20)
+      expect(result[1].rank).toBe(2)
+    })
+
+    it('rank é atribuído após a ordenação por fitScore (não antes)', async () => {
+      repo.findRecruiterProfileByUserId.mockResolvedValue(makeRecruiterProfile() as any)
+      repo.findJobById.mockResolvedValue(makeJobWithCoords() as any)
+      repo.findSwipesByJobId.mockResolvedValue([
+        makeSwipeWithCandidate({ candidateId: 'cand-A' }),
+        makeSwipeWithCandidate({ candidateId: 'cand-B' }),
+        makeSwipeWithCandidate({ candidateId: 'cand-C' }),
+      ] as any)
+      recRepo.computeFitScore
+        .mockResolvedValueOnce(30)
+        .mockResolvedValueOnce(90)
+        .mockResolvedValueOnce(60)
+      const result = await service.getRanking('user-1', 'job-1')
+      expect(result[0].rank).toBe(1)
+      expect(result[1].rank).toBe(2)
+      expect(result[2].rank).toBe(3)
+      expect(result[0].fitScore).toBe(90)
+      expect(result[1].fitScore).toBe(60)
+      expect(result[2].fitScore).toBe(30)
     })
   })
 })
