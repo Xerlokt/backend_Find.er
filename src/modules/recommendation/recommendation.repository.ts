@@ -3,12 +3,74 @@
 import neo4j, { Driver } from 'neo4j-driver'
 import type { IRecommendationService, CandidateData, JobData } from '../../shared/interfaces/recommendation.interface'
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
 export class RecommendationRepository implements IRecommendationService {
   constructor(private readonly driver: Driver) {}
 
-  async computeFitScore(_candidate: CandidateData, _job: JobData): Promise<number> {
-    // Phase 06-01 stub — implemented in Plan 06-02
-    return 0
+  async computeFitScore(candidate: CandidateData, job: JobData): Promise<number> {
+    // Factor 1: Profession match (30%)
+    const professionScore =
+      candidate.professionId != null &&
+      job.professionId != null &&
+      candidate.professionId === job.professionId
+        ? 1.0
+        : 0.0
+
+    // Factor 2: Skills overlap (35%) — case-insensitive exact match (RELATED_TO traversal deferred to v1.1)
+    let skillsScore: number
+    if (job.requiredSkills.length === 0) {
+      skillsScore = 1.0
+    } else {
+      const matched = job.requiredSkills.filter((req) =>
+        candidate.skills.some((cs) => cs.toLowerCase() === req.toLowerCase()),
+      )
+      skillsScore = matched.length / job.requiredSkills.length
+    }
+
+    // Factor 3: Location proximity (20%)
+    let locationScore: number
+    if (job.lat == null || job.lng == null) {
+      locationScore = 1.0 // No location requirement — all candidates qualify
+    } else if (candidate.lat == null || candidate.lng == null) {
+      locationScore = 0.5 // Neutral — cannot penalise candidate for not sharing location
+    } else {
+      const radius = candidate.searchRadiusKm > 0 ? candidate.searchRadiusKm : 50
+      const distKm = haversineKm(candidate.lat, candidate.lng, job.lat, job.lng)
+      locationScore = Math.max(0, 1 - distKm / radius)
+    }
+
+    // Factor 4: Work mode (10%)
+    const modalityScore = candidate.preferredModalities.includes(job.modality) ? 1.0 : 0.0
+
+    // Factor 5: Salary compatibility (5%)
+    let salaryScore: number
+    if (candidate.salaryExpectation == null) {
+      salaryScore = 1.0 // No stated preference — any salary is acceptable
+    } else if (job.salaryMin == null && job.salaryMax == null) {
+      salaryScore = 1.0 // Open salary range — no constraint
+    } else {
+      const aboveMin = job.salaryMin == null || candidate.salaryExpectation >= job.salaryMin
+      const belowMax = job.salaryMax == null || candidate.salaryExpectation <= job.salaryMax
+      salaryScore = aboveMin && belowMax ? 1.0 : 0.0
+    }
+
+    return Math.round(
+      (professionScore * 0.30 +
+        skillsScore * 0.35 +
+        locationScore * 0.20 +
+        modalityScore * 0.10 +
+        salaryScore * 0.05) *
+        100,
+    )
   }
 
   async seedTaxonomy(): Promise<void> {
