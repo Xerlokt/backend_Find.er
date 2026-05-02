@@ -14,7 +14,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - [x] **Phase 2: Authentication** - JWT + Google OAuth2, refresh tokens, route guards
 - [x] **Phase 3: Profiles & Companies** - Candidate profiles, company accounts, admin user management
 - [x] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
-- [ ] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
+- [x] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
 - [ ] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
 - [ ] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
 - [ ] **Phase 8: Chat** - WebSocket real-time chat, auto-creation on match/unlock, message persistence
@@ -103,9 +103,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — SwipeRepository + SwipeService (recordSwipe + getFeed) + createSwipe factory — TDD unit tests
-- [ ] 05-02-PLAN.md — swipe.routes.ts (POST /swipes + GET /jobs/feed) + app.ts wiring + integration tests
-- [ ] 05-03-PLAN.md — SwipeService.getRanking (Haversine + LIKE/DISLIKE gate) + GET /jobs/:jobId/ranking route + integration tests
+- [x] 05-01-PLAN.md — SwipeRepository + SwipeService (recordSwipe + getFeed) + createSwipe factory — TDD unit tests
+- [x] 05-02-PLAN.md — swipe.routes.ts (POST /swipes + GET /jobs/feed) + app.ts wiring + integration tests
+- [x] 05-03-PLAN.md — SwipeService.getRanking (Haversine + LIKE/DISLIKE gate) + GET /jobs/:jobId/ranking route + integration tests
 
 ### Phase 6: Recommendation
 **Goal**: The Neo4j fit-score engine calculates match percentages and the candidate ranking is ordered by fit score
@@ -170,7 +170,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 2. Authentication | 3/3 | Complete | 2026-04-18 |
 | 3. Profiles & Companies | 3/3 | Complete | 2026-04-19 |
 | 4. Jobs | 4/4 | Complete | 2026-04-25 |
-| 5. Swipe | 0/3 | Not started | - |
+| 5. Swipe | 3/3 | Complete | 2026-05-01 |
 | 6. Recommendation | 0/3 | Not started | - |
 | 7. Credits | 0/3 | Not started | - |
 | 8. Chat | 0/3 | Not started | - |
