@@ -46,4 +46,14 @@ export class SwipeRepository {
       },
     })
   }
+
+  async findUnlocksByJobAndCompany(jobId: string, companyId: string): Promise<Set<string>> {
+    // Direct prisma.unlock query — ARCH-04 compliant: repositories may query any Prisma model directly
+    // SwipeService must never import from src/modules/credits/
+    const unlocks = await prisma.unlock.findMany({
+      where: { jobId, companyId },
+      select: { candidateId: true },
+    })
+    return new Set(unlocks.map((u) => u.candidateId))
+  }
 }

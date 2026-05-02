@@ -1,7 +1,7 @@
 import '../helpers/setup'
 import { buildApp } from '../../src/app'
 import supertest from 'supertest'
-import { createUser, createCompany, createJob, createCandidate, createSwipe } from '../helpers/factories'
+import { createUser, createCompany, createJob, createCandidate, createSwipe, createUnlock } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../src/shared/db/prisma'
 
@@ -366,6 +366,58 @@ describe('GET /jobs/:jobId/ranking', () => {
     expect(response.body[0]).toHaveProperty('distanceKm')
     // No coords on either side → distanceKm: null
     expect(response.body[0].distanceKm).toBeNull()
+    await app.close()
+  })
+
+  it('revela perfil completo de candidato DISLIKE que foi desbloqueado', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const company = await createCompany({ credits: 10 })
+    const passwordHash = await bcrypt.hash('password123', 12)
+    const recUser = await createUser({ role: 'RECRUITER', email: `rec-reveal-${Date.now()}@test.com`, passwordHash })
+    const recProfile = await prisma.recruiterProfile.create({ data: { userId: recUser.id, companyId: company.id } })
+    const job = await createJob(company.id, recProfile.id)
+    const { profile: candProfile } = await createCandidate()
+    await createSwipe(candProfile.id, job.id, { direction: 'DISLIKE' })
+    // Create unlock record directly (bypasses HTTP for isolation)
+    await createUnlock(company.id, candProfile.id, job.id)
+    const recToken = await loginUser(app, recUser.email)
+
+    const res = await supertest(app.server)
+      .get(`/jobs/${job.id}/ranking`)
+      .set('Authorization', `Bearer ${recToken}`)
+
+    expect(res.status).toBe(200)
+    const dislikeItem = res.body.find((item: any) => item.candidateId === candProfile.id)
+    expect(dislikeItem).toBeDefined()
+    expect(dislikeItem.profile).not.toBeNull()
+    expect(dislikeItem.profile.name).toBe('Test Candidate')
+
+    await app.close()
+  })
+
+  it('ainda censura DISLIKE candidato que NÃO foi desbloqueado', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const company = await createCompany({ credits: 10 })
+    const passwordHash = await bcrypt.hash('password123', 12)
+    const recUser = await createUser({ role: 'RECRUITER', email: `rec-censor-${Date.now()}@test.com`, passwordHash })
+    const recProfile = await prisma.recruiterProfile.create({ data: { userId: recUser.id, companyId: company.id } })
+    const job = await createJob(company.id, recProfile.id)
+    const { profile: candProfile } = await createCandidate()
+    await createSwipe(candProfile.id, job.id, { direction: 'DISLIKE' })
+    // No createUnlock — this candidate remains censored
+    const recToken = await loginUser(app, recUser.email)
+
+    const res = await supertest(app.server)
+      .get(`/jobs/${job.id}/ranking`)
+      .set('Authorization', `Bearer ${recToken}`)
+
+    expect(res.status).toBe(200)
+    const dislikeItem = res.body.find((item: any) => item.candidateId === candProfile.id)
+    expect(dislikeItem).toBeDefined()
+    expect(dislikeItem.profile).toBeNull()
+
     await app.close()
   })
 })

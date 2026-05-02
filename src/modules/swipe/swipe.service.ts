@@ -95,6 +95,10 @@ export class SwipeService {
     if (job.recruiterId !== recruiterProfile.id) throw new AppError('Forbidden', 403, 'FORBIDDEN')
 
     const swipes = await this.repo.findSwipesByJobId(jobId)
+    const unlockedCandidateIds = await this.repo.findUnlocksByJobAndCompany(
+      jobId,
+      recruiterProfile.companyId,
+    )
 
     const items = await Promise.all(
       swipes.map(async (swipe: any) => {
@@ -123,7 +127,7 @@ export class SwipeService {
           fitScore,
           distanceKm: haversineKm(swipe.candidate.lat, swipe.candidate.lng, job.lat, job.lng),
           profile:
-            swipe.direction === 'LIKE'
+            swipe.direction === 'LIKE' || unlockedCandidateIds.has(swipe.candidateId)
               ? {
                   name: swipe.candidate.name,
                   avatarUrl: swipe.candidate.user.avatarUrl,
@@ -134,7 +138,7 @@ export class SwipeService {
                   salaryExpectation: swipe.candidate.salaryExpectation,
                   // lat/lng intentionally excluded — D-05, D-07 (location privacy)
                 }
-              : null, // DISLIKE — identity fully censored (D-06)
+              : null, // DISLIKE not unlocked — identity fully censored (D-06)
         }
       }),
     )

@@ -12,6 +12,7 @@ const makeRepo = (): jest.Mocked<SwipeRepository> => ({
   findCandidateProfileByUserId: jest.fn(),
   findRecruiterProfileByUserId: jest.fn(),
   findJobById: jest.fn(),
+  findUnlocksByJobAndCompany: jest.fn(),
 } as unknown as jest.Mocked<SwipeRepository>)
 
 const makeRecRepo = (): jest.Mocked<RecommendationRepository> => ({
@@ -53,6 +54,7 @@ describe('SwipeService', () => {
     service = new SwipeService(repo, recRepo)
     jest.clearAllMocks()
     recRepo.computeFitScore.mockResolvedValue(0)  // set AFTER clearAllMocks — preserve existing test behaviors
+    repo.findUnlocksByJobAndCompany.mockResolvedValue(new Set())  // default: empty unlock set — no behavior change for existing tests
   })
 
   describe('recordSwipe', () => {
@@ -311,6 +313,41 @@ describe('SwipeService', () => {
       expect(result[0].fitScore).toBe(90)
       expect(result[1].fitScore).toBe(60)
       expect(result[2].fitScore).toBe(30)
+    })
+
+    it('revela perfil de candidato DISLIKE quando está no conjunto de desbloqueados', async () => {
+      const recruiterProfile = { id: 'recruiter-profile-1', companyId: 'company-1' }
+      repo.findRecruiterProfileByUserId.mockResolvedValue(recruiterProfile as any)
+      repo.findJobById.mockResolvedValue(makeJob() as any)
+      const candidateId = 'candidate-unlock-1'
+      const swipesWithCandidate = [
+        {
+          candidateId,
+          direction: 'DISLIKE',
+          candidate: {
+            id: candidateId,
+            name: 'Unlocked Candidate',
+            lat: null,
+            lng: null,
+            bio: 'bio',
+            skills: ['Node.js'],
+            professionId: 'backend-dev',
+            preferredModalities: ['REMOTE'],
+            salaryExpectation: null,
+            searchRadiusKm: 50,
+            user: { avatarUrl: null },
+          },
+        },
+      ]
+      repo.findSwipesByJobId.mockResolvedValue(swipesWithCandidate as any)
+      // Set contains the candidateId — this DISLIKE is unlocked
+      repo.findUnlocksByJobAndCompany.mockResolvedValue(new Set([candidateId]))
+      recRepo.computeFitScore.mockResolvedValue(75)
+
+      const result = await service.getRanking('user-1', 'job-1')
+
+      expect(result[0].profile).not.toBeNull()
+      expect(result[0].profile!.name).toBe('Unlocked Candidate')
     })
   })
 })
