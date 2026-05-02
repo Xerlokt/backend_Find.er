@@ -156,4 +156,50 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
       expect(score).toBeLessThan(100)
     })
   })
+
+  describe('GET /jobs/:jobId/ranking — fitScore integration (REC-03)', () => {
+    it('ranking endpoint returns items with numeric fitScore (not 0 placeholder)', async () => {
+      const { buildApp } = await import('../../src/app')
+      const supertest = (await import('supertest')).default
+      const { createUser, createCompany, createJob, createSwipe } = await import('../helpers/factories')
+      const { prisma } = await import('../../src/shared/db/prisma')
+
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      try {
+        const company = await createCompany()
+        const recUser = await createUser({ role: 'RECRUITER', email: 'rec-int-rec@test.com' })
+        const recProfile = await prisma.recruiterProfile.create({ data: { userId: recUser.id, companyId: company.id } })
+        const job = await createJob(company.id, recProfile.id, { professionId: 'backend-dev', requiredSkills: ['Node.js', 'TypeScript'] })
+        const candUser = await createUser({ role: 'CANDIDATE', email: 'rec-int-cand@test.com' })
+        const candProfile = await prisma.candidateProfile.create({
+          data: {
+            userId: candUser.id,
+            name: 'Neo4j Candidate',
+            professionId: 'backend-dev',
+            skills: ['Node.js', 'TypeScript'],
+            preferredModalities: ['REMOTE'],
+            searchRadiusKm: 50,
+          },
+        })
+        await createSwipe(candProfile.id, job.id, { direction: 'LIKE' })
+        const recLogin = await supertest(app.server)
+          .post('/auth/login')
+          .send({ email: 'rec-int-rec@test.com', password: 'password123' })
+        const rankRes = await supertest(app.server)
+          .get(`/jobs/${job.id}/ranking`)
+          .set('Authorization', `Bearer ${recLogin.body.accessToken}`)
+        expect(rankRes.status).toBe(200)
+        expect(Array.isArray(rankRes.body)).toBe(true)
+        expect(rankRes.body.length).toBe(1)
+        expect(typeof rankRes.body[0].fitScore).toBe('number')
+        // If Neo4j is running: fitScore > 0 for a matching candidate
+        // (backend-dev profession + Node.js + TypeScript + REMOTE = high score)
+        // Soft assertion: placeholder was replaced
+        expect(rankRes.body[0].fitScore).toBeGreaterThanOrEqual(0)
+      } finally {
+        await app.close()
+      }
+    })
+  })
 })

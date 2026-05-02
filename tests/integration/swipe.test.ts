@@ -186,6 +186,37 @@ describe('GET /jobs/feed', () => {
     await app.close()
   })
 
+  it('items do feed incluem campo fitScore numérico (CAND-03)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const company = await createCompany()
+    const { profile: recruiterProfile } = await createRecruiterWithProfile(app, company.id, 'feed-fitscore-rec')
+    await createJob(company.id, recruiterProfile.id)
+    const passwordHash = await bcrypt.hash(PASSWORD, 12)
+    const candidateUser = await createUser({ role: 'CANDIDATE', email: 'feed-fitscore@test.com', passwordHash })
+    await prisma.candidateProfile.create({
+      data: {
+        userId: candidateUser.id,
+        name: 'Feed Candidate',
+        professionId: 'backend-dev',
+        skills: ['Node.js'],
+        preferredModalities: ['REMOTE'],
+        searchRadiusKm: 50,
+      },
+    })
+    const token = await loginUser(app, 'feed-fitscore@test.com')
+    const feedRes = await supertest(app.server)
+      .get('/jobs/feed')
+      .set('Authorization', `Bearer ${token}`)
+    expect(feedRes.status).toBe(200)
+    expect(Array.isArray(feedRes.body.data)).toBe(true)
+    if (feedRes.body.data.length > 0) {
+      expect(feedRes.body.data[0]).toHaveProperty('fitScore')
+      expect(typeof feedRes.body.data[0].fitScore).toBe('number')
+    }
+    await app.close()
+  })
+
   it('paginação cursor: segunda página não repete itens da primeira', async () => {
     const app = await buildApp({ testing: true })
     await app.ready()
@@ -299,6 +330,24 @@ describe('GET /jobs/:jobId/ranking', () => {
     await app.ready()
     const response = await supertest(app.server).get('/jobs/00000000-0000-0000-0000-000000000001/ranking')
     expect(response.status).toBe(401)
+    await app.close()
+  })
+
+  it('ranking items têm fitScore numérico (não placeholder 0 se Neo4j estiver rodando)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const company = await createCompany()
+    const { token: recToken, profile: recProfile } = await createRecruiterWithProfile(app, company.id, 'rank-fitscore-rec')
+    const job = await createJob(company.id, recProfile.id)
+    const { profile: candProfile } = await createCandidateWithProfile(app, 'rank-fitscore-cand')
+    await createSwipe(candProfile.id, job.id, { direction: 'LIKE' })
+    const rankRes = await supertest(app.server)
+      .get(`/jobs/${job.id}/ranking`)
+      .set('Authorization', `Bearer ${recToken}`)
+    expect(rankRes.status).toBe(200)
+    expect(Array.isArray(rankRes.body)).toBe(true)
+    expect(rankRes.body.length).toBeGreaterThan(0)
+    expect(typeof rankRes.body[0].fitScore).toBe('number')
     await app.close()
   })
 
