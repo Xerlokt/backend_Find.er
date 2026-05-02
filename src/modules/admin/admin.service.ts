@@ -1,7 +1,14 @@
 import { prisma } from '../../shared/db/prisma'
 import { AppError } from '../../shared/errors/AppError'
 
+// ICreditService — ARCH-04: AdminService depends on interface, not concrete CreditRepository
+export interface ICreditService {
+  grantCredits(companyId: string, amount: number, reason?: string): Promise<unknown>
+}
+
 export class AdminService {
+  constructor(private readonly creditService: ICreditService) {}
+
   async listUsers(page: number, limit: number) {
     return prisma.user.findMany({
       skip: (page - 1) * limit,
@@ -36,18 +43,7 @@ export class AdminService {
     return user
   }
 
-  async adjustCredits(companyId: string, amount: number, reason = 'admin_grant') {
-    return prisma.$transaction(async (tx) => {
-      const company = await tx.company.findUnique({ where: { id: companyId } })
-      if (!company) throw new AppError('Company not found', 404, 'NOT_FOUND')
-      const updated = await tx.company.update({
-        where: { id: companyId },
-        data: { credits: { increment: amount } },
-      })
-      await tx.creditTransaction.create({
-        data: { companyId, amount, reason },
-      })
-      return updated
-    })
+  async adjustCredits(companyId: string, amount: number) {
+    return this.creditService.grantCredits(companyId, amount, 'admin_grant')
   }
 }

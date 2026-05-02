@@ -3,6 +3,7 @@ import { buildApp } from '../../src/app'
 import supertest from 'supertest'
 import { createUser, createCompany } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
+import { prisma } from '../../src/shared/db/prisma'
 
 describe('Admin Routes — Integration', () => {
   // Helper: login de um usuário e retorna accessToken
@@ -206,6 +207,66 @@ describe('Admin Routes — Integration', () => {
 
       expect(response.status).toBe(403)
 
+      await app.close()
+    })
+  })
+
+  // ── GET /admin/companies/:id/transactions ─────────────────────────────
+
+  describe('GET /admin/companies/:id/transactions', () => {
+    it('200 retorna lista de transações da empresa', async () => {
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const adminUser = await createUser({ role: 'ADMIN', email: `admin-txn-${Date.now()}@test.com`, passwordHash: await bcrypt.hash('password123', 12) })
+      const adminToken = await loginUser(app, adminUser.email)
+      const company = await createCompany({ credits: 10 })
+      // Grant credits to create a transaction
+      await supertest(app.server)
+        .patch(`/admin/companies/${company.id}/credits`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ amount: 5 })
+
+      const res = await supertest(app.server)
+        .get(`/admin/companies/${company.id}/transactions`)
+        .set('Authorization', `Bearer ${adminToken}`)
+
+      expect(res.status).toBe(200)
+      expect(Array.isArray(res.body)).toBe(true)
+      expect(res.body.length).toBeGreaterThanOrEqual(1)
+      expect(res.body[0].reason).toBe('admin_grant')
+      await app.close()
+    })
+
+    it('200 retorna array vazio quando não há transações', async () => {
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const adminUser = await createUser({ role: 'ADMIN', email: `admin-empty-${Date.now()}@test.com`, passwordHash: await bcrypt.hash('password123', 12) })
+      const adminToken = await loginUser(app, adminUser.email)
+      const company = await createCompany()
+
+      const res = await supertest(app.server)
+        .get(`/admin/companies/${company.id}/transactions`)
+        .set('Authorization', `Bearer ${adminToken}`)
+
+      expect(res.status).toBe(200)
+      expect(Array.isArray(res.body)).toBe(true)
+      expect(res.body.length).toBe(0)
+      await app.close()
+    })
+
+    it('403 quando usuário não é ADMIN', async () => {
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const passwordHash = await bcrypt.hash('password123', 12)
+      const recUser = await createUser({ role: 'RECRUITER', email: `rec-txn-${Date.now()}@test.com`, passwordHash })
+      const recToken = await loginUser(app, recUser.email)
+      const company = await createCompany()
+
+      const res = await supertest(app.server)
+        .get(`/admin/companies/${company.id}/transactions`)
+        .set('Authorization', `Bearer ${recToken}`)
+
+      expect(res.status).toBe(403)
       await app.close()
     })
   })
