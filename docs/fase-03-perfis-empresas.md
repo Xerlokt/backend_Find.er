@@ -47,9 +47,7 @@ Se o body pudesse definir o `userId`, qualquer usuário autenticado poderia escr
 
 ### Incremento atômico de créditos
 
-O ajuste de créditos usa `prisma.company.update({ data: { credits: { increment: delta } } })` em vez de `credits: company.credits + delta`. A diferença é que o `increment` é executado dentro do banco como uma operação atômica — o PostgreSQL lê e escreve em uma única instrução SQL. Se dois requests simultâneos chegarem ao mesmo tempo, ambos aplicam seus deltas corretamente em vez de um sobrescrever o outro.
-
-> **Warning WR-01 do code review:** O `adjustCredits` do `CompanyService` ainda tem uma condição de corrida entre o guard de saldo negativo e o write. Será corrigido com `prisma.$transaction` em `/gsd-code-review-fix 03`.
+O ajuste de créditos usa `prisma.$transaction` combinando o guard de saldo negativo e o `increment` numa única operação atômica. O `increment` é executado dentro do banco como uma instrução SQL — se dois requests simultâneos chegarem ao mesmo tempo, ambos aplicam seus deltas corretamente em vez de um sobrescrever o outro. O guard de saldo (`credits + delta < 0`) também fica dentro da transação, eliminando a condição de corrida entre leitura e escrita.
 
 ### Validação de FK antes do upsert do recruiter
 
@@ -168,7 +166,7 @@ Authorization: Bearer <accessToken>
 
 ### `PATCH /companies/admin/:id/credits`
 
-Ajusta o saldo de créditos de uma empresa. Apenas ADMIN. O `amount` pode ser negativo para debitar (guard de saldo aplicado).
+Ajusta o saldo de créditos de uma empresa atomicamente. Apenas ADMIN. O `amount` deve ser positivo para crédito ou negativo para débito — o guard de saldo é aplicado dentro de `prisma.$transaction`.
 
 ```http
 PATCH /companies/admin/uuid-da-empresa/credits
@@ -184,7 +182,7 @@ Content-Type: application/json
 
 **Erros:**
 - `400 INSUFFICIENT_CREDITS` — o delta causaria saldo negativo
-- `400` — `amount` não é inteiro positivo (Zod)
+- `400` — `amount` não é inteiro (Zod)
 - `404 NOT_FOUND` — empresa não existe
 
 ---
@@ -366,19 +364,7 @@ npx jest tests/integration/admin.test.ts --runInBand
 npm run test:integration
 ```
 
-**Resultado esperado:** 30 unit tests + 35 integration tests = 65 total passando.
+**Resultado esperado:** 30 unit tests + 39 integration tests = 69 total passando.
 
 > **Nota:** Os testes de integração não criam admin via `/auth/register` (Zod rejeita role ADMIN no register). Usam `createUser({ role: 'ADMIN' })` da factory e depois `POST /auth/login` para obter token.
 
----
-
-## Pendências conhecidas (code review)
-
-| # | Arquivo | Problema | Fix planejado |
-|---|---------|---------|---------------|
-| WR-01 | `company.service.ts` | Race condition no `adjustCredits` — guard e write são dois round-trips separados | Envolver em `prisma.$transaction` |
-| WR-02 | `admin.routes.ts` | `limit` sem `max()` — risco de scan ilimitado | `z.coerce.number().int().positive().max(100)` |
-| WR-03 | `admin.routes.ts` | `(query as any)` permite `NaN` chegar ao Prisma | Parsear page/limit com Zod |
-| WR-04 | Tests | Sem teste de 401 (sem token) em nenhum grupo | Adicionar um `it('returns 401 without token')` por suite |
-
-Todos serão corrigidos via `/gsd-code-review-fix 03`.
