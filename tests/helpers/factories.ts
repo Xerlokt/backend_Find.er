@@ -114,3 +114,19 @@ export async function createSwipe(
     },
   })
 }
+
+export async function createUnlock(
+  companyId: string,
+  candidateId: string,
+  jobId: string,
+  overrides: Partial<{ creditsCost: number }> = {}
+) {
+  return prisma.unlock.create({
+    data: {
+      companyId,
+      candidateId,
+      jobId,
+      creditsCost: overrides.creditsCost ?? 2,
+    },
+  })
+}

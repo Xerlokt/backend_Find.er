@@ -75,8 +75,9 @@ model CandidateProfile {
   searchRadiusKm      Int        @default(50)
   salaryExpectation   Float?
 
-  swipes Swipe[]
-  chats  Chat[]
+  swipes  Swipe[]
+  chats   Chat[]
+  unlocks Unlock[]
 }
 
 model RecruiterProfile {
@@ -103,6 +104,7 @@ model Company {
   jobs               Job[]
   chats              Chat[]
   creditTransactions CreditTransaction[]
+  unlocks            Unlock[]
 }
 
 model Job {
@@ -124,8 +126,9 @@ model Job {
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
 
-  swipes Swipe[]
-  chats  Chat[]
+  swipes  Swipe[]
+  chats   Chat[]
+  unlocks Unlock[]
 }
 
 model Swipe {
@@ -174,4 +177,18 @@ model CreditTransaction {
   amount    Int
   reason    String
   createdAt DateTime @default(now())
+}
+
+model Unlock {
+  id          String           @id @default(uuid())
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id])
+  candidateId String
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id])
+  jobId       String
+  job         Job              @relation(fields: [jobId], references: [id])
+  unlockedAt  DateTime         @default(now())
+  creditsCost Int
+
+  @@unique([companyId, candidateId, jobId])
 }

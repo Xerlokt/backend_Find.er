@@ -20,6 +20,7 @@ afterEach(async () => {
   await prisma.message.deleteMany()
   await prisma.chat.deleteMany()
   await prisma.swipe.deleteMany()
+  await prisma.unlock.deleteMany()
   await prisma.creditTransaction.deleteMany()
   await prisma.job.deleteMany()
   await prisma.recruiterProfile.deleteMany()
