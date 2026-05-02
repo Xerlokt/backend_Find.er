@@ -5,6 +5,8 @@ import { requireRole } from '../../shared/hooks/requireRole'
 import { SwipeRepository } from './swipe.repository'
 import { SwipeService } from './swipe.service'
 import { SwipeDirection } from '@prisma/client'
+import { RecommendationRepository } from '../recommendation/recommendation.repository'
+import { getNeo4jDriver } from '../../shared/db/neo4j'
 
 const SwipeBodySchema = z.object({
   jobId: z.string().uuid(),
@@ -19,7 +21,8 @@ const FeedQuerySchema = z.object({
 // Exported function 1: mounts POST / under /swipes prefix
 export async function swipeRoutes(app: FastifyInstance): Promise<void> {
   const repo = new SwipeRepository()
-  const service = new SwipeService(repo)
+  const recRepo = new RecommendationRepository(getNeo4jDriver())
+  const service = new SwipeService(repo, recRepo)
 
   // POST /swipes — CANDIDATE only, rate limited (SEC-05, D-11)
   app.post('/', {
@@ -38,7 +41,8 @@ const JobIdParamsSchema = z.object({ jobId: z.string().uuid() })
 // GET /feed MUST be registered before any parameterized route (Pitfall 1 — static before parameterized)
 export async function swipeJobRoutes(app: FastifyInstance): Promise<void> {
   const repo = new SwipeRepository()
-  const service = new SwipeService(repo)
+  const recRepo = new RecommendationRepository(getNeo4jDriver())
+  const service = new SwipeService(repo, recRepo)
 
   // GET /jobs/feed — CANDIDATE only
   // MUST be registered before /:jobId/ranking to prevent "feed" matching as jobId param (Pitfall 1)
