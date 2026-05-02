@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06 planned — 3 plans ready. Next: /gsd-execute-phase 6."
-last_updated: "2026-05-01T00:00:00.000Z"
-last_activity: 2026-05-01 -- Phase 06 planned — 3 plans in 2 waves, verification passed
+stopped_at: "Phase 06 complete — 3/3 plans done, 9/9 integration tests green, UAT approved. Next: /gsd-plan-phase 7."
+last_updated: "2026-05-02T13:08:01.523Z"
+last_activity: 2026-05-02 -- Phase 06 complete — Neo4j fit-score engine live, 34/34 unit tests + 9/9 integration tests green
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 19
-  completed_plans: 16
-  percent: 62
+  completed_plans: 19
+  percent: 75
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** Phase 06 — Recommendation (Neo4j fit-score)
+**Current focus:** Phase 07 — Credits
 
 ## Current Position
 
-Phase: 06 (recommendation) — ready to execute
-Next: /gsd-execute-phase 6
-Status: Phase 06 planned — 3 plans in 2 waves, verification passed
-Last activity: 2026-05-01 -- Phase 06 planned — 3 plans ready
+Phase: 07 (credits) — ready to plan
+Next: /gsd-plan-phase 7
+Status: Phase 06 complete — Neo4j fit-score engine live
+Last activity: 2026-05-02 -- Phase 06 complete — 3 plans done, UAT approved
 
-Progress: [█████░░░░░] 62%
+Progress: [██████░░░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 13
+- Total plans completed: 19
 - Average duration: ~20min
-- Total execution time: ~4.5 hours
+- Total execution time: ~5.5 hours
 
 **By Phase:**
 
@@ -48,10 +48,12 @@ Progress: [█████░░░░░] 62%
 | 2. Authentication | 3 | ~60min | ~20min |
 | 3. Profiles & Companies | 3 | ~75min | ~25min |
 | 4. Jobs | 4 | ~75min | ~19min |
+| 5. Swipe | 3 | ~60min | ~20min |
+| 6. Recommendation | 3 | ~60min | ~20min |
 
 **Recent Trend:**
 
-- Last 5 plans: 04-01, 04-02, 04-03, 04-04
+- Last 5 plans: 06-01, 06-02, 06-03
 - Trend: steady
 
 *Updated after each plan completion*
@@ -71,6 +73,10 @@ Recent decisions affecting current work:
 - 04-01: companyId removed from CreateJobSchema — service derives it from recruiter profile to prevent IDOR (any recruiter posting to any company)
 - 04-04: GET /jobs/:id uses [authenticate] only — any authenticated role (CANDIDATE, RECRUITER, ADMIN) can read job details; required by Phase 5 swipe flow
 - 04-04: RankingItem interface exported from job.routes.ts as Phase 6 contract — shape: candidateId/fitScore/profile
+- 06-01: disableLosslessIntegers: true added to Neo4j driver config — JS numbers returned from Cypher (not neo4j.Integer objects)
+- 06-01: IRecommendationService interface at src/shared/interfaces/recommendation.interface.ts — ARCH-04 boundary between swipe and recommendation modules
+- 06-02: computeFitScore is pure TypeScript math (no Neo4j calls in v1) — profession 30%, skills 35%, location 20%, modality 10%, salary 5%
+- 06-03: swipe.service.ts depends on IRecommendationService (type-only import) — RecommendationRepository injected at route level in swipe.routes.ts
 
 ### Pending Todos
 
@@ -87,6 +93,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-01
-Stopped at: Phase 05 complete. All 3 plans done, 16/16 integration tests green, UAT 6/6 passed. Next: Phase 6 (Recommendation).
-Resume file: .planning/phases/05-swipe/05-03-SUMMARY.md
+Last session: 2026-05-02
+Stopped at: Phase 06 complete. 3 plans done, 34/34 unit tests + 9/9 integration tests green, UAT approved. Next: Phase 7 (Credits).
+Resume file: .planning/phases/06-recommendation/06-03-SUMMARY.md

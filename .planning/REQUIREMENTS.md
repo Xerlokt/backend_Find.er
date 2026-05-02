@@ -15,7 +15,7 @@
 
 - [ ] **CAND-01**: Candidato pode criar e editar perfil com nome, bio, localização (lat/lng), profissão, skills, modalidades preferidas e pretensão salarial
 - [ ] **CAND-02**: Candidato pode definir raio de busca em km para vagas
-- [ ] **CAND-03**: Candidato pode ver lista de vagas recomendadas para dar swipe
+- [x] **CAND-03**: Candidato pode ver lista de vagas recomendadas para dar swipe
 
 ### Company & Recruiter (COMP)
 
@@ -39,9 +39,9 @@
 
 ### Recommendation (REC)
 
-- [ ] **REC-01**: Score de fit calculado via Neo4j considerando: profissão, skills, localização, modalidade de trabalho, pretensão salarial
-- [ ] **REC-02**: Grafo de profissões/habilidades seed no Neo4j
-- [ ] **REC-03**: Candidatos rankeados por % de fit descendente na página da vaga
+- [x] **REC-01**: Score de fit calculado via Neo4j considerando: profissão, skills, localização, modalidade de trabalho, pretensão salarial
+- [x] **REC-02**: Grafo de profissões/habilidades seed no Neo4j
+- [x] **REC-03**: Candidatos rankeados por % de fit descendente na página da vaga
 
 ### Credits (CREDIT)
 
@@ -113,7 +113,7 @@
 | AUTH-06 | Phase 2 | Pending |
 | CAND-01 | Phase 3 | Pending |
 | CAND-02 | Phase 3 | Pending |
-| CAND-03 | Phase 6 | Pending |
+| CAND-03 | Phase 6 | Complete |
 | COMP-01 | Phase 3 | Pending |
 | COMP-02 | Phase 3 | Pending |
 | COMP-03 | Phase 3 | Pending |
@@ -125,9 +125,9 @@
 | SWIPE-02 | Phase 5 | Pending |
 | SWIPE-03 | Phase 5 | Pending |
 | SWIPE-04 | Phase 5 | Pending |
-| REC-01 | Phase 6 | Pending |
-| REC-02 | Phase 6 | Pending |
-| REC-03 | Phase 6 | Pending |
+| REC-01 | Phase 6 | Complete |
+| REC-02 | Phase 6 | Complete |
+| REC-03 | Phase 6 | Complete |
 | CREDIT-01 | Phase 7 | Pending |
 | CREDIT-02 | Phase 7 | Pending |
 | CREDIT-03 | Phase 7 | Pending |

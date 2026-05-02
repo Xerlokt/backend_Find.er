@@ -15,7 +15,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - [x] **Phase 3: Profiles & Companies** - Candidate profiles, company accounts, admin user management
 - [x] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
 - [x] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
-- [ ] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
+- [x] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
 - [ ] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
 - [ ] **Phase 8: Chat** - WebSocket real-time chat, auto-creation on match/unlock, message persistence
 
@@ -121,9 +121,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Neo4j driver config (disableLosslessIntegers), IRecommendationService interface (ARCH-04), RecommendationRepository skeleton + seedTaxonomy (6 professions, 10 skills, REQUIRES + RELATED_TO), seed CLI script, Wave 0 test stubs
-- [ ] 06-02-PLAN.md — 5-factor computeFitScore algorithm (profession 30%, skills 35%, location 20%, work mode 10%, salary 5%) — TDD, all 12 unit test cases GREEN
-- [ ] 06-03-PLAN.md — Wire IRecommendationService into SwipeService (constructor injection), replace fitScore:0 placeholder, sort ranking by fitScore DESC, add fitScore to feed (CAND-03), update existing swipe tests + integration assertions
+- [x] 06-01-PLAN.md — Neo4j driver config (disableLosslessIntegers), IRecommendationService interface (ARCH-04), RecommendationRepository skeleton + seedTaxonomy (6 professions, 10 skills, REQUIRES + RELATED_TO), seed CLI script, Wave 0 test stubs
+- [x] 06-02-PLAN.md — 5-factor computeFitScore algorithm (profession 30%, skills 35%, location 20%, work mode 10%, salary 5%) — TDD, all 12 unit test cases GREEN
+- [x] 06-03-PLAN.md — Wire IRecommendationService into SwipeService (constructor injection), replace fitScore:0 placeholder, sort ranking by fitScore DESC, add fitScore to feed (CAND-03), update existing swipe tests + integration assertions
 **UI hint**: no
 
 ### Phase 7: Credits
@@ -172,6 +172,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 3. Profiles & Companies | 3/3 | Complete | 2026-04-19 |
 | 4. Jobs | 4/4 | Complete | 2026-04-25 |
 | 5. Swipe | 3/3 | Complete | 2026-05-01 |
-| 6. Recommendation | 0/3 | Not started | - |
+| 6. Recommendation | 3/3 | Complete | 2026-05-02 |
 | 7. Credits | 0/3 | Not started | - |
 | 8. Chat | 0/3 | Not started | - |
