@@ -13,6 +13,7 @@ import { recruiterRoutes } from './modules/recruiter/recruiter.routes'
 import { adminRoutes } from './modules/admin/admin.routes'
 import { jobRoutes } from './modules/job/job.routes'
 import { swipeRoutes, swipeJobRoutes } from './modules/swipe/swipe.routes'
+import { creditsJobRoutes } from './modules/credits/credits.routes'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -41,6 +42,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(jobRoutes, { prefix: '/jobs' })
   await app.register(swipeRoutes, { prefix: '/swipes' })
   await app.register(swipeJobRoutes, { prefix: '/jobs' })
+  await app.register(creditsJobRoutes, { prefix: '/jobs' })
   await app.register(adminRoutes, { prefix: '/admin' })
 
   if (!opts.testing) {
