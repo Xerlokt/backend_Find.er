@@ -6,14 +6,14 @@ Documentação técnica por fase. Cada doc explica o que foi construído, por qu
 
 | Fase | Status | Doc |
 |------|--------|-----|
-| 01 — Fundação | ✅ Completa | [[fase-01-fundacao]] |
-| 02 — Autenticação | ✅ Completa | [[fase-02-autenticacao]] |
-| 03 — Perfis | 🔜 Pendente | — |
-| 04 — Vagas | 🔜 Pendente | — |
-| 05 — Swipe | 🔜 Pendente | — |
-| 06 — Recomendação Neo4j | 🔜 Pendente | — |
-| 07 — Chat | 🔜 Pendente | — |
-| 08 — Créditos | 🔜 Pendente | — |
+| 01 — Fundação | ✅ Completa | [fase-01-fundacao](fase-01-fundacao.md) |
+| 02 — Autenticação | ✅ Completa | [fase-02-autenticacao](fase-02-autenticacao.md) |
+| 03 — Perfis & Empresas | ✅ Completa | [fase-03-perfis-empresas](fase-03-perfis-empresas.md) |
+| 04 — Vagas | ✅ Completa | [fase-04-vagas](fase-04-vagas.md) |
+| 05 — Swipe | ✅ Completa | [fase-05-swipe](fase-05-swipe.md) |
+| 06 — Recomendação Neo4j | ✅ Completa | [fase-06-recommendation](fase-06-recommendation.md) |
+| 07 — Créditos | 🔜 Pendente | — |
+| 08 — Chat | 🔜 Pendente | — |
 
 ## Stack
 
@@ -30,4 +30,10 @@ cp .env.example .env        # configurar variáveis
 docker compose up -d        # PostgreSQL + Neo4j
 npx prisma migrate dev      # criar tabelas
 npm run dev                 # servidor em http://localhost:3000
+```
+
+## Seed Neo4j
+
+```bash
+npx ts-node --skip-project --compiler-options '{"lib":["ES2022","dom"],"module":"commonjs","esModuleInterop":true}' scripts/seed-neo4j.ts
 ```
