@@ -110,19 +110,20 @@ Plans:
 ### Phase 6: Recommendation
 **Goal**: The Neo4j fit-score engine calculates match percentages and the candidate ranking is ordered by fit score
 **Depends on**: Phase 5
-**Requirements**: REC-01, REC-02, REC-03
+**Requirements**: REC-01, REC-02, REC-03, CAND-03
 **Success Criteria** (what must be TRUE):
   1. The Neo4j graph contains seeded profession/skill nodes and relationships
   2. Calling the recommendation service for a job returns a list of candidates with numeric fit scores (0–100)
   3. Fit score accounts for all five factors: profession match, skills overlap, location proximity, work mode, salary range
   4. The recruiter ranking view on a job is sorted by fit score descending
   5. A candidate with no skill or location overlap scores lower than one with partial overlap
-**Plans**: TBD
+  6. GET /jobs/feed response items include a numeric fitScore field per job (CAND-03)
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: Neo4j graph seed (profession/skill taxonomy Cypher), Neo4j repository queries — unit tests with Neo4j test container
-- [ ] 06-02: Fit-score algorithm in recommendation service — unit tests covering each scoring factor
-- [ ] 06-03: Wire recommendation into job ranking endpoint; integration tests for ranked output
+- [ ] 06-01-PLAN.md — Neo4j driver config (disableLosslessIntegers), IRecommendationService interface (ARCH-04), RecommendationRepository skeleton + seedTaxonomy (6 professions, 10 skills, REQUIRES + RELATED_TO), seed CLI script, Wave 0 test stubs
+- [ ] 06-02-PLAN.md — 5-factor computeFitScore algorithm (profession 30%, skills 35%, location 20%, work mode 10%, salary 5%) — TDD, all 12 unit test cases GREEN
+- [ ] 06-03-PLAN.md — Wire IRecommendationService into SwipeService (constructor injection), replace fitScore:0 placeholder, sort ranking by fitScore DESC, add fitScore to feed (CAND-03), update existing swipe tests + integration assertions
 **UI hint**: no
 
 ### Phase 7: Credits
