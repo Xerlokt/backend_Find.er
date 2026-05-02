@@ -10,7 +10,7 @@ export function getNeo4jDriver(): Driver {
     if (!uri || !user || !password) {
       throw new Error('NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD must all be set')
     }
-    driver = neo4j.driver(uri, neo4j.auth.basic(user, password))
+    driver = neo4j.driver(uri, neo4j.auth.basic(user, password), { disableLosslessIntegers: true })
   }
   return driver
 }
