@@ -129,19 +129,19 @@ Plans:
 ### Phase 7: Credits
 **Goal**: Companies can spend credits to unlock censored candidates; every transaction is audited
 **Depends on**: Phase 6
-**Requirements**: CREDIT-01, CREDIT-02, CREDIT-03, CREDIT-04
+**Requirements**: CREDIT-01, CREDIT-02, CREDIT-03, CREDIT-04, SEC-03, ARCH-01, ARCH-04
 **Success Criteria** (what must be TRUE):
   1. Recruiter can call the unlock endpoint for a DISLIKE candidate and the candidate's full profile becomes visible
   2. Unlock deducts the correct credit amount from the company's balance
   3. An unlock attempt when the company has insufficient credits is rejected with 402
   4. Every credit deduction and admin grant is recorded in the transaction audit log
   5. Admin can grant credits to a company and the balance updates immediately
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 07-01: Credits service + repository (balance management, deduction, audit log) — unit tests
-- [ ] 07-02: Unlock route (validates balance, deducts, reveals candidate) — integration tests
-- [ ] 07-03: Admin credit-grant route + audit log endpoint — integration tests
+- [ ] 07-01-PLAN.md — Prisma Unlock model + migration [BLOCKING], haversineKm shared utility, CreditRepository + CreditService (unlockCandidate + grantCredits), unit tests TDD GREEN
+- [ ] 07-02-PLAN.md — credits.routes.ts (POST /jobs/:jobId/candidates/:candidateId/unlock) + app.ts wiring + full integration tests GREEN
+- [ ] 07-03-PLAN.md — AdminService refactor (ICreditService injection), GET /admin/companies/:id/transactions audit endpoint, SwipeRepository.findUnlocksByJobAndCompany + SwipeService.getRanking reveal update + swipe/admin integration tests GREEN
 
 ### Phase 8: Chat
 **Goal**: Candidates and recruiters can exchange messages in real time after a match or unlock; history persists
