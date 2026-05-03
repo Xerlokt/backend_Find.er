@@ -16,7 +16,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - [x] **Phase 4: Jobs** - Job creation, editing, expiry scheduler, recruiter job view
 - [x] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
 - [x] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
-- [ ] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
+- [x] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
 - [ ] **Phase 8: Chat** - WebSocket real-time chat, auto-creation on match/unlock, message persistence
 
 ## Phase Details
@@ -139,9 +139,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Prisma Unlock model + migration [BLOCKING], haversineKm shared utility, CreditRepository + CreditService (unlockCandidate + grantCredits), unit tests TDD GREEN
-- [ ] 07-02-PLAN.md — credits.routes.ts (POST /jobs/:jobId/candidates/:candidateId/unlock) + app.ts wiring + full integration tests GREEN
-- [ ] 07-03-PLAN.md — AdminService refactor (ICreditService injection), GET /admin/companies/:id/transactions audit endpoint, SwipeRepository.findUnlocksByJobAndCompany + SwipeService.getRanking reveal update + swipe/admin integration tests GREEN
+- [x] 07-01-PLAN.md — Prisma Unlock model + migration [BLOCKING], haversineKm shared utility, CreditRepository + CreditService (unlockCandidate + grantCredits), unit tests TDD GREEN
+- [x] 07-02-PLAN.md — credits.routes.ts (POST /jobs/:jobId/candidates/:candidateId/unlock) + app.ts wiring + full integration tests GREEN
+- [x] 07-03-PLAN.md — AdminService refactor (ICreditService injection), GET /admin/companies/:id/transactions audit endpoint, SwipeRepository.findUnlocksByJobAndCompany + SwipeService.getRanking reveal update + swipe/admin integration tests GREEN
 
 ### Phase 8: Chat
 **Goal**: Candidates and recruiters can exchange messages in real time after a match or unlock; history persists
@@ -173,5 +173,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 4. Jobs | 4/4 | Complete | 2026-04-25 |
 | 5. Swipe | 3/3 | Complete | 2026-05-01 |
 | 6. Recommendation | 3/3 | Complete | 2026-05-02 |
-| 7. Credits | 0/3 | Not started | - |
+| 7. Credits | 3/3 | Complete | 2026-05-02 |
 | 8. Chat | 0/3 | Not started | - |

@@ -15,20 +15,17 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 - [x] Empresa pode criar conta, cadastrar vagas com requisitos detalhados — Validated in Phase 4: Jobs (JOB-01, JOB-02, JOB-03, JOB-04)
 - [x] Autenticação JWT + OAuth Google — Validated in Phase 2: Authentication (AUTH-01..AUTH-06)
 - [x] Candidato pode criar conta, completar perfil (skills, pretensão salarial, localização, modo de trabalho) — Validated in Phase 3: Profiles & Companies (CAND-01, CAND-02)
+- [x] Candidato pode dar swipe (sim/não) em vagas recomendadas — Validated in Phase 5: Swipe (SWIPE-01, SWIPE-02)
+- [x] Candidatos que deram "sim" aparecem com perfil completo visível — Validated in Phase 5: Swipe (SWIPE-03)
+- [x] Candidatos que deram "não" aparecem censurados no ranking (posição visível, identidade não) — Validated in Phase 5: Swipe (SWIPE-04)
+- [x] Recrutador vê ranking de candidatos por % de fit na página da vaga — Validated in Phase 6: Recommendation (REC-01, REC-02, REC-03)
+- [x] Score de fit calculado via Neo4j: habilidades, cargo, área, localização, modo de trabalho, pretensão salarial — Validated in Phase 6: Recommendation (REC-01)
+- [x] Empresa pode desbloquear candidato censurado pagando créditos da plataforma — Validated in Phase 7: Credits (CREDIT-01, CREDIT-02)
+- [x] Sistema de créditos da plataforma para desbloqueio de candidatos — Validated in Phase 7: Credits (CREDIT-03, CREDIT-04)
 
 ### Active
 
-- [ ] Candidato pode criar conta, completar perfil (skills, pretensão salarial, localização, modo de trabalho)
-- [ ] Empresa pode criar conta, cadastrar vagas com requisitos detalhados
-- [ ] Candidato pode dar swipe (sim/não) em vagas recomendadas
-- [ ] Recrutador vê ranking de candidatos por % de fit na página da vaga
-- [ ] Candidatos que deram "sim" aparecem com perfil completo visível
-- [ ] Candidatos que deram "não" aparecem censurados no ranking (posição visível, identidade não)
-- [ ] Empresa pode desbloquear candidato censurado pagando créditos da plataforma
-- [ ] Score de fit calculado via Neo4j: habilidades, cargo, área, localização, modo de trabalho, pretensão salarial
 - [ ] Chat em tempo real entre candidato e recrutador após match (candidato deu sim)
-- [ ] Sistema de créditos da plataforma para desbloqueio de candidatos
-- [ ] Autenticação JWT + OAuth Google
 
 ### Out of Scope
 
@@ -57,11 +54,11 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Neo4j para recomendação | Score de fit requer travessia de grafo de profissões/habilidades | — Pending |
-| PostgreSQL via Prisma para dados relacionais | Dados estruturados (usuários, vagas, swipes, créditos) | — Pending |
-| Fastify em vez de Express | Performance superior, TypeScript nativo, schema validation built-in | — Pending |
-| Chat via WebSocket (@fastify/websocket) | Real-time sem overhead de polling | — Pending |
-| Créditos apenas para empresas | Candidatos não devem ter barreira financeira para buscar emprego | — Pending |
+| Neo4j para recomendação | Score de fit requer travessia de grafo de profissões/habilidades | Validated Phase 6 — 5-factor fit score live |
+| PostgreSQL via Prisma para dados relacionais | Dados estruturados (usuários, vagas, swipes, créditos) | Validated — atomic $transaction for credits/swipes |
+| Fastify em vez de Express | Performance superior, TypeScript nativo, schema validation built-in | Validated — all 7 phases built on Fastify 4 |
+| Chat via WebSocket (@fastify/websocket) | Real-time sem overhead de polling | Pending — Phase 8 |
+| Créditos apenas para empresas | Candidatos não devem ter barreira financeira para buscar emprego | Validated Phase 7 — unlock economy live |
 
 ## Evolution
 
@@ -81,4 +78,4 @@ Este documento evolui a cada transição de fase e marco de milestone.
 4. Atualizar Context com estado atual
 
 ---
-*Last updated: 2026-04-25 after Phase 04 completion*
+*Last updated: 2026-05-02 after Phase 07 completion*

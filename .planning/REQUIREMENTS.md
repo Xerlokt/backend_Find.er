@@ -45,10 +45,10 @@
 
 ### Credits (CREDIT)
 
-- [ ] **CREDIT-01**: Empresa pode usar créditos para desbloquear perfil de candidato que deu DISLIKE
-- [ ] **CREDIT-02**: Cada desbloqueio desconta créditos do saldo da empresa
-- [ ] **CREDIT-03**: Transações de crédito são registradas (audit log)
-- [ ] **CREDIT-04**: Admin pode adicionar créditos a uma empresa
+- [x] **CREDIT-01**: Empresa pode usar créditos para desbloquear perfil de candidato que deu DISLIKE
+- [x] **CREDIT-02**: Cada desbloqueio desconta créditos do saldo da empresa
+- [x] **CREDIT-03**: Transações de crédito são registradas (audit log)
+- [x] **CREDIT-04**: Admin pode adicionar créditos a uma empresa
 
 ### Chat (CHAT)
 
@@ -128,10 +128,10 @@
 | REC-01 | Phase 6 | Complete |
 | REC-02 | Phase 6 | Complete |
 | REC-03 | Phase 6 | Complete |
-| CREDIT-01 | Phase 7 | Pending |
-| CREDIT-02 | Phase 7 | Pending |
-| CREDIT-03 | Phase 7 | Pending |
-| CREDIT-04 | Phase 7 | Pending |
+| CREDIT-01 | Phase 7 | Complete |
+| CREDIT-02 | Phase 7 | Complete |
+| CREDIT-03 | Phase 7 | Complete |
+| CREDIT-04 | Phase 7 | Complete |
 | CHAT-01 | Phase 8 | Pending |
 | CHAT-02 | Phase 8 | Pending |
 | CHAT-03 | Phase 8 | Pending |
@@ -141,7 +141,7 @@
 | ADMIN-03 | Phase 3 | Pending |
 | SEC-01 | All Phases | Pending |
 | SEC-02 | All Phases | Pending |
-| SEC-03 | Phase 5, 7 | Pending |
+| SEC-03 | Phase 5, 7 | Complete |
 | SEC-04 | Phase 2 | Pending |
 | SEC-05 | Phase 2 | Pending |
 | SEC-06 | Phase 2 | Pending |
