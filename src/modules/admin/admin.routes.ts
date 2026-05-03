@@ -3,9 +3,6 @@ import { z } from 'zod'
 import { authenticate } from '../../shared/hooks/authenticate'
 import { requireRole } from '../../shared/hooks/requireRole'
 import { AdminService } from './admin.service'
-import { CreditRepository } from '../credits/credits.repository'
-import { CreditService } from '../credits/credits.service'
-import { prisma } from '../../shared/db/prisma'
 
 const AdjustCreditsAdminSchema = z.object({
   amount: z.number().int().positive(),
@@ -16,10 +13,8 @@ const ListUsersQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 })
 
-export async function adminRoutes(app: FastifyInstance): Promise<void> {
-  const creditRepo = new CreditRepository()
-  const creditService = new CreditService(creditRepo)
-  const service = new AdminService(creditService)
+export async function adminRoutes(app: FastifyInstance, opts: { service: AdminService }): Promise<void> {
+  const service = opts.service
 
   // GET /admin/users — lista paginada de usuários (sem campos sensíveis)
   app.get('/users', {
@@ -54,10 +49,7 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [authenticate, requireRole('ADMIN')],
   }, async (request, reply) => {
     const { id } = request.params as { id: string }
-    const transactions = await prisma.creditTransaction.findMany({
-      where: { companyId: id },
-      orderBy: { createdAt: 'desc' },
-    })
+    const transactions = await service.getTransactions(id)
     return reply.status(200).send(transactions)
   })
 }

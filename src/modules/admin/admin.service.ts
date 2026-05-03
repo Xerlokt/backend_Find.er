@@ -46,4 +46,11 @@ export class AdminService {
   async adjustCredits(companyId: string, amount: number) {
     return this.creditService.grantCredits(companyId, amount, 'admin_grant')
   }
+
+  async getTransactions(companyId: string) {
+    return prisma.creditTransaction.findMany({
+      where: { companyId },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
 }

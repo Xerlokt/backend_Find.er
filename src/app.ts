@@ -11,6 +11,9 @@ import { candidateRoutes } from './modules/candidate/candidate.routes'
 import { companyRoutes } from './modules/company/company.routes'
 import { recruiterRoutes } from './modules/recruiter/recruiter.routes'
 import { adminRoutes } from './modules/admin/admin.routes'
+import { AdminService } from './modules/admin/admin.service'
+import { CreditRepository } from './modules/credits/credits.repository'
+import { CreditService } from './modules/credits/credits.service'
 import { jobRoutes } from './modules/job/job.routes'
 import { swipeRoutes, swipeJobRoutes } from './modules/swipe/swipe.routes'
 import { creditsJobRoutes } from './modules/credits/credits.routes'
@@ -43,7 +46,12 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(swipeRoutes, { prefix: '/swipes' })
   await app.register(swipeJobRoutes, { prefix: '/jobs' })
   await app.register(creditsJobRoutes, { prefix: '/jobs' })
-  await app.register(adminRoutes, { prefix: '/admin' })
+
+  // Composition root: wire credits dependencies and inject into admin module
+  const creditRepo = new CreditRepository()
+  const creditService = new CreditService(creditRepo)
+  const adminService = new AdminService(creditService)
+  await app.register(adminRoutes, { prefix: '/admin', service: adminService })
 
   if (!opts.testing) {
     await app.register(schedulerPlugin)
