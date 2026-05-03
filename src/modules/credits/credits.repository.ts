@@ -35,6 +35,9 @@ export class CreditRepository {
     return prisma.$transaction(async (tx) => {
       const company = await tx.company.findUnique({ where: { id: companyId } })
       if (!company) throw new Error('COMPANY_NOT_FOUND')
+      // NOTE: This in-transaction credit check is REQUIRED for correctness under concurrency.
+      // The service-layer findUnlock() pre-check is an optimistic fast-path only and does NOT
+      // guarantee exclusivity. Do not remove this check.
       if (company.credits < creditsCost) throw new Error('INSUFFICIENT_CREDITS')
 
       await tx.company.update({
