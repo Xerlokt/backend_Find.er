@@ -157,6 +157,8 @@ model Chat {
   createdAt   DateTime         @default(now())
 
   messages Message[]
+
+  @@unique([candidateId, companyId, jobId])
 }
 
 model Message {
