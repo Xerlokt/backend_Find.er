@@ -130,3 +130,41 @@ export async function createUnlock(
     },
   })
 }
+
+export async function createChat(
+  candidateId: string,
+  jobId: string,
+  companyId: string,
+  overrides: Partial<{
+    initiatedBy: 'MATCH' | 'CREDIT'
+    isActive: boolean
+  }> = {}
+) {
+  return prisma.chat.create({
+    data: {
+      candidateId,
+      jobId,
+      companyId,
+      initiatedBy: overrides.initiatedBy ?? 'MATCH',
+      isActive: overrides.isActive ?? true,
+    },
+  })
+}
+
+export async function createMessage(
+  chatId: string,
+  senderId: string,
+  overrides: Partial<{
+    content: string
+    readAt: Date | null
+  }> = {}
+) {
+  return prisma.message.create({
+    data: {
+      chatId,
+      senderId,
+      content: overrides.content ?? 'Test message',
+      readAt: overrides.readAt ?? null,
+    },
+  })
+}
