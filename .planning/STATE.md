@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Phase 08 context gathered (2026-05-03)
-last_updated: "2026-05-03T00:00:00.000Z"
-last_activity: 2026-05-03 -- Phase 08 chat context captured — ready for planning
+stopped_at: Phase 08 Plan 01 complete (2026-05-03)
+last_updated: "2026-05-03T16:15:00.000Z"
+last_activity: 2026-05-03 -- Phase 08 Plan 01 complete — @types/ws installed, Chat @@unique migration applied, test factories and RED stubs created
 progress:
   total_phases: 8
   completed_phases: 7
-  total_plans: 22
-  completed_plans: 22
-  percent: 100
+  total_plans: 25
+  completed_plans: 23
+  percent: 92
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** Phase 07 — Credits
+**Current focus:** Phase 08 — Chat
 
 ## Current Position
 
-Phase: 07 (credits) — complete
-Next: /gsd-plan-phase 8
-Status: Phase 07 complete — credits, unlocks, audit log, ranking reveal all live
-Last activity: 2026-05-02 -- Phase 07 plan 03 complete — credits phase fully done
+Phase: 08 (chat) — executing, Plan 01 complete
+Next: Execute 08-02-PLAN.md (IChatService interface, ChatRepository, ChatService TDD)
+Status: Phase 08 Plan 01 complete — Wave 0 gate satisfied; @types/ws installed, Chat @@unique migration applied, test factories and RED stubs ready
+Last activity: 2026-05-03 -- Phase 08 Plan 01 complete — Wave 0 scaffolding done
 
-Progress: [███████░░░] 87%
+Progress: [████████░░] 92%
 
 ## Performance Metrics
 
@@ -53,7 +53,7 @@ Progress: [███████░░░] 87%
 
 **Recent Trend:**
 
-- Last 5 plans: 06-01, 06-02, 06-03
+- Last 5 plans: 06-01, 06-02, 06-03, 07-01, 07-02, 07-03, 08-01
 - Trend: steady
 
 *Updated after each plan completion*
@@ -80,6 +80,8 @@ Recent decisions affecting current work:
 - 07-03: ICreditService interface defined in admin.service.ts co-located with consumer (ARCH-04) — AdminService depends on interface, not concrete CreditRepository
 - 07-03: SwipeRepository.findUnlocksByJobAndCompany queries prisma.unlock directly — repositories may cross Prisma models; modules must not import other modules
 - 07-03: GET /admin/companies/:id/transactions uses admin-trusted IDOR disposition (T-07-03) — admin role trusted to query any company
+- 08-01: Used prisma db push + migrate resolve --applied workflow when migrate dev is non-interactive (CI/non-TTY environment); migration file created manually with correct index name
+- 08-01: Chat @@unique([candidateId, companyId, jobId]) live in dev+test DBs — DB-level guard against duplicate chat rooms
 
 ### Pending Todos
 
@@ -96,6 +98,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-02T00:35:00.000Z
-Stopped at: Completed 07-03-PLAN.md — Phase 07 credits fully done
+Last session: 2026-05-03T16:15:00.000Z
+Stopped at: Completed 08-01-PLAN.md — Phase 08 Wave 0 scaffolding done
 Resume file: None

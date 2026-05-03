@@ -156,7 +156,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Wave 0: @types/ws install, @@unique migration [BLOCKING], createChat/createMessage factories, unit + integration test stubs
+- [x] 08-01-PLAN.md — Wave 0: @types/ws install, @@unique migration [BLOCKING], createChat/createMessage factories, unit + integration test stubs
 - [ ] 08-02-PLAN.md — IChatService interface (ARCH-04), ChatRepository, ChatService (TDD: recruiter-first rule, participant check, cursor pagination) — unit tests GREEN
 - [ ] 08-03-PLAN.md — chat.routes.ts (REST + WS gateway + in-memory broadcast), app.ts wiring (fastifyWebsocket + IChatService injection into SwipeService/CreditService), integration tests GREEN
 
@@ -174,4 +174,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Swipe | 3/3 | Complete | 2026-05-01 |
 | 6. Recommendation | 3/3 | Complete | 2026-05-02 |
 | 7. Credits | 3/3 | Complete | 2026-05-02 |
-| 8. Chat | 0/3 | Not started | - |
+| 8. Chat | 1/3 | In progress | - |
