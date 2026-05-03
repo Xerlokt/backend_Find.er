@@ -13,6 +13,8 @@ const ListUsersQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
 })
 
+const ParamIdSchema = z.object({ id: z.string().uuid() })
+
 export async function adminRoutes(app: FastifyInstance, opts: { service: AdminService }): Promise<void> {
   const service = opts.service
 
@@ -29,7 +31,7 @@ export async function adminRoutes(app: FastifyInstance, opts: { service: AdminSe
   app.get('/users/:id', {
     preHandler: [authenticate, requireRole('ADMIN')],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = ParamIdSchema.parse(request.params)
     const user = await service.getUserById(id)
     return reply.status(200).send(user)
   })
@@ -38,7 +40,7 @@ export async function adminRoutes(app: FastifyInstance, opts: { service: AdminSe
   app.patch('/companies/:id/credits', {
     preHandler: [authenticate, requireRole('ADMIN')],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = ParamIdSchema.parse(request.params)
     const body = AdjustCreditsAdminSchema.parse(request.body)
     const company = await service.adjustCredits(id, body.amount)
     return reply.status(200).send(company)
@@ -48,7 +50,7 @@ export async function adminRoutes(app: FastifyInstance, opts: { service: AdminSe
   app.get('/companies/:id/transactions', {
     preHandler: [authenticate, requireRole('ADMIN')],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string }
+    const { id } = ParamIdSchema.parse(request.params)
     const transactions = await service.getTransactions(id)
     return reply.status(200).send(transactions)
   })
