@@ -2,6 +2,7 @@ import { CreditService } from '../../src/modules/credits/credits.service'
 import { CreditRepository } from '../../src/modules/credits/credits.repository'
 import { AppError } from '../../src/shared/errors/AppError'
 import { Prisma } from '@prisma/client'
+import type { IChatService } from '../../src/shared/interfaces/chat.interface'
 
 const makeRepo = (): jest.Mocked<CreditRepository> => ({
   findRecruiterByUserId: jest.fn(),
@@ -30,14 +31,22 @@ const makeSwipe = (direction: 'LIKE' | 'DISLIKE' = 'DISLIKE') => ({
   direction,
 })
 
+const makeChatService = (): jest.Mocked<IChatService> => ({
+  createOrGetChat: jest.fn().mockResolvedValue({ chatId: 'chat-uuid-1' }),
+  sendMessage: jest.fn(),
+} as unknown as jest.Mocked<IChatService>)
+
 describe('CreditService', () => {
   let repo: jest.Mocked<CreditRepository>
+  let chatService: jest.Mocked<IChatService>
   let service: CreditService
 
   beforeEach(() => {
     repo = makeRepo()
-    service = new CreditService(repo)
+    chatService = makeChatService()
+    service = new CreditService(repo, chatService) // IChatService injected (D-01)
     jest.clearAllMocks()
+    chatService.createOrGetChat.mockResolvedValue({ chatId: 'chat-uuid-1' }) // reset after clearAllMocks
   })
 
   describe('unlockCandidate', () => {

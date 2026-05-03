@@ -1,10 +1,14 @@
 import { CreditRepository } from './credits.repository'
 import { AppError } from '../../shared/errors/AppError'
-import { Prisma } from '@prisma/client'
+import { ChatInitiator, Prisma } from '@prisma/client'
 import { UNLOCK_COST_BY_PLAN } from './credits.constants'
+import type { IChatService } from '../../shared/interfaces/chat.interface'
 
 export class CreditService {
-  constructor(private readonly repo: CreditRepository) {}
+  constructor(
+    private readonly repo: CreditRepository,
+    private readonly chat: IChatService, // NEW — injected at composition root (D-01, ARCH-04)
+  ) {}
 
   async unlockCandidate(userId: string, jobId: string, candidateId: string) {
     const recruiter = await this.repo.findRecruiterByUserId(userId)
@@ -23,8 +27,9 @@ export class CreditService {
 
     const cost = UNLOCK_COST_BY_PLAN[recruiter.company.plan] ?? UNLOCK_COST_BY_PLAN['FREE']
 
+    let unlock: Awaited<ReturnType<typeof this.repo.executeUnlock>>
     try {
-      return await this.repo.executeUnlock(recruiter.companyId, candidateId, jobId, cost)
+      unlock = await this.repo.executeUnlock(recruiter.companyId, candidateId, jobId, cost)
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new AppError('Already unlocked', 409, 'ALREADY_UNLOCKED')
@@ -37,6 +42,15 @@ export class CreditService {
       }
       throw err
     }
+
+    const { chatId } = await this.chat.createOrGetChat(
+      candidateId,
+      recruiter.companyId,
+      jobId,
+      ChatInitiator.CREDIT,
+    )
+
+    return { ...unlock, chatId } // D-03: chatId included in unlock response
   }
 
   async grantCredits(companyId: string, amount: number, reason = 'admin_grant') {

@@ -7,6 +7,7 @@ import { SwipeService } from './swipe.service'
 import { SwipeDirection } from '@prisma/client'
 import { RecommendationRepository } from '../recommendation/recommendation.repository'
 import { getNeo4jDriver } from '../../shared/db/neo4j'
+import type { IChatService } from '../../shared/interfaces/chat.interface'
 
 const SwipeBodySchema = z.object({
   jobId: z.string().uuid(),
@@ -19,10 +20,10 @@ const FeedQuerySchema = z.object({
 })
 
 // Exported function 1: mounts POST / under /swipes prefix
-export async function swipeRoutes(app: FastifyInstance): Promise<void> {
+export async function swipeRoutes(app: FastifyInstance, opts: { chat: IChatService }): Promise<void> {
   const repo = new SwipeRepository()
   const recRepo = new RecommendationRepository(getNeo4jDriver())
-  const service = new SwipeService(repo, recRepo)
+  const service = new SwipeService(repo, recRepo, opts.chat) // chat injected via opts (D-01)
 
   // POST /swipes — CANDIDATE only, rate limited (SEC-05, D-11)
   app.post('/', {
@@ -39,10 +40,10 @@ const JobIdParamsSchema = z.object({ jobId: z.string().uuid() })
 
 // Exported function 2: mounts GET /feed and GET /:jobId/ranking under /jobs prefix
 // GET /feed MUST be registered before any parameterized route (Pitfall 1 — static before parameterized)
-export async function swipeJobRoutes(app: FastifyInstance): Promise<void> {
+export async function swipeJobRoutes(app: FastifyInstance, opts: { chat: IChatService }): Promise<void> {
   const repo = new SwipeRepository()
   const recRepo = new RecommendationRepository(getNeo4jDriver())
-  const service = new SwipeService(repo, recRepo)
+  const service = new SwipeService(repo, recRepo, opts.chat) // chat injected via opts (D-01)
 
   // GET /jobs/feed — CANDIDATE only
   // MUST be registered before /:jobId/ranking to prevent "feed" matching as jobId param (Pitfall 1)

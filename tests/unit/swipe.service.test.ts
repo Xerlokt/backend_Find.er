@@ -3,6 +3,7 @@ import { SwipeRepository } from '../../src/modules/swipe/swipe.repository'
 import { AppError } from '../../src/shared/errors/AppError'
 import { Prisma, SwipeDirection } from '@prisma/client'
 import { RecommendationRepository } from '../../src/modules/recommendation/recommendation.repository'
+import type { IChatService } from '../../src/shared/interfaces/chat.interface'
 
 // Mock do SwipeRepository — sem DB em testes unitários
 const makeRepo = (): jest.Mocked<SwipeRepository> => ({
@@ -19,6 +20,11 @@ const makeRecRepo = (): jest.Mocked<RecommendationRepository> => ({
   computeFitScore: jest.fn(),
   seedTaxonomy: jest.fn(),
 } as unknown as jest.Mocked<RecommendationRepository>)
+
+const makeChatService = (): jest.Mocked<IChatService> => ({
+  createOrGetChat: jest.fn().mockResolvedValue({ chatId: 'chat-uuid-1' }),
+  sendMessage: jest.fn(),
+} as unknown as jest.Mocked<IChatService>)
 
 const makeCandidate = (overrides: Partial<{ id: string; userId: string; lat: number | null; lng: number | null }> = {}) => ({
   id: overrides.id ?? 'candidate-1',
@@ -46,15 +52,18 @@ const makeJob = (overrides: Partial<{ id: string; recruiterId: string; isActive:
 describe('SwipeService', () => {
   let repo: jest.Mocked<SwipeRepository>
   let recRepo: jest.Mocked<RecommendationRepository>
+  let chatService: jest.Mocked<IChatService>
   let service: SwipeService
 
   beforeEach(() => {
     repo = makeRepo()
     recRepo = makeRecRepo()
-    service = new SwipeService(repo, recRepo)
+    chatService = makeChatService()
+    service = new SwipeService(repo, recRepo, chatService) // IChatService injected (D-01)
     jest.clearAllMocks()
     recRepo.computeFitScore.mockResolvedValue(0)  // set AFTER clearAllMocks — preserve existing test behaviors
     repo.findUnlocksByJobAndCompany.mockResolvedValue(new Set())  // default: empty unlock set — no behavior change for existing tests
+    chatService.createOrGetChat.mockResolvedValue({ chatId: 'chat-uuid-1' }) // reset after clearAllMocks
   })
 
   describe('recordSwipe', () => {
@@ -102,7 +111,9 @@ describe('SwipeService', () => {
       repo.createSwipe.mockResolvedValue(swipe as any)
       const result = await service.recordSwipe('user-1', 'job-1', 'LIKE')
       expect(repo.createSwipe).toHaveBeenCalledWith({ candidateId: 'real-candidate-id', jobId: 'job-1', direction: 'LIKE' })
-      expect(result).toEqual(swipe)
+      // recordSwipe now returns { ...swipe, chatId } on LIKE (D-03)
+      expect(result).toMatchObject(swipe)
+      expect(typeof result.chatId).toBe('string')
     })
   })
 

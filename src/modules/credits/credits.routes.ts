@@ -5,15 +5,16 @@ import { requireRole } from '../../shared/hooks/requireRole'
 import { CreditRepository } from './credits.repository'
 import { CreditService } from './credits.service'
 import { haversineKm } from '../../shared/utils/haversine'
+import type { IChatService } from '../../shared/interfaces/chat.interface'
 
 const UnlockParamsSchema = z.object({
   jobId: z.string().uuid(),
   candidateId: z.string().uuid(),
 })
 
-export async function creditsJobRoutes(app: FastifyInstance): Promise<void> {
+export async function creditsJobRoutes(app: FastifyInstance, opts: { chat: IChatService }): Promise<void> {
   const repo = new CreditRepository()
-  const service = new CreditService(repo)
+  const service = new CreditService(repo, opts.chat) // chat injected via opts (D-01)
 
   app.post('/:jobId/candidates/:candidateId/unlock', {
     preHandler: [authenticate, requireRole('RECRUITER')],
@@ -38,6 +39,7 @@ export async function creditsJobRoutes(app: FastifyInstance): Promise<void> {
       jobId: unlock.jobId,
       unlockedAt: unlock.unlockedAt,
       creditsCost: unlock.creditsCost,
+      chatId: unlock.chatId, // D-03: chatId included in unlock response
       profile: candidateProfile
         ? {
             name: candidateProfile.name,

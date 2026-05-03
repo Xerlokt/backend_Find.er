@@ -1,8 +1,9 @@
 import { SwipeRepository } from './swipe.repository'
 import { AppError } from '../../shared/errors/AppError'
-import { Prisma, SwipeDirection } from '@prisma/client'
+import { ChatInitiator, Prisma, SwipeDirection } from '@prisma/client'
 import type { RankingItem } from '../job/job.routes'
 import type { IRecommendationService } from '../../shared/interfaces/recommendation.interface'
+import type { IChatService } from '../../shared/interfaces/chat.interface'
 
 function haversineKm(
   lat1: number | null,
@@ -26,6 +27,7 @@ export class SwipeService {
   constructor(
     private readonly repo: SwipeRepository,
     private readonly recommendation: IRecommendationService,
+    private readonly chat: IChatService, // NEW — injected at composition root (D-01, ARCH-04)
   ) {}
 
   async recordSwipe(userId: string, jobId: string, direction: SwipeDirection) {
@@ -38,14 +40,28 @@ export class SwipeService {
       throw new AppError('Job not found', 404, 'NOT_FOUND')
     }
 
+    let swipe: Awaited<ReturnType<typeof this.repo.createSwipe>>
     try {
-      return await this.repo.createSwipe({ candidateId: candidate.id, jobId, direction })
+      swipe = await this.repo.createSwipe({ candidateId: candidate.id, jobId, direction })
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
         throw new AppError('Duplicate swipe', 409, 'DUPLICATE_SWIPE')
       }
       throw err
     }
+
+    let chatId: string | null = null
+    if (direction === SwipeDirection.LIKE) {
+      const result = await this.chat.createOrGetChat(
+        candidate.id,
+        job.companyId,
+        jobId,
+        ChatInitiator.MATCH,
+      )
+      chatId = result.chatId
+    }
+
+    return { ...swipe, chatId } // D-03: chatId included in LIKE response
   }
 
   async getFeed(userId: string, cursor: string | undefined, limit: number) {
