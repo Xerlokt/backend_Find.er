@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Phase 08 Plan 02 complete (2026-05-03)
-last_updated: "2026-05-03T19:06:32.000Z"
-last_activity: 2026-05-03 -- Phase 08 Plan 02 complete — IChatService interface, ChatRepository, ChatService implemented; all 13 unit tests GREEN
+status: completed
+stopped_at: Completed 08-03-PLAN.md — chat.routes.ts REST+WS, app.ts wiring, integration tests GREEN
+last_updated: "2026-05-03T19:35:00.000Z"
+last_activity: 2026-05-03 -- Phase 08 Plan 03 complete — chat.routes.ts (REST + WS gateway), app.ts wiring (fastifyWebsocket), IChatService injected into SwipeService and CreditService; all 12 chat integration tests GREEN; 22/24 suites pass (2 pre-existing failures)
 progress:
   total_phases: 8
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 25
-  completed_plans: 24
-  percent: 96
+  completed_plans: 25
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 ## Current Position
 
-Phase: 08 (chat) — executing, Plan 02 complete
-Next: Execute 08-03-PLAN.md (chat.routes.ts REST+WS, app.ts wiring, integration tests)
-Status: Phase 08 Plan 02 complete — IChatService interface, ChatRepository, ChatService implemented; all 13 unit tests GREEN; TypeScript compiles clean
-Last activity: 2026-05-03 -- Phase 08 Plan 02 complete — service layer complete, recruiter-first rule enforced, cursor pagination implemented
+Phase: 08 (chat) — COMPLETE (all 3 plans executed)
+Next: All phases complete — project v1.0 milestone reached
+Status: Phase 08 Plan 03 complete — chat.routes.ts REST+WS gateway, app.ts wiring with fastifyWebsocket, IChatService injected into SwipeService and CreditService; all 12 chat integration tests GREEN; TypeScript compiles clean
+Last activity: 2026-05-03 -- Phase 08 Plan 03 complete — chat module fully wired end-to-end, chatId returned on LIKE swipe and credit unlock
 
-Progress: [████████░░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -86,6 +86,9 @@ Recent decisions affecting current work:
 - 08-02: Recruiter-first rule enforced by countRecruiterMessages(chatId, recruiterUserId) — uses actual userId from DB, NOT role field (avoids Pitfall 5)
 - 08-02: verifyParticipant never throws — returns false for chat-not-found or non-participant; safe for WS handler pre-check without try/catch
 - 08-02: Optional chaining (chat.candidate?.userId ?? null) required in sendMessage — unit test mock for NOT_PARTICIPANT case omits nested candidate object from findChatWithParticipants result
+- 08-03: IChatRouteService extends IChatService in chat.routes.ts opts type — verifyParticipant/getMessages/listChats declared inline; IChatService kept minimal for ARCH-04 consumers (swipe/credits)
+- 08-03: IChatService passed via opts.chat to swipe.routes.ts and credits.routes.ts — keeps internal service instantiation; less invasive than moving to app.ts composition root
+- 08-03: fastifyWebsocket registered before chatRoutes in buildApp (RESEARCH Pitfall 1 — plugin must precede any route using websocket: true)
 
 ### Pending Todos
 
@@ -102,6 +105,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-03T19:06:32.000Z
-Stopped at: Completed 08-02-PLAN.md — IChatService interface, ChatRepository, ChatService; all 13 unit tests GREEN
+Last session: 2026-05-03T19:35:00.000Z
+Stopped at: Completed 08-03-PLAN.md — chat.routes.ts REST+WS gateway, app.ts wiring, IChatService injection, all integration tests GREEN; Phase 8 and project v1.0 complete
 Resume file: None

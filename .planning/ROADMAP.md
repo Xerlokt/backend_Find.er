@@ -17,7 +17,7 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - [x] **Phase 5: Swipe** - Like/Dislike mechanics, duplicate prevention, ranking visibility rules
 - [x] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
 - [x] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
-- [ ] **Phase 8: Chat** - WebSocket real-time chat, auto-creation on match/unlock, message persistence
+- [x] **Phase 8: Chat** - WebSocket real-time chat, auto-creation on match/unlock, message persistence
 
 ## Phase Details
 
@@ -158,7 +158,7 @@ Plans:
 Plans:
 - [x] 08-01-PLAN.md — Wave 0: @types/ws install, @@unique migration [BLOCKING], createChat/createMessage factories, unit + integration test stubs
 - [x] 08-02-PLAN.md — IChatService interface (ARCH-04), ChatRepository, ChatService (TDD: recruiter-first rule, participant check, cursor pagination) — unit tests GREEN
-- [ ] 08-03-PLAN.md — chat.routes.ts (REST + WS gateway + in-memory broadcast), app.ts wiring (fastifyWebsocket + IChatService injection into SwipeService/CreditService), integration tests GREEN
+- [x] 08-03-PLAN.md — chat.routes.ts (REST + WS gateway + in-memory broadcast), app.ts wiring (fastifyWebsocket + IChatService injection into SwipeService/CreditService), integration tests GREEN
 
 ## Progress
 
@@ -174,4 +174,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Swipe | 3/3 | Complete | 2026-05-01 |
 | 6. Recommendation | 3/3 | Complete | 2026-05-02 |
 | 7. Credits | 3/3 | Complete | 2026-05-02 |
-| 8. Chat | 2/3 | In progress | - |
+| 8. Chat | 3/3 | Complete | 2026-05-03 |

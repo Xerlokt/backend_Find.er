@@ -52,10 +52,10 @@
 
 ### Chat (CHAT)
 
-- [ ] **CHAT-01**: Chat em tempo real via WebSocket entre candidato e recrutador
-- [ ] **CHAT-02**: Chat criado automaticamente quando candidato dá LIKE (match) ou quando empresa desbloqueia candidato
-- [ ] **CHAT-03**: Mensagens persistidas no PostgreSQL
-- [ ] **CHAT-04**: Histórico de mensagens carregado ao abrir chat
+- [x] **CHAT-01**: Chat em tempo real via WebSocket entre candidato e recrutador
+- [x] **CHAT-02**: Chat criado automaticamente quando candidato dá LIKE (match) ou quando empresa desbloqueia candidato
+- [x] **CHAT-03**: Mensagens persistidas no PostgreSQL
+- [x] **CHAT-04**: Histórico de mensagens carregado ao abrir chat
 
 ### Admin (ADMIN)
 
@@ -132,10 +132,10 @@
 | CREDIT-02 | Phase 7 | Complete |
 | CREDIT-03 | Phase 7 | Complete |
 | CREDIT-04 | Phase 7 | Complete |
-| CHAT-01 | Phase 8 | Pending |
-| CHAT-02 | Phase 8 | Pending |
-| CHAT-03 | Phase 8 | Pending |
-| CHAT-04 | Phase 8 | Pending |
+| CHAT-01 | Phase 8 | Complete |
+| CHAT-02 | Phase 8 | Complete |
+| CHAT-03 | Phase 8 | Complete |
+| CHAT-04 | Phase 8 | Complete |
 | ADMIN-01 | Phase 3 | Pending |
 | ADMIN-02 | Phase 3 | Pending |
 | ADMIN-03 | Phase 3 | Pending |
