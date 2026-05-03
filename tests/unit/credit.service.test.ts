@@ -136,5 +136,17 @@ describe('CreditService', () => {
       await service.grantCredits('company-1', 5)
       expect(repo.grantCredits).toHaveBeenCalledWith('company-1', 5, 'admin_grant')
     })
+
+    it('lança 400 INVALID_AMOUNT quando amount é zero', async () => {
+      await expect(service.grantCredits('company-1', 0))
+        .rejects.toMatchObject({ statusCode: 400, code: 'INVALID_AMOUNT' })
+      expect(repo.grantCredits).not.toHaveBeenCalled()
+    })
+
+    it('lança 400 INVALID_AMOUNT quando amount é negativo', async () => {
+      await expect(service.grantCredits('company-1', -5))
+        .rejects.toMatchObject({ statusCode: 400, code: 'INVALID_AMOUNT' })
+      expect(repo.grantCredits).not.toHaveBeenCalled()
+    })
   })
 })

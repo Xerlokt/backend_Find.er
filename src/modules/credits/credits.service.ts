@@ -40,6 +40,9 @@ export class CreditService {
   }
 
   async grantCredits(companyId: string, amount: number, reason = 'admin_grant') {
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new AppError('Amount must be a positive integer', 400, 'INVALID_AMOUNT')
+    }
     return this.repo.grantCredits(companyId, amount, reason)
   }
 }
