@@ -153,12 +153,12 @@ Plans:
   3. A chat room is created automatically when a company unlocks a DISLIKE candidate
   4. Messages sent via WebSocket are persisted to PostgreSQL
   5. A participant opening a chat receives the full message history via a REST endpoint
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 08-01: Chat service + repository (room creation, message persistence) — unit tests
-- [ ] 08-02: WebSocket gateway (`@fastify/websocket`), real-time message broadcast — integration tests
-- [ ] 08-03: Chat auto-creation hooks (LIKE event, unlock event), message history REST endpoint — integration tests
+- [ ] 08-01-PLAN.md — Wave 0: @types/ws install, @@unique migration [BLOCKING], createChat/createMessage factories, unit + integration test stubs
+- [ ] 08-02-PLAN.md — IChatService interface (ARCH-04), ChatRepository, ChatService (TDD: recruiter-first rule, participant check, cursor pagination) — unit tests GREEN
+- [ ] 08-03-PLAN.md — chat.routes.ts (REST + WS gateway + in-memory broadcast), app.ts wiring (fastifyWebsocket + IChatService injection into SwipeService/CreditService), integration tests GREEN
 
 ## Progress
 
