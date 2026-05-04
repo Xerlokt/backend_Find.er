@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Clean Architecture Refactor
 status: in_progress
-stopped_at: Milestone v2.0 started — defining requirements
+stopped_at: Roadmap created — Phase 9 ready to plan
 last_updated: "2026-05-04T00:00:00Z"
-last_activity: 2026-05-04 -- Milestone v2.0 started — migrating from src/modules/ to Clean Architecture (domain/application/adapters/infrastructure)
+last_activity: 2026-05-04 -- v2.0 roadmap created — 5 phases (9-13), 14 requirements mapped, ready to /gsd-plan-phase 9
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,43 +18,50 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-17)
+See: .planning/PROJECT.md (updated 2026-05-03)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** Phase 08 — Chat
+**Current focus:** Phase 09 — Domain Layer Scaffold (v2.0 start)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 — Domain Layer Scaffold
 Plan: —
-Status: Defining requirements for v2.0 Clean Architecture Refactor
-Last activity: 2026-05-04 -- Milestone v2.0 started — migrating from src/modules/ to 4-layer Clean Architecture
+Status: Not started — roadmap approved, ready to plan
+Last activity: 2026-05-04 -- v2.0 roadmap written — 5 phases (9–13), 14 requirements mapped 100%
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0% (v2.0 milestone)
 
 ## Performance Metrics
 
-**Velocity:**
+**v1.0 Velocity (reference):**
 
-- Total plans completed: 19
+- Total plans completed: 27
 - Average duration: ~20min
-- Total execution time: ~5.5 hours
+- Total execution time: ~9 hours
 
-**By Phase:**
+**v1.0 By Phase:**
+
+| Phase | Plans | Avg/Plan |
+|-------|-------|----------|
+| 1. Foundation | 3 | ~15min |
+| 2. Authentication | 3 | ~20min |
+| 3. Profiles & Companies | 4 | ~25min |
+| 4. Jobs | 4 | ~19min |
+| 5. Swipe | 3 | ~20min |
+| 6. Recommendation | 3 | ~20min |
+| 7. Credits | 3 | ~20min |
+| 8. Chat | 4 | ~22min |
+
+**v2.0 By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1. Foundation | 3 | ~45min | ~15min |
-| 2. Authentication | 3 | ~60min | ~20min |
-| 3. Profiles & Companies | 3 | ~75min | ~25min |
-| 4. Jobs | 4 | ~75min | ~19min |
-| 5. Swipe | 3 | ~60min | ~20min |
-| 6. Recommendation | 3 | ~60min | ~20min |
-
-**Recent Trend:**
-
-- Last 5 plans: 06-01, 06-02, 06-03, 07-01, 07-02, 07-03, 08-01
-- Trend: steady
+| 9. Domain Layer Scaffold | TBD | - | - |
+| 10. Infrastructure + Auth Migration | TBD | - | - |
+| 11. Core Modules Migration | TBD | - | - |
+| 12. Swipe, Credits, Recommendation, Chat Migration | TBD | - | - |
+| 13. Cleanup + Unit Test Layer | TBD | - | - |
 
 *Updated after each plan completion*
 
@@ -89,6 +96,28 @@ Recent decisions affecting current work:
 - 08-03: IChatRouteService extends IChatService in chat.routes.ts opts type — verifyParticipant/getMessages/listChats declared inline; IChatService kept minimal for ARCH-04 consumers (swipe/credits)
 - 08-03: IChatService passed via opts.chat to swipe.routes.ts and credits.routes.ts — keeps internal service instantiation; less invasive than moving to app.ts composition root
 - 08-03: fastifyWebsocket registered before chatRoutes in buildApp (RESEARCH Pitfall 1 — plugin must precede any route using websocket: true)
+- v2.0 roadmap: Migration strategy is module-by-module (not layer-by-layer) — keeps 41 integration tests green after every phase; Phase 9 creates the skeleton before any imports change
+
+### v2.0 Architecture Context
+
+**Current src/ structure (before migration):**
+- `src/modules/` — flat module directories (auth, candidate, company, recruiter, job, swipe, credits, recommendation, chat, admin, health)
+- `src/shared/` — db clients (prisma.ts, neo4j.ts), plugins, hooks, errors, interfaces, utils
+- `src/app.ts`, `src/server.ts` — entry points
+
+**Target src/ structure:**
+- `src/domain/` — entities, value-objects, interfaces (repository contracts)
+- `src/application/` — use-cases by module, ports (IHashPort, ITokenPort, IGraphPort), errors
+- `src/adapters/` — controllers, repository implementations, service adapters
+- `src/infrastructure/` — http/routes, http/plugins, database singletons, app.ts, server.ts, scheduler
+
+**Dependency rule (enforced in Phase 13):**
+- `domain/` imports nothing from the project
+- `application/` imports only `domain/`
+- `adapters/` imports `application/` and `domain/`
+- `infrastructure/` imports all layers
+
+**File mapping reference:** `plan-architecture.md` (root of repo)
 
 ### Pending Todos
 
@@ -105,6 +134,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-03T19:35:00.000Z
-Stopped at: Completed 08-03-PLAN.md — chat.routes.ts REST+WS gateway, app.ts wiring, IChatService injection, all integration tests GREEN; Phase 8 and project v1.0 complete
+Last session: 2026-05-04T00:00:00.000Z
+Stopped at: v2.0 roadmap created — ROADMAP.md, STATE.md, REQUIREMENTS.md updated; Phase 9 ready to /gsd-plan-phase 9
 Resume file: None

@@ -2,13 +2,15 @@
 
 ## Overview
 
-Eight phases deliver the complete Job Tinder backend — from bare scaffolding through authentication, domain entities, the Neo4j recommendation engine (the core value), real-time chat, and the credits economy. Each phase delivers a coherent, testable capability. The Neo4j fit-scoring engine stands alone in Phase 6 because without it, the product is just another job board.
+Eight phases delivered the complete Job Tinder backend (v1.0). Five more phases (9–13) deliver the Clean Architecture refactor (v2.0) — migrating from `src/modules/` flat structure to a strict 4-layer architecture: domain → application → adapters → infrastructure. The refactor is module-by-module so the 41 existing integration tests remain green after every phase.
 
 ## Phases
 
 **Phase Numbering:**
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+**v1.0 — Complete**
 
 - [x] **Phase 1: Foundation** - Project scaffolding, Docker, Prisma schema, test infrastructure
 - [x] **Phase 2: Authentication** - JWT + Google OAuth2, refresh tokens, route guards
@@ -18,6 +20,14 @@ Eight phases deliver the complete Job Tinder backend — from bare scaffolding t
 - [x] **Phase 6: Recommendation** - Neo4j graph seed, fit-score algorithm, ranked candidate list
 - [x] **Phase 7: Credits** - Credit balance, unlock flow, audit log, admin credit grants
 - [x] **Phase 8: Chat** - WebSocket real-time chat, auto-creation on match/unlock, message persistence
+
+**v2.0 — Clean Architecture Refactor**
+
+- [ ] **Phase 9: Domain Layer Scaffold** - Create src/domain/ and src/application/ skeletons: entities, repository interfaces, ports, DomainError
+- [ ] **Phase 10: Infrastructure + Auth Migration** - Migrate shared infrastructure and the full auth module end-to-end into the new layer structure
+- [ ] **Phase 11: Core Modules Migration** - Migrate candidate, company, recruiter, job, and admin modules; all tests remain green
+- [ ] **Phase 12: Swipe, Credits, Recommendation, Chat Migration** - Migrate remaining modules; 41 integration tests green; all use cases wired via interfaces only
+- [ ] **Phase 13: Cleanup + Unit Test Layer** - Delete src/modules/ and src/shared/; enforce dependency rule; add use-case unit tests
 
 ## Phase Details
 
@@ -52,9 +62,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Schema RefreshToken, rate-limit plugin, errorHandler update, AuthRepository + AuthService (register + login) — TDD
-- [ ] 02-02-PLAN.md — AuthService (refresh + logout), auth.routes.ts, app.ts wiring, integration tests — TDD
-- [ ] 02-03-PLAN.md — Google OAuth2 (google-auth-library, loginWithGoogle, POST /auth/google) — TDD
+- [x] 02-01-PLAN.md — Schema RefreshToken, rate-limit plugin, errorHandler update, AuthRepository + AuthService (register + login) — TDD
+- [x] 02-02-PLAN.md — AuthService (refresh + logout), auth.routes.ts, app.ts wiring, integration tests — TDD
+- [x] 02-03-PLAN.md — Google OAuth2 (google-auth-library, loginWithGoogle, POST /auth/google) — TDD
 
 ### Phase 3: Profiles & Companies
 **Goal**: Candidates and recruiters have complete, editable profiles linked to companies; admins can manage users
@@ -125,7 +135,6 @@ Plans:
 - [x] 06-01-PLAN.md — Neo4j driver config (disableLosslessIntegers), IRecommendationService interface (ARCH-04), RecommendationRepository skeleton + seedTaxonomy (6 professions, 10 skills, REQUIRES + RELATED_TO), seed CLI script, Wave 0 test stubs
 - [x] 06-02-PLAN.md — 5-factor computeFitScore algorithm (profession 30%, skills 35%, location 20%, work mode 10%, salary 5%) — TDD, all 12 unit test cases GREEN
 - [x] 06-03-PLAN.md — Wire IRecommendationService into SwipeService (constructor injection), replace fitScore:0 placeholder, sort ranking by fitScore DESC, add fitScore to feed (CAND-03), update existing swipe tests + integration assertions
-**UI hint**: no
 
 ### Phase 7: Credits
 **Goal**: Companies can spend credits to unlock censored candidates; every transaction is audited
@@ -162,10 +171,75 @@ Plans:
 - [x] 08-03-PLAN.md — chat.routes.ts (REST + WS gateway + in-memory broadcast), app.ts wiring (fastifyWebsocket + IChatService injection into SwipeService/CreditService), integration tests GREEN
 - [x] 08-04-PLAN.md — Gap closure: replace 6 stub integration tests with real WS + credit-unlock assertions — all 12 tests GREEN
 
+---
+
+### Phase 9: Domain Layer Scaffold
+**Goal**: The domain and application skeleton exists with entities, repository interfaces, ports, and error types — no behavior changes, no tests broken
+**Depends on**: Phase 8
+**Requirements**: ARCH-05, ARCH-06, ARCH-08
+**Success Criteria** (what must be TRUE):
+  1. All domain entity files exist under `src/domain/entities/` with zero imports from external libraries (Prisma, Fastify, bcrypt, JWT)
+  2. All repository interfaces exist under `src/domain/interfaces/` and define data-access contracts using only domain entity types
+  3. All port interfaces exist under `src/application/ports/` — `IHashPort`, `ITokenPort`, `IGraphPort` — with no concrete implementation
+  4. `DomainError` class exists at `src/application/errors/domain.error.ts` as the sole application error type
+  5. All 41 existing integration tests continue to pass after the scaffold is created (no imports changed yet)
+**Plans**: TBD
+
+### Phase 10: Infrastructure + Auth Migration
+**Goal**: The shared infrastructure files and the complete auth module are migrated into the new layer structure; the auth integration tests run against the new wiring
+**Depends on**: Phase 9
+**Requirements**: ARCH-09, ARCH-10, ARCH-11, ARCH-12
+**Success Criteria** (what must be TRUE):
+  1. `src/infrastructure/database/prisma.ts` and `src/infrastructure/database/neo4j.ts` are the canonical database singletons — no other files instantiate clients
+  2. All Fastify plugins live under `src/infrastructure/http/plugins/` and are imported from there
+  3. `AuthController` in `src/adapters/controllers/auth.controller.ts` dispatches to use cases and contains no business logic
+  4. Auth use cases (`register`, `login`, `refresh-token`, `logout`, `login-with-google`) live under `src/application/use-cases/auth/` and receive all dependencies via `IUserRepository`, `IHashPort`, `ITokenPort` — no direct Prisma or bcrypt imports
+  5. Auth repository implementation `src/adapters/repositories/user.repository.ts` implements `IUserRepository` and maps Prisma rows to domain entities
+  6. All 41 integration tests remain green after the auth module is fully migrated
+**Plans**: TBD
+
+### Phase 11: Core Modules Migration
+**Goal**: Candidate, company, recruiter, job, and admin modules are fully migrated; repository implementations are tested against real DB
+**Depends on**: Phase 10
+**Requirements**: TEST-03
+**Success Criteria** (what must be TRUE):
+  1. Candidate, company, recruiter, job, and admin use cases live under `src/application/use-cases/` and depend only on domain interfaces — no Prisma imports inside use case files
+  2. All five module repository implementations live under `src/adapters/repositories/` and each implements its corresponding `IXxxRepository` interface
+  3. Repository implementations are exercised by integration tests running against the real Docker DB — no mocks for DB interaction
+  4. Controllers for these modules live under `src/adapters/controllers/` and contain no business logic
+  5. All 41 existing integration tests remain green after each module is migrated
+**Plans**: TBD
+
+### Phase 12: Swipe, Credits, Recommendation, Chat Migration
+**Goal**: All remaining modules are migrated; every use case receives dependencies exclusively via interfaces; the full 41-test suite is green
+**Depends on**: Phase 11
+**Requirements**: ARCH-07, TEST-01
+**Success Criteria** (what must be TRUE):
+  1. Swipe, credits, recommendation, and chat use cases live under `src/application/use-cases/` and receive every dependency (repositories, ports, graph port) via constructor injection of interfaces — zero concrete implementation imports inside use case files
+  2. Service adapters (`BcryptAdapter`, `JwtAdapter`, `Neo4jAdapter`) live under `src/adapters/services/` and implement their respective port interfaces
+  3. Route files under `src/infrastructure/http/routes/` only register endpoints and instantiate controllers — no business logic, no direct use-case logic
+  4. All 41 integration tests pass green — zero regressions introduced by the migration
+  5. Running the app end-to-end (register → swipe → recommendation → unlock → chat) produces correct responses via the new wiring
+**Plans**: TBD
+
+### Phase 13: Cleanup + Unit Test Layer
+**Goal**: The old module structure is gone, the dependency rule is mechanically enforced, and use cases are independently unit-testable without a database
+**Depends on**: Phase 12
+**Requirements**: ARCH-13, TEST-02, MIGRATE-01, MIGRATE-02
+**Success Criteria** (what must be TRUE):
+  1. `src/modules/` directory does not exist — all logic has migrated to the new 4-layer structure
+  2. `src/shared/` directory does not exist — all shared utilities, plugins, and errors live in the appropriate layer
+  3. A static import-check (or `madge --circular` / custom script) confirms: `domain/` has no project imports; `application/` imports only `domain/`; `adapters/` imports only `application/` and `domain/`; `infrastructure/` is the only layer that imports all others
+  4. At least one use case per module (auth, candidate, job, swipe, credits, chat) has a Jest unit test that runs with mocked interfaces — no DB, no HTTP server required
+  5. All 41 integration tests continue to pass after cleanup; `npm run build` produces zero TypeScript errors
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
+
+**v1.0 — Complete**
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -177,3 +251,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 6. Recommendation | 3/3 | Complete | 2026-05-02 |
 | 7. Credits | 3/3 | Complete | 2026-05-02 |
 | 8. Chat | 4/4 | Complete | 2026-05-03 |
+
+**v2.0 — Clean Architecture Refactor**
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 9. Domain Layer Scaffold | 0/? | Not started | - |
+| 10. Infrastructure + Auth Migration | 0/? | Not started | - |
+| 11. Core Modules Migration | 0/? | Not started | - |
+| 12. Swipe, Credits, Recommendation, Chat Migration | 0/? | Not started | - |
+| 13. Cleanup + Unit Test Layer | 0/? | Not started | - |

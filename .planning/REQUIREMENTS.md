@@ -177,17 +177,17 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| ARCH-05 | TBD | Pending |
-| ARCH-06 | TBD | Pending |
-| ARCH-07 | TBD | Pending |
-| ARCH-08 | TBD | Pending |
-| ARCH-09 | TBD | Pending |
-| ARCH-10 | TBD | Pending |
-| ARCH-11 | TBD | Pending |
-| ARCH-12 | TBD | Pending |
-| ARCH-13 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| MIGRATE-01 | TBD | Pending |
-| MIGRATE-02 | TBD | Pending |
+| ARCH-05 | Phase 9 | Pending |
+| ARCH-06 | Phase 9 | Pending |
+| ARCH-07 | Phase 12 | Pending |
+| ARCH-08 | Phase 9 | Pending |
+| ARCH-09 | Phase 10 | Pending |
+| ARCH-10 | Phase 10 | Pending |
+| ARCH-11 | Phase 10 | Pending |
+| ARCH-12 | Phase 10 | Pending |
+| ARCH-13 | Phase 13 | Pending |
+| TEST-01 | Phase 12 | Pending |
+| TEST-02 | Phase 13 | Pending |
+| TEST-03 | Phase 11 | Pending |
+| MIGRATE-01 | Phase 13 | Pending |
+| MIGRATE-02 | Phase 13 | Pending |
