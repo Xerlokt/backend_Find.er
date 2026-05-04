@@ -13,7 +13,7 @@ Documentação técnica por fase. Cada doc explica o que foi construído, por qu
 | 05 — Swipe | ✅ Completa | [fase-05-swipe](fase-05-swipe.md) |
 | 06 — Recomendação Neo4j | ✅ Completa | [fase-06-recommendation](fase-06-recommendation.md) |
 | 07 — Créditos | ✅ Completa | [fase-07-creditos](fase-07-creditos.md) |
-| 08 — Chat | 🔜 Pendente | — |
+| 08 — Chat | ✅ Completa | [fase-08-chat](fase-08-chat.md) |
 
 ## Stack
 
