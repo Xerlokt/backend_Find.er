@@ -1,41 +1,41 @@
 # Requirements — Job Tinder Backend
 
-## v1 Requirements
+## v1 Requirements (Milestone v1.0 — Complete)
 
 ### Authentication (AUTH)
 
-- [ ] **AUTH-01**: Usuário pode criar conta com email/senha
-- [ ] **AUTH-02**: Usuário pode fazer login com email/senha e receber JWT de acesso + refresh token
-- [ ] **AUTH-03**: Usuário pode autenticar via Google OAuth2
-- [ ] **AUTH-04**: Usuário pode renovar token de acesso via refresh token
-- [ ] **AUTH-05**: Usuário pode fazer logout (invalidar refresh token)
-- [ ] **AUTH-06**: Rotas protegidas rejeitam requisições sem JWT válido
+- [x] **AUTH-01**: Usuário pode criar conta com email/senha
+- [x] **AUTH-02**: Usuário pode fazer login com email/senha e receber JWT de acesso + refresh token
+- [x] **AUTH-03**: Usuário pode autenticar via Google OAuth2
+- [x] **AUTH-04**: Usuário pode renovar token de acesso via refresh token
+- [x] **AUTH-05**: Usuário pode fazer logout (invalidar refresh token)
+- [x] **AUTH-06**: Rotas protegidas rejeitam requisições sem JWT válido
 
 ### Candidate Profile (CAND)
 
-- [ ] **CAND-01**: Candidato pode criar e editar perfil com nome, bio, localização (lat/lng), profissão, skills, modalidades preferidas e pretensão salarial
-- [ ] **CAND-02**: Candidato pode definir raio de busca em km para vagas
+- [x] **CAND-01**: Candidato pode criar e editar perfil com nome, bio, localização (lat/lng), profissão, skills, modalidades preferidas e pretensão salarial
+- [x] **CAND-02**: Candidato pode definir raio de busca em km para vagas
 - [x] **CAND-03**: Candidato pode ver lista de vagas recomendadas para dar swipe
 
 ### Company & Recruiter (COMP)
 
-- [ ] **COMP-01**: Recrutador pode criar e editar perfil vinculado a uma empresa
-- [ ] **COMP-02**: Admin pode criar empresas na plataforma
-- [ ] **COMP-03**: Empresa tem saldo de créditos gerenciado via admin
+- [x] **COMP-01**: Recrutador pode criar e editar perfil vinculado a uma empresa
+- [x] **COMP-02**: Admin pode criar empresas na plataforma
+- [x] **COMP-03**: Empresa tem saldo de créditos gerenciado via admin
 
 ### Jobs (JOB)
 
-- [ ] **JOB-01**: Recrutador pode criar vaga com título, descrição, profissão, skills requeridas, faixa salarial, localização, modalidade e data de expiração
-- [ ] **JOB-02**: Recrutador pode editar e desativar vagas
-- [ ] **JOB-03**: Vagas expiradas são desativadas automaticamente (scheduler)
-- [ ] **JOB-04**: Recrutador vê página da vaga com ranking de candidatos por % de fit
+- [x] **JOB-01**: Recrutador pode criar vaga com título, descrição, profissão, skills requeridas, faixa salarial, localização, modalidade e data de expiração
+- [x] **JOB-02**: Recrutador pode editar e desativar vagas
+- [x] **JOB-03**: Vagas expiradas são desativadas automaticamente (scheduler)
+- [x] **JOB-04**: Recrutador vê página da vaga com ranking de candidatos por % de fit
 
 ### Swipe (SWIPE)
 
-- [ ] **SWIPE-01**: Candidato pode dar swipe LIKE ou DISLIKE em uma vaga
-- [ ] **SWIPE-02**: Candidato não pode dar swipe na mesma vaga duas vezes
-- [ ] **SWIPE-03**: No ranking da vaga, candidatos que deram LIKE aparecem com perfil completo visível
-- [ ] **SWIPE-04**: No ranking da vaga, candidatos que deram DISLIKE aparecem com identidade censurada (posição no rank visível)
+- [x] **SWIPE-01**: Candidato pode dar swipe LIKE ou DISLIKE em uma vaga
+- [x] **SWIPE-02**: Candidato não pode dar swipe na mesma vaga duas vezes
+- [x] **SWIPE-03**: No ranking da vaga, candidatos que deram LIKE aparecem com perfil completo visível
+- [x] **SWIPE-04**: No ranking da vaga, candidatos que deram DISLIKE aparecem com identidade censurada (posição no rank visível)
 
 ### Recommendation (REC)
 
@@ -59,72 +59,94 @@
 
 ### Admin (ADMIN)
 
-- [ ] **ADMIN-01**: Admin pode listar e gerenciar usuários
-- [ ] **ADMIN-02**: Admin pode adicionar créditos a empresas
-- [ ] **ADMIN-03**: Rotas admin protegidas por role ADMIN
+- [x] **ADMIN-01**: Admin pode listar e gerenciar usuários
+- [x] **ADMIN-02**: Admin pode adicionar créditos a empresas
+- [x] **ADMIN-03**: Rotas admin protegidas por role ADMIN
 
 ### Security (SEC)
 
-- [ ] **SEC-01**: Todas as queries ao DB usam Prisma ORM (sem raw SQL com interpolação de strings) — previne SQL injection
-- [ ] **SEC-02**: Inputs de usuário validados e sanitizados via Zod em todos os endpoints
-- [ ] **SEC-03**: Operações de crédito e swipe executadas em transações atômicas — previne race conditions
-- [ ] **SEC-04**: Senhas armazenadas com bcrypt (salt rounds ≥ 12)
-- [ ] **SEC-05**: Rate limiting em rotas sensíveis (login, register, swipe)
-- [ ] **SEC-06**: JWT de curta duração (access token ≤ 15min), refresh token com rotação
-- [ ] **SEC-07**: Headers de segurança HTTP via @fastify/helmet
+- [x] **SEC-01**: Todas as queries ao DB usam Prisma ORM (sem raw SQL com interpolação de strings) — previne SQL injection
+- [x] **SEC-02**: Inputs de usuário validados e sanitizados via Zod em todos os endpoints
+- [x] **SEC-03**: Operações de crédito e swipe executadas em transações atômicas — previne race conditions
+- [x] **SEC-04**: Senhas armazenadas com bcrypt (salt rounds ≥ 12)
+- [x] **SEC-05**: Rate limiting em rotas sensíveis (login, register, swipe)
+- [x] **SEC-06**: JWT de curta duração (access token ≤ 15min), refresh token com rotação
+- [x] **SEC-07**: Headers de segurança HTTP via @fastify/helmet
 
 ### Architecture (ARCH)
 
-- [ ] **ARCH-01**: Cada módulo segue Clean Architecture — routes → service → repository (sem pular camadas)
-- [ ] **ARCH-02**: Services não importam diretamente clientes de DB — dependência injetada via repositórios
-- [ ] **ARCH-03**: Responsabilidade única por classe/função (SOLID - SRP)
-- [ ] **ARCH-04**: Módulos não importam diretamente de outros módulos — comunicação via interfaces
+- [x] **ARCH-01**: Cada módulo segue Clean Architecture — routes → service → repository (sem pular camadas)
+- [x] **ARCH-02**: Services não importam diretamente clientes de DB — dependência injetada via repositórios
+- [x] **ARCH-03**: Responsabilidade única por classe/função (SOLID - SRP)
+- [x] **ARCH-04**: Módulos não importam diretamente de outros módulos — comunicação via interfaces
 
 ---
 
-## v2 (Deferred)
+## v2 Requirements (Milestone v2.0 — Clean Architecture Refactor)
 
-- Candidatos comprando créditos — fora do escopo v1 (créditos só para empresas)
-- Sistema de pagamento integrado — créditos gerenciados manualmente via admin na v1
-- Notificação push quando candidato é desbloqueado
-- App mobile
-- Relatórios e analytics de vagas
+### Architecture — Layer Isolation (ARCH)
+
+- [ ] **ARCH-05**: Domain entities em `src/domain/entities/` não importam nenhuma lib externa (Prisma, Fastify, bcrypt, JWT)
+- [ ] **ARCH-06**: Repository interfaces em `src/domain/interfaces/` definem contratos de acesso a dados sem implementação (portas de saída)
+- [ ] **ARCH-07**: Use cases em `src/application/use-cases/` recebem todas as dependências exclusivamente via interfaces e ports — nunca implementações concretas
+- [ ] **ARCH-08**: Ports em `src/application/ports/` definem contratos para serviços externos: `IHashPort` (bcrypt), `ITokenPort` (JWT), `IGraphPort` (Neo4j)
+- [ ] **ARCH-09**: Controllers em `src/adapters/controllers/` orquestram use cases e formatam resposta HTTP sem conter lógica de negócio
+- [ ] **ARCH-10**: Repository implementations em `src/adapters/repositories/` implementam as interfaces definidas em `src/domain/interfaces/`
+- [ ] **ARCH-11**: Service adapters em `src/adapters/services/` implementam os ports definidos em `src/application/ports/`
+- [ ] **ARCH-12**: Routes em `src/infrastructure/http/routes/` apenas registram endpoints e instanciam controllers — sem lógica de negócio
+- [ ] **ARCH-13**: Regra de dependência enforced: `domain` não importa nada do projeto; `application` importa apenas `domain`; `adapters` importa `application` + `domain`; `infrastructure` importa todas as camadas
+
+### Test Preservation (TEST)
+
+- [ ] **TEST-01**: Todos os testes de integração existentes (41 testes) continuam passando após refatoração — regressão zero
+- [ ] **TEST-02**: Use cases são testáveis unitariamente sem banco usando mocks Jest das interfaces de domínio
+- [ ] **TEST-03**: Repository implementations são testadas contra banco real (Docker Compose) sem mocks
+
+### Migration Completeness (MIGRATE)
+
+- [ ] **MIGRATE-01**: Nenhum arquivo de lógica permanece em `src/modules/` após migração completa
+- [ ] **MIGRATE-02**: Todos os arquivos seguem o mapeamento definido no `plan-architecture.md` — tabela "Arquivo Atual → Nova Localização"
 
 ---
 
-## Out of Scope
+## Out of Scope (v2.0)
 
-- Candidatos comprando ou gerenciando créditos — créditos são exclusivos das empresas
-- Pagamento online integrado (Stripe, etc.) — v1 gerencia créditos via admin
-- App mobile — apenas API REST + WebSocket
-- Sistema de avaliação/review de empresas por candidatos — v2
+- Adicionar novas features durante a refatoração — milestone é exclusivamente refactor
+- Alterar a API pública (endpoints, schemas de resposta) — comportamento externo preservado
+- Trocar bibliotecas (ex: substituir Prisma por outro ORM) — mesmo stack
+- Candidatos comprando créditos — deferred
+- Sistema de pagamento integrado — deferred
+- App mobile — fora de escopo
+- Notificação push — deferred
 
 ---
 
 ## Traceability
 
+### v1.0 (Completed — 2026-05-03)
+
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| AUTH-05 | Phase 2 | Pending |
-| AUTH-06 | Phase 2 | Pending |
-| CAND-01 | Phase 3 | Pending |
-| CAND-02 | Phase 3 | Pending |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
+| AUTH-05 | Phase 2 | Complete |
+| AUTH-06 | Phase 2 | Complete |
+| CAND-01 | Phase 3 | Complete |
+| CAND-02 | Phase 3 | Complete |
 | CAND-03 | Phase 6 | Complete |
-| COMP-01 | Phase 3 | Pending |
-| COMP-02 | Phase 3 | Pending |
-| COMP-03 | Phase 3 | Pending |
-| JOB-01 | Phase 4 | Pending |
-| JOB-02 | Phase 4 | Pending |
-| JOB-03 | Phase 4 | Pending |
-| JOB-04 | Phase 4 | Pending |
-| SWIPE-01 | Phase 5 | Pending |
-| SWIPE-02 | Phase 5 | Pending |
-| SWIPE-03 | Phase 5 | Pending |
-| SWIPE-04 | Phase 5 | Pending |
+| COMP-01 | Phase 3 | Complete |
+| COMP-02 | Phase 3 | Complete |
+| COMP-03 | Phase 3 | Complete |
+| JOB-01 | Phase 4 | Complete |
+| JOB-02 | Phase 4 | Complete |
+| JOB-03 | Phase 4 | Complete |
+| JOB-04 | Phase 4 | Complete |
+| SWIPE-01 | Phase 5 | Complete |
+| SWIPE-02 | Phase 5 | Complete |
+| SWIPE-03 | Phase 5 | Complete |
+| SWIPE-04 | Phase 5 | Complete |
 | REC-01 | Phase 6 | Complete |
 | REC-02 | Phase 6 | Complete |
 | REC-03 | Phase 6 | Complete |
@@ -136,17 +158,36 @@
 | CHAT-02 | Phase 8 | Complete |
 | CHAT-03 | Phase 8 | Complete |
 | CHAT-04 | Phase 8 | Complete |
-| ADMIN-01 | Phase 3 | Pending |
-| ADMIN-02 | Phase 3 | Pending |
-| ADMIN-03 | Phase 3 | Pending |
-| SEC-01 | All Phases | Pending |
-| SEC-02 | All Phases | Pending |
+| ADMIN-01 | Phase 3 | Complete |
+| ADMIN-02 | Phase 3 | Complete |
+| ADMIN-03 | Phase 3 | Complete |
+| SEC-01 | All Phases | Complete |
+| SEC-02 | All Phases | Complete |
 | SEC-03 | Phase 5, 7 | Complete |
-| SEC-04 | Phase 2 | Pending |
-| SEC-05 | Phase 2 | Pending |
-| SEC-06 | Phase 2 | Pending |
-| SEC-07 | Phase 1 | Pending |
-| ARCH-01 | All Phases | Pending |
-| ARCH-02 | All Phases | Pending |
-| ARCH-03 | All Phases | Pending |
-| ARCH-04 | All Phases | Pending |
+| SEC-04 | Phase 2 | Complete |
+| SEC-05 | Phase 2 | Complete |
+| SEC-06 | Phase 2 | Complete |
+| SEC-07 | Phase 1 | Complete |
+| ARCH-01 | All Phases | Complete |
+| ARCH-02 | All Phases | Complete |
+| ARCH-03 | All Phases | Complete |
+| ARCH-04 | All Phases | Complete |
+
+### v2.0 (In Progress)
+
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| ARCH-05 | TBD | Pending |
+| ARCH-06 | TBD | Pending |
+| ARCH-07 | TBD | Pending |
+| ARCH-08 | TBD | Pending |
+| ARCH-09 | TBD | Pending |
+| ARCH-10 | TBD | Pending |
+| ARCH-11 | TBD | Pending |
+| ARCH-12 | TBD | Pending |
+| ARCH-13 | TBD | Pending |
+| TEST-01 | TBD | Pending |
+| TEST-02 | TBD | Pending |
+| TEST-03 | TBD | Pending |
+| MIGRATE-01 | TBD | Pending |
+| MIGRATE-02 | TBD | Pending |
