@@ -10,9 +10,15 @@ export class CompanyRepository {
   }
 
   async adjustCredits(companyId: string, delta: number) {
-    return prisma.company.update({
-      where: { id: companyId },
-      data: { credits: { increment: delta } },
+    return prisma.$transaction(async (tx) => {
+      const updated = await tx.company.update({
+        where: { id: companyId },
+        data: { credits: { increment: delta } },
+      })
+      await tx.creditTransaction.create({
+        data: { companyId, amount: delta, reason: 'admin_grant' },
+      })
+      return updated
     })
   }
 }
