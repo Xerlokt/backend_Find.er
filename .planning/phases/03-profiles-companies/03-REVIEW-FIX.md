@@ -1,67 +1,41 @@
 ---
 phase: 03-profiles-companies
-fixed_at: 2026-04-20T00:00:00Z
+fixed_at: 2026-05-04T00:00:00Z
 review_path: .planning/phases/03-profiles-companies/03-REVIEW.md
 iteration: 1
-findings_in_scope: 5
-fixed: 5
+findings_in_scope: 2
+fixed: 2
 skipped: 0
 status: all_fixed
 ---
 
 # Phase 03: Code Review Fix Report
 
-**Fixed at:** 2026-04-20T00:00:00Z
+**Fixed at:** 2026-05-04T00:00:00Z
 **Source review:** .planning/phases/03-profiles-companies/03-REVIEW.md
 **Iteration:** 1
 
 **Summary:**
-- Findings in scope: 5 (CR-01, WR-01, WR-02, WR-03, WR-04)
-- Fixed: 5
+- Findings in scope: 2 (CR-01, WR-01; IN-01 excluded by fix_scope=critical_warning)
+- Fixed: 2
 - Skipped: 0
 
 ## Fixed Issues
 
-### CR-01: Race condition in `CompanyService.adjustCredits` — credits can go negative under concurrent load
+### CR-01: TOCTOU race condition in `adjustCredits` — credits can still go negative under concurrent load
 
-**Files modified:** `src/modules/company/company.service.ts`, `src/modules/admin/admin.service.ts`
-**Commit:** f5cd889
-**Applied fix:** Both `CompanyService.adjustCredits` and `AdminService.adjustCredits` now wrap the entire guard + update sequence inside `prisma.$transaction(async (tx) => { ... })`. The balance check (`credits + delta < 0`) and the `company.update` call are executed in the same transaction, eliminating the race condition. A `reason` parameter (default `'admin_grant'`) was also added to both methods (see WR-03 below, handled in the same commit).
+**Files modified:** `src/modules/company/company.repository.ts`, `src/modules/company/company.service.ts`, `tests/unit/company.service.test.ts`
+**Commit:** 21a3a72
+**Applied fix:** Moved the balance guard (`company.credits + delta < 0`) and the NOT_FOUND check from the service layer into the body of `prisma.$transaction` inside `CompanyRepository.adjustCredits`. The guard now reads a consistent snapshot via `tx.company.findUnique` within the same transaction, so no concurrent write can interleave between the read and the update. The service's `adjustCredits` was simplified to a single delegation call, removing the separate `findById` pre-fetch that created the TOCTOU window.
 
----
+### WR-01: `reason` hardcoded to `'admin_grant'` — audit log is inaccurate for all non-admin callers
 
-### WR-01: No upper bound on pagination `limit` parameter — allows unbounded DB scan
-
-**Files modified:** `src/modules/admin/admin.routes.ts`
-**Commit:** e93e165
-**Applied fix:** Added `ListUsersQuerySchema` using `z.coerce.number().int().positive().max(100).default(20)` for `limit` and `z.coerce.number().int().positive().default(1)` for `page`. The handler now calls `ListUsersQuerySchema.parse(request.query)` instead of raw `Number(...)` extraction, capping `limit` at 100 and rejecting non-positive values via Zod.
+**Files modified:** `src/modules/company/company.repository.ts`, `src/modules/company/company.service.ts`, `tests/unit/company.service.test.ts`
+**Commit:** 21a3a72
+**Applied fix:** Added `reason: string = 'admin_grant'` parameter to both `CompanyRepository.adjustCredits` and `CompanyService.adjustCredits`. The `CreditTransaction` record now uses the passed-in reason rather than the hardcoded literal. Existing callers (`company.routes.ts` and `admin.routes.ts` via `AdminService.adjustCredits`) continue to work without changes — `AdminService` already passes `'admin_grant'` explicitly, and the default value covers all remaining call sites. Unit tests were updated to assert the three-argument call to `repo.adjustCredits`, cover the new `reason` forwarding behaviour, and verify that errors thrown by the repository propagate cleanly through the service; all 7 tests pass.
 
 ---
 
-### WR-02: `(request.query as any)` cast — `NaN` silently accepted by Prisma, empty results returned
-
-**Files modified:** `src/modules/admin/admin.routes.ts`
-**Commit:** e93e165
-**Applied fix:** Resolved together with WR-01. The `(request.query as any)` casts on lines 18-19 were replaced by `ListUsersQuerySchema.parse(request.query)`, which uses `z.coerce.number()` to safely parse strings to numbers and rejects `undefined`/non-numeric input instead of silently producing `NaN`.
-
----
-
-### WR-03: CreditTransaction audit record is never written when credits are adjusted
-
-**Files modified:** `src/modules/company/company.service.ts`, `src/modules/admin/admin.service.ts`
-**Commit:** f5cd889
-**Applied fix:** A `tx.creditTransaction.create({ data: { companyId, amount: delta, reason } })` call was added inside the same `$transaction` block as the credit update in both service methods. Both methods now accept an optional `reason: string` parameter (default `'admin_grant'`), making the audit record available for all future call sites.
-
----
-
-### WR-04: Integration tests do not cover unauthenticated access (missing 401 assertions)
-
-**Files modified:** `tests/integration/company.test.ts`, `tests/integration/candidate.test.ts`, `tests/integration/recruiter.test.ts`
-**Commit:** a9c8c92
-**Applied fix:** Added one top-level `it('401 para requisição sem Authorization header', ...)` test to each of the three integration test files. Each test sends a GET request to the module's primary protected route without an `Authorization` header and asserts `response.status` equals `401`.
-
----
-
-_Fixed: 2026-04-20T00:00:00Z_
+_Fixed: 2026-05-04T00:00:00Z_
 _Fixer: Claude (gsd-code-fixer)_
 _Iteration: 1_
