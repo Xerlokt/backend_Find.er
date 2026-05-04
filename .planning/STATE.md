@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Phase 08 gap closure plan 08-04 executed — all 12 chat integration tests GREEN with real assertions
-last_updated: "2026-05-03T21:00:00.000Z"
-last_activity: 2026-05-03 -- Phase 08 Plan 04 complete — replaced 6 stub tests with real WS + credit-unlock assertions; all 12 integration tests GREEN; project v1.0 milestone complete
+stopped_at: Phase 03 gap closure plan 03-04 executed — CompanyService.adjustCredits Clean Architecture violation fixed; 107 unit tests GREEN
+last_updated: "2026-05-04T21:59:08Z"
+last_activity: 2026-05-04 -- Phase 03 Plan 04 (gap closure) complete — CompanyService no longer imports prisma directly; $transaction moved to CompanyRepository; 6 company service unit tests all GREEN; 107 total unit tests passing
 progress:
   total_phases: 8
   completed_phases: 8

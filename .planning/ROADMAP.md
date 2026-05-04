@@ -73,6 +73,7 @@ Plans:
 - [x] 03-01-PLAN.md — Prisma migration (salaryExpectation), CandidateRepository + CandidateService + candidateRoutes (PUT/GET /candidates/me) — TDD
 - [x] 03-02-PLAN.md — CompanyRepository + CompanyService + companyRoutes (POST /companies, GET /companies/:id, PATCH /companies/admin/:id/credits) — TDD
 - [x] 03-03-PLAN.md — RecruiterRepository + RecruiterService + recruiterRoutes (PUT/GET /recruiters/me) + AdminService + adminRoutes (GET /admin/users, GET /admin/users/:id, PATCH /admin/companies/:id/credits) — TDD
+- [x] 03-04-PLAN.md — Gap closure: CompanyService.adjustCredits Clean Architecture fix ($transaction movido para CompanyRepository); 6 unit tests GREEN
 
 ### Phase 4: Jobs
 **Goal**: Recruiters can manage the full lifecycle of job postings; expired jobs deactivate automatically
