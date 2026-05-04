@@ -1,8 +1,8 @@
 ---
 phase: 08-chat
-reviewed: 2026-05-03T00:00:00Z
+reviewed: 2026-05-03T12:00:00Z
 depth: standard
-files_reviewed: 15
+files_reviewed: 16
 files_reviewed_list:
   - src/shared/interfaces/chat.interface.ts
   - src/modules/chat/chat.repository.ts
@@ -19,19 +19,20 @@ files_reviewed_list:
   - tests/helpers/factories.ts
   - tests/unit/swipe.service.test.ts
   - tests/unit/credit.service.test.ts
+  - tests/integration/chat.test.ts (re-reviewed: plan 08-04 gap closure)
 findings:
   critical: 2
-  warning: 5
-  info: 4
-  total: 11
+  warning: 6
+  info: 5
+  total: 13
 status: issues_found
 ---
 
 # Phase 08: Code Review Report
 
-**Reviewed:** 2026-05-03T00:00:00Z
+**Reviewed:** 2026-05-03T12:00:00Z
 **Depth:** standard
-**Files Reviewed:** 15
+**Files Reviewed:** 15 (+ 1 re-reviewed after plan 08-04 gap closure)
 **Status:** issues_found
 
 ## Summary
@@ -40,7 +41,9 @@ This phase implements the full chat domain: a `ChatRepository`, `ChatService`, `
 
 Two critical issues were found: an unchecked null-dereference in `ChatService.verifyParticipant` that will crash if the chat's `candidate` or `job.recruiter` relation is absent (which Prisma returns as `null` for missing related records), and a content-length bypass in the WebSocket handler where the `content` field length is validated by Zod before JSON parsing, but the raw `rawData` buffer itself is never size-capped, opening a memory DoS vector.
 
-Five warnings cover: the in-memory WebSocket connection store being incompatible with multi-process deployments with no documentation of the limitation; a TOCTOU race condition in the credits unlock flow that creates a chat even when `executeUnlock` fails; a missing role guard on the WebSocket route that allows ADMIN-role users to join chats; the `listChats` method performing unchecked property access on `chat.candidate` and `chat.job.company` that will throw if relations are missing; and the integration test suite being mostly stubs with no real WS assertions, leaving the critical recruiter-first rule untested at the integration level.
+Five warnings cover: the in-memory WebSocket connection store being incompatible with multi-process deployments with no documentation of the limitation; a TOCTOU race condition in the credits unlock flow that creates a chat even when `executeUnlock` fails; a missing role guard on the WebSocket route that allows ADMIN-role users to join chats; the `listChats` method performing unchecked property access on `chat.candidate` and `chat.job.company` that will throw if relations are missing; and a flaky timing dependency in the message-persistence integration test.
+
+**Plan 08-04 update (2026-05-03):** WR-05 (integration test suite mostly stubs) has been resolved. Plan 08-04 replaced all but one stub with real WebSocket and REST assertions. The one remaining `expect(true).toBe(true)` stub (line 68 — idempotency test) is permitted by design per the plan. All five WS test cases now call `ws.terminate()` to prevent Jest open handles, and all five use the correct `as unknown as WS` cast for `injectWS` return values. Test isolation is correct — each `it` block builds and closes its own `app` instance. One new Warning (WR-06) was identified in the updated test file: a timing assumption in the message-persistence test that risks flakiness in slow CI environments. One new Info item (IN-05) was identified regarding unnecessary `setupChatWorld` setup in the CHAT-02 swipe test.
 
 ---
 
@@ -200,21 +203,56 @@ export interface IChatService {
 
 ---
 
-### WR-05: Integration test suite is mostly stubs — critical paths untested
+### WR-05: ~~Integration test suite is mostly stubs — critical paths untested~~ RESOLVED by plan 08-04
 
-**File:** `tests/integration/chat.test.ts:65-158`
+**File:** `tests/integration/chat.test.ts`
 
-**Issue:** The majority of the integration test cases are stubs (`expect(true).toBe(true)`). The following business-critical scenarios have no real assertions:
-- Chat auto-created on credit unlock (line 71-78)
-- Recruiter-first rule via WebSocket (line 82-87)
-- WebSocket connection establishment and rejection (lines 89-99)
-- Message persistence after WebSocket send (lines 101-110)
-- Invalid WebSocket payload handling (lines 107-110)
-- `readAt` marking on message fetch (lines 141-144)
+**Resolution (2026-05-03, plan 08-04):** All formerly-stubbed test cases now have real WebSocket and REST assertions. The one remaining `expect(true).toBe(true)` at line 68 (idempotency test) is a permitted stub per the gap closure plan. All WS tests call `ws.terminate()` and all use the correct `as unknown as WS` type cast. WR-05 is closed.
 
-Only 3 of the 10 `it` blocks contain real assertions. The recruiter-first rule (`RECRUITER_MUST_INITIATE`) is covered in unit tests but not at the integration level, meaning an error in the route layer (e.g., incorrect user ID extraction from the JWT vs. the participant check) would not be caught.
+---
 
-**Fix:** Implement real WebSocket test cases using the `ws` npm package (or `@fastify/websocket`'s test utilities) for the critical WS paths. At minimum, the recruiter-first rule and the 403 rejection for non-participants should be integration-tested before this phase is marked complete.
+### WR-06: Timing assumption in message-persistence test risks CI flakiness
+
+**File:** `tests/integration/chat.test.ts:162`
+
+**Issue:** The "message persisted to DB after WS send" test (lines 149–167) waits for the broadcast echo over WebSocket (which confirms the server has processed the message) and then immediately waits an additional 100ms before querying Prisma:
+
+```typescript
+await new Promise<void>((resolve) => {
+  ws.once('message', () => resolve())
+  ws.send(JSON.stringify({ content: 'Persist me' }))
+})
+// Brief settle for Prisma transaction flush
+await new Promise((r) => setTimeout(r, 100))
+const count = await prisma.message.count({ where: { chatId: chat.id } })
+expect(count).toBe(1)
+```
+
+If the server persists the message to the DB *before* broadcasting (persist-then-broadcast ordering), the echo arriving at the client is already proof that the DB write completed. The subsequent `setTimeout(100)` is redundant and the test should pass reliably without it.
+
+If the server broadcasts *before* persisting (broadcast-then-persist ordering), the 100ms is an arbitrary delay that will be fragile on slow CI runners (e.g., a congested GitHub Actions runner may take >100ms to flush a Prisma transaction). In that case the correct fix is to fix the server ordering, not the test delay.
+
+The comment "Brief settle for Prisma transaction flush" suggests the author is uncertain about the server's persist/broadcast ordering — this uncertainty should be resolved at the source.
+
+**Fix:** Confirm the server persists before broadcasting. If it does, remove the `setTimeout`. If it does not, invert the server ordering so the DB write is atomic before the echo is sent:
+
+```typescript
+// In the WS handler — persist first, then broadcast
+const saved = await chatService.sendMessage(chatId, userId, content)
+socket.send(JSON.stringify(saved))         // echo back to sender
+broadcastToChat(chatId, saved, userId)     // broadcast to other participants
+```
+
+With persist-first ordering, the test can be simplified:
+```typescript
+await new Promise<void>((resolve) => {
+  ws.once('message', () => resolve())
+  ws.send(JSON.stringify({ content: 'Persist me' }))
+})
+// No setTimeout needed — echo arrival proves DB write completed
+const count = await prisma.message.count({ where: { chatId: chat.id } })
+expect(count).toBe(1)
+```
 
 ---
 
@@ -250,16 +288,31 @@ Only 3 of the 10 `it` blocks contain real assertions. The recruiter-first rule (
 
 ---
 
-### IN-04: Commented-out debug/placeholder stub tests lower test confidence metrics
+### IN-04: ~~Placeholder stub tests lower test confidence metrics~~ RESOLVED by plan 08-04
 
-**File:** `tests/integration/chat.test.ts:65-158`
+**File:** `tests/integration/chat.test.ts`
 
-**Issue:** Placeholder `it` blocks that contain only `expect(true).toBe(true)` will always pass and will be counted as passing tests in CI, giving a false signal of test coverage. If a coverage gate is added later, these stubs inflate the count.
-
-**Fix:** Mark incomplete tests with `it.todo('description')` instead of `it('...', () => expect(true).toBe(true))`. `it.todo` is shown explicitly in Jest output as pending and does not inflate the passing count.
+**Resolution (2026-05-03, plan 08-04):** All but one stub has been replaced with real assertions. The one remaining stub (line 68, idempotency test) is documented with a comment and is a permitted stub per the plan. IN-04 is closed.
 
 ---
 
-_Reviewed: 2026-05-03T00:00:00Z_
+### IN-05: Unnecessary `setupChatWorld` in CHAT-02 swipe test creates excess DB fixtures
+
+**File:** `tests/integration/chat.test.ts:50`
+
+**Issue:** The "201 with chatId when candidate swipes LIKE" test calls `setupChatWorld(app)` at line 50, which creates a full world (candidate, recruiter, company, job, chat, both tokens). The test then immediately creates a *second* recruiter, job, and candidate (lines 51–56) to run the actual swipe assertion against. From `setupChatWorld`, only `company` is reused (line 54); the candidate, recruiter profile, job, chat, and tokens from the world setup are discarded (destructured as `_cp`, `recUser`, `recProfile`, `recUser` — all unused).
+
+This creates 5–6 unnecessary DB rows per test run, which is minor but adds latency in a DB-backed integration suite. The `_cp` prefix on the destructured candidate correctly signals intentional non-use, but the other unused names (`recUser`, `recProfile`) are not prefixed with `_`, which may trigger lint warnings depending on the project's ESLint config.
+
+**Fix:** Extract only `company` from `setupChatWorld`, or create a slimmer `setupCompany` factory that returns only a company with credits. Alternatively, prefix all unused destructured names with `_` to signal intent and suppress lint:
+
+```typescript
+const { company, candProfile: _cp, recUser: _ru, recProfile: _rp } = await setupChatWorld(app)
+```
+
+---
+
+_Reviewed: 2026-05-03T12:00:00Z_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: standard_
+_Re-review note: tests/integration/chat.test.ts re-reviewed after plan 08-04 gap closure. WR-05 and IN-04 closed; WR-06 and IN-05 added._
