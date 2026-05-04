@@ -67,7 +67,7 @@ Plans:
   4. Admin can set and adjust a company's credit balance
   5. Admin routes return 403 for non-ADMIN roles
   6. Admin can list all users and view individual profiles
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 03-01-PLAN.md — Prisma migration (salaryExpectation), CandidateRepository + CandidateService + candidateRoutes (PUT/GET /candidates/me) — TDD
@@ -171,7 +171,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-04-18 |
 | 2. Authentication | 3/3 | Complete | 2026-04-18 |
-| 3. Profiles & Companies | 3/3 | Complete | 2026-04-19 |
+| 3. Profiles & Companies | 4/4 | Complete | 2026-04-19 |
 | 4. Jobs | 4/4 | Complete | 2026-04-25 |
 | 5. Swipe | 3/3 | Complete | 2026-05-01 |
 | 6. Recommendation | 3/3 | Complete | 2026-05-02 |
