@@ -1,0 +1,42 @@
+Summary of all failing tests
+ FAIL  tests/unit/company.service.test.ts
+  ● CompanyService › adjustCredits › chama repo.findById e repo.adjustCredits quando saldo é suficiente
+
+    AppError: Company not found
+
+      21 |     return prisma.$transaction(async (tx) => {
+      22 |       const company = await tx.company.findUnique({ where: { id: companyId } })
+    > 23 |       if (!company) throw new AppError('Company not found', 404, 'NOT_FOUND')
+         |                           ^
+      24 |       if (company.credits + delta < 0) {
+      25 |         throw new AppError('Insufficient credits', 400, 'INSUFFICIENT_CREDITS')
+      26 |       }
+
+      at src/modules/company/company.service.ts:23:27
+      at async Proxy._transactionWithCallback (node_modules/@prisma/client/src/runtime/getPrismaClient.ts:785:18)
+      at async Object.<anonymous> (tests/unit/company.service.test.ts:64:22)
+
+  ● CompanyService › adjustCredits › lança AppError 400 INSUFFICIENT_CREDITS quando saldo ficaria negativo
+
+    expect(received).rejects.toMatchObject(expected)
+
+    - Expected  - 2
+    + Received  + 2
+
+      Object {
+    -   "code": "INSUFFICIENT_CREDITS",
+    -   "statusCode": 400,
+    +   "code": "NOT_FOUND",
+    +   "statusCode": 404,
+      }
+
+      73 |       repo.findById.mockResolvedValue(company as any)
+      74 |
+    > 75 |       await expect(service.adjustCredits('company-1', -999)).rejects.toMatchObject({
+         |                                                                      ^
+      76 |         statusCode: 400,
+      77 |         code: 'INSUFFICIENT_CREDITS',
+      78 |       })
+
+      at Object.toMatchObject (node_modules/expect/build/index.js:2155:20)
+      at Object.<anonymous> (tests/unit/company.service.test.ts:75:70)
