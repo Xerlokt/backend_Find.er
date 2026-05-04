@@ -22,10 +22,11 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 - [x] Score de fit calculado via Neo4j: habilidades, cargo, área, localização, modo de trabalho, pretensão salarial — Validated in Phase 6: Recommendation (REC-01)
 - [x] Empresa pode desbloquear candidato censurado pagando créditos da plataforma — Validated in Phase 7: Credits (CREDIT-01, CREDIT-02)
 - [x] Sistema de créditos da plataforma para desbloqueio de candidatos — Validated in Phase 7: Credits (CREDIT-03, CREDIT-04)
+- [x] Chat em tempo real entre candidato e recrutador após match (candidato deu sim) — Validated in Phase 8: Chat (CHAT-01, CHAT-02, CHAT-03, CHAT-04)
 
 ### Active
 
-- [ ] Chat em tempo real entre candidato e recrutador após match (candidato deu sim)
+(none — all v1.0 requirements validated)
 
 ### Out of Scope
 
@@ -57,7 +58,7 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 | Neo4j para recomendação | Score de fit requer travessia de grafo de profissões/habilidades | Validated Phase 6 — 5-factor fit score live |
 | PostgreSQL via Prisma para dados relacionais | Dados estruturados (usuários, vagas, swipes, créditos) | Validated — atomic $transaction for credits/swipes |
 | Fastify em vez de Express | Performance superior, TypeScript nativo, schema validation built-in | Validated — all 7 phases built on Fastify 4 |
-| Chat via WebSocket (@fastify/websocket) | Real-time sem overhead de polling | Pending — Phase 8 |
+| Chat via WebSocket (@fastify/websocket) | Real-time sem overhead de polling | Validated Phase 8 — WS gateway + REST history + auto-create on match/unlock live |
 | Créditos apenas para empresas | Candidatos não devem ter barreira financeira para buscar emprego | Validated Phase 7 — unlock economy live |
 
 ## Evolution
@@ -78,4 +79,4 @@ Este documento evolui a cada transição de fase e marco de milestone.
 4. Atualizar Context com estado atual
 
 ---
-*Last updated: 2026-05-02 after Phase 07 completion*
+*Last updated: 2026-05-03 after Phase 08 completion — v1.0 milestone complete*
