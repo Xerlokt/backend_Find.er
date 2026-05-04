@@ -213,8 +213,21 @@ describe('Chat Integration Tests', () => {
     })
 
     it('GET /chats/:chatId/messages marks readAt on other participant messages', async () => {
-      // Stub — full assertion wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat, recUser, candToken } = await setupChatWorld(app)
+      // Recruiter sends a message (readAt = null by default)
+      const msg = await createMessage(chat.id, recUser.id, { content: 'Mark me as read' })
+      expect(msg.readAt).toBeNull()
+      // Candidate fetches messages — this should trigger markMessagesRead for messages sent by recUser
+      const res = await supertest(app.server)
+        .get(`/chats/${chat.id}/messages`)
+        .set('Authorization', `Bearer ${candToken}`)
+      expect(res.status).toBe(200)
+      // Verify readAt was updated in DB
+      const updated = await prisma.message.findUnique({ where: { id: msg.id } })
+      expect(updated?.readAt).not.toBeNull()
+      await app.close()
     })
 
     it('GET /chats/:chatId/messages returns 403 for non-participant', async () => {
