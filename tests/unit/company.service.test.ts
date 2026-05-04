@@ -55,32 +55,42 @@ describe('CompanyService', () => {
   })
 
   describe('adjustCredits', () => {
-    it('chama repo.findById e repo.adjustCredits quando saldo é suficiente', async () => {
-      const company = { id: 'company-1', name: 'Acme', credits: 0 }
+    it('delega para repo.adjustCredits com companyId, delta e reason padrão', async () => {
       const updated = { id: 'company-1', name: 'Acme', credits: 50 }
-      repo.findById.mockResolvedValue(company as any)
       repo.adjustCredits.mockResolvedValue(updated as any)
 
       const result = await service.adjustCredits('company-1', 50)
 
-      expect(repo.findById).toHaveBeenCalledWith('company-1')
-      expect(repo.adjustCredits).toHaveBeenCalledWith('company-1', 50)
+      expect(repo.findById).not.toHaveBeenCalled()
+      expect(repo.adjustCredits).toHaveBeenCalledWith('company-1', 50, 'admin_grant')
       expect(result).toEqual(updated)
     })
 
-    it('lança AppError 400 INSUFFICIENT_CREDITS quando saldo ficaria negativo', async () => {
-      const company = { id: 'company-1', name: 'Acme', credits: 0 }
-      repo.findById.mockResolvedValue(company as any)
+    it('delega para repo.adjustCredits com reason personalizado', async () => {
+      const updated = { id: 'company-1', name: 'Acme', credits: 40 }
+      repo.adjustCredits.mockResolvedValue(updated as any)
+
+      const result = await service.adjustCredits('company-1', -10, 'unlock')
+
+      expect(repo.adjustCredits).toHaveBeenCalledWith('company-1', -10, 'unlock')
+      expect(result).toEqual(updated)
+    })
+
+    it('propaga AppError 400 INSUFFICIENT_CREDITS lançado pelo repositório', async () => {
+      repo.adjustCredits.mockRejectedValue(
+        new AppError('Insufficient credits', 400, 'INSUFFICIENT_CREDITS'),
+      )
 
       await expect(service.adjustCredits('company-1', -999)).rejects.toMatchObject({
         statusCode: 400,
         code: 'INSUFFICIENT_CREDITS',
       })
-      expect(repo.adjustCredits).not.toHaveBeenCalled()
     })
 
-    it('lança AppError 404 NOT_FOUND quando empresa não existe', async () => {
-      repo.findById.mockResolvedValue(null)
+    it('propaga AppError 404 NOT_FOUND lançado pelo repositório', async () => {
+      repo.adjustCredits.mockRejectedValue(
+        new AppError('Company not found', 404, 'NOT_FOUND'),
+      )
 
       await expect(service.adjustCredits('non-existent', 50)).rejects.toMatchObject({
         statusCode: 404,
