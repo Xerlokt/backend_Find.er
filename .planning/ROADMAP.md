@@ -153,12 +153,13 @@ Plans:
   3. A chat room is created automatically when a company unlocks a DISLIKE candidate
   4. Messages sent via WebSocket are persisted to PostgreSQL
   5. A participant opening a chat receives the full message history via a REST endpoint
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 08-01-PLAN.md — Wave 0: @types/ws install, @@unique migration [BLOCKING], createChat/createMessage factories, unit + integration test stubs
 - [x] 08-02-PLAN.md — IChatService interface (ARCH-04), ChatRepository, ChatService (TDD: recruiter-first rule, participant check, cursor pagination) — unit tests GREEN
 - [x] 08-03-PLAN.md — chat.routes.ts (REST + WS gateway + in-memory broadcast), app.ts wiring (fastifyWebsocket + IChatService injection into SwipeService/CreditService), integration tests GREEN
+- [x] 08-04-PLAN.md — Gap closure: replace 6 stub integration tests with real WS + credit-unlock assertions — all 12 tests GREEN
 
 ## Progress
 
@@ -174,4 +175,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 | 5. Swipe | 3/3 | Complete | 2026-05-01 |
 | 6. Recommendation | 3/3 | Complete | 2026-05-02 |
 | 7. Credits | 3/3 | Complete | 2026-05-02 |
-| 8. Chat | 3/3 | Complete | 2026-05-03 |
+| 8. Chat | 4/4 | Complete | 2026-05-03 |

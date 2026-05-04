@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 08-03-PLAN.md — chat.routes.ts REST+WS, app.ts wiring, integration tests GREEN
-last_updated: "2026-05-03T19:35:00.000Z"
-last_activity: 2026-05-03 -- Phase 08 Plan 03 complete — chat.routes.ts (REST + WS gateway), app.ts wiring (fastifyWebsocket), IChatService injected into SwipeService and CreditService; all 12 chat integration tests GREEN; 22/24 suites pass (2 pre-existing failures)
+status: complete
+stopped_at: Phase 08 gap closure plan 08-04 executed — all 12 chat integration tests GREEN with real assertions
+last_updated: "2026-05-03T21:00:00.000Z"
+last_activity: 2026-05-03 -- Phase 08 Plan 04 complete — replaced 6 stub tests with real WS + credit-unlock assertions; all 12 integration tests GREEN; project v1.0 milestone complete
 progress:
   total_phases: 8
   completed_phases: 8
-  total_plans: 25
-  completed_plans: 25
+  total_plans: 26
+  completed_plans: 26
   percent: 100
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 ## Current Position
 
-Phase: 08 (chat) — COMPLETE (all 3 plans executed)
+Phase: 08 (chat) — COMPLETE (all 4 plans executed)
 Next: All phases complete — project v1.0 milestone reached
-Status: Phase 08 Plan 03 complete — chat.routes.ts REST+WS gateway, app.ts wiring with fastifyWebsocket, IChatService injected into SwipeService and CreditService; all 12 chat integration tests GREEN; TypeScript compiles clean
-Last activity: 2026-05-03 -- Phase 08 Plan 03 complete — chat module fully wired end-to-end, chatId returned on LIKE swipe and credit unlock
+Status: Phase 08 Plan 04 complete — replaced 6 expect(true).toBe(true) stubs with real integration assertions; WS connect/reject/persistence/recruiter-first/invalid-payload + credit unlock chatId + markReadAt all GREEN
+Last activity: 2026-05-03 -- Phase 08 Plan 04 complete — all 12 chat integration tests pass with real assertions; VERIFICATION.md gaps closed; project v1.0 complete
 
 Progress: [██████████] 100%
 
