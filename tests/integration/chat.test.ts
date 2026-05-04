@@ -12,6 +12,7 @@ import {
 } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../src/shared/db/prisma'
+import type { WebSocket as WS } from 'ws'
 
 async function loginUser(
   app: Awaited<ReturnType<typeof buildApp>>,
@@ -72,41 +73,114 @@ describe('Chat Integration Tests', () => {
     it('200 with chatId when recruiter unlocks DISLIKE candidate', async () => {
       const app = await buildApp({ testing: true })
       await app.ready()
-      // Stub — credits unlock endpoint must return chatId (D-03)
-      // Full implementation in Plan 03
-      expect(true).toBe(true)
+      const { candProfile, job, recToken } = await setupChatWorld(app)
+      // Unlock requires a DISLIKE swipe to exist (credits.service.ts line 23)
+      await createSwipe(candProfile.id, job.id, { direction: 'DISLIKE' })
+      const res = await supertest(app.server)
+        .post(`/jobs/${job.id}/candidates/${candProfile.id}/unlock`)
+        .set('Authorization', `Bearer ${recToken}`)
+        .send()
+      expect(res.status).toBe(201)
+      expect(typeof res.body.chatId).toBe('string')
       await app.close()
     })
   })
 
   describe('CHAT-02: Recruiter-first rule', () => {
     it('403 RECRUITER_MUST_INITIATE when candidate sends first message via WS', async () => {
-      // Stub — WS tests wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat, candToken } = await setupChatWorld(app)
+      const ws = await app.injectWS(`/chats/${chat.id}/ws`, {
+        headers: { authorization: `Bearer ${candToken}` },
+      }) as unknown as WS
+      // Candidate sends first message — recruiter has not sent any yet
+      const errorMsg = await new Promise<string>((resolve) => {
+        ws.once('message', (data) => resolve(data.toString()))
+        ws.send(JSON.stringify({ content: 'Hello first' }))
+      })
+      expect(JSON.parse(errorMsg)).toEqual({ error: 'RECRUITER_MUST_INITIATE' })
+      ws.terminate()
+      await app.close()
     })
   })
 
   describe('CHAT-01: WebSocket connection', () => {
     it('WS connects successfully with valid JWT and participant check', async () => {
-      // Stub — WS gateway wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat, recToken, recUser } = await setupChatWorld(app)
+      // Recruiter connects and sends first message — should receive broadcast back
+      const ws = await app.injectWS(`/chats/${chat.id}/ws`, {
+        headers: { authorization: `Bearer ${recToken}` },
+      }) as unknown as WS
+      const broadcastMsg = await new Promise<string>((resolve) => {
+        ws.once('message', (data) => resolve(data.toString()))
+        ws.send(JSON.stringify({ content: 'Hello from recruiter' }))
+      })
+      const parsed = JSON.parse(broadcastMsg)
+      expect(parsed).toHaveProperty('id')
+      expect(parsed).toHaveProperty('content', 'Hello from recruiter')
+      expect(parsed).toHaveProperty('senderId', recUser.id)
+      ws.terminate()
+      await app.close()
     })
 
     it('WS rejected (close 1008) when user is not a participant', async () => {
-      // Stub — WS gateway wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat } = await setupChatWorld(app)
+      const { user: stranger } = await createCandidate()
+      const strangerToken = await loginUser(app, stranger.email)
+      // injectWS resolves (upgrade succeeds at HTTP level), then handler sends close(1008)
+      const ws = await app.injectWS(`/chats/${chat.id}/ws`, {
+        headers: { authorization: `Bearer ${strangerToken}` },
+      }) as unknown as WS
+      const closeCode = await new Promise<number>((resolve) => {
+        ws.on('close', (code) => resolve(code))
+      })
+      expect(closeCode).toBe(1008)
+      ws.terminate()
+      await app.close()
     })
   })
 
   describe('CHAT-03: Message persistence', () => {
     it('message persisted to DB after WS send', async () => {
-      // Stub — WS gateway wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat, recToken } = await setupChatWorld(app)
+      const ws = await app.injectWS(`/chats/${chat.id}/ws`, {
+        headers: { authorization: `Bearer ${recToken}` },
+      }) as unknown as WS
+      // Wait for the broadcast echo — confirms persist-before-broadcast completed
+      await new Promise<void>((resolve) => {
+        ws.once('message', () => resolve())
+        ws.send(JSON.stringify({ content: 'Persist me' }))
+      })
+      // Brief settle for Prisma transaction flush
+      await new Promise((r) => setTimeout(r, 100))
+      const count = await prisma.message.count({ where: { chatId: chat.id } })
+      expect(count).toBe(1)
+      ws.terminate()
+      await app.close()
     })
 
     it('invalid WS payload (missing content) returns error response', async () => {
-      // Stub — WS gateway wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat, recToken } = await setupChatWorld(app)
+      const ws = await app.injectWS(`/chats/${chat.id}/ws`, {
+        headers: { authorization: `Bearer ${recToken}` },
+      }) as unknown as WS
+      const errorMsg = await new Promise<string>((resolve) => {
+        ws.once('message', (data) => resolve(data.toString()))
+        // Send malformed payload — missing 'content' field (fails IncomingMessageSchema)
+        ws.send(JSON.stringify({ text: 'wrong key' }))
+      })
+      expect(JSON.parse(errorMsg)).toEqual({ error: 'INVALID_PAYLOAD' })
+      ws.terminate()
+      await app.close()
     })
   })
 
@@ -139,8 +213,21 @@ describe('Chat Integration Tests', () => {
     })
 
     it('GET /chats/:chatId/messages marks readAt on other participant messages', async () => {
-      // Stub — full assertion wired in Plan 03
-      expect(true).toBe(true)
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { chat, recUser, candToken } = await setupChatWorld(app)
+      // Recruiter sends a message (readAt = null by default)
+      const msg = await createMessage(chat.id, recUser.id, { content: 'Mark me as read' })
+      expect(msg.readAt).toBeNull()
+      // Candidate fetches messages — this should trigger markMessagesRead for messages sent by recUser
+      const res = await supertest(app.server)
+        .get(`/chats/${chat.id}/messages`)
+        .set('Authorization', `Bearer ${candToken}`)
+      expect(res.status).toBe(200)
+      // Verify readAt was updated in DB
+      const updated = await prisma.message.findUnique({ where: { id: msg.id } })
+      expect(updated?.readAt).not.toBeNull()
+      await app.close()
     })
 
     it('GET /chats/:chatId/messages returns 403 for non-participant', async () => {
