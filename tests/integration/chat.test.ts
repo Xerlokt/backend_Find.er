@@ -72,9 +72,15 @@ describe('Chat Integration Tests', () => {
     it('200 with chatId when recruiter unlocks DISLIKE candidate', async () => {
       const app = await buildApp({ testing: true })
       await app.ready()
-      // Stub — credits unlock endpoint must return chatId (D-03)
-      // Full implementation in Plan 03
-      expect(true).toBe(true)
+      const { candProfile, job, recToken } = await setupChatWorld(app)
+      // Unlock requires a DISLIKE swipe to exist (credits.service.ts line 23)
+      await createSwipe(candProfile.id, job.id, { direction: 'DISLIKE' })
+      const res = await supertest(app.server)
+        .post(`/jobs/${job.id}/candidates/${candProfile.id}/unlock`)
+        .set('Authorization', `Bearer ${recToken}`)
+        .send()
+      expect(res.status).toBe(201)
+      expect(typeof res.body.chatId).toBe('string')
       await app.close()
     })
   })
