@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: complete
-stopped_at: Phase 03 gap closure plan 03-04 executed — CompanyService.adjustCredits Clean Architecture violation fixed; 107 unit tests GREEN
-last_updated: "2026-05-04T21:59:08Z"
-last_activity: 2026-05-04 -- Phase 03 Plan 04 (gap closure) complete — CompanyService no longer imports prisma directly; $transaction moved to CompanyRepository; 6 company service unit tests all GREEN; 107 total unit tests passing
+milestone: v2.0
+milestone_name: Clean Architecture Refactor
+status: in_progress
+stopped_at: Milestone v2.0 started — defining requirements
+last_updated: "2026-05-04T00:00:00Z"
+last_activity: 2026-05-04 -- Milestone v2.0 started — migrating from src/modules/ to Clean Architecture (domain/application/adapters/infrastructure)
 progress:
-  total_phases: 8
-  completed_phases: 8
-  total_plans: 27
-  completed_plans: 27
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 ## Current Position
 
-Phase: 08 (chat) — COMPLETE (all 4 plans executed)
-Next: All phases complete — project v1.0 milestone reached
-Status: Phase 08 Plan 04 complete — replaced 6 expect(true).toBe(true) stubs with real integration assertions; WS connect/reject/persistence/recruiter-first/invalid-payload + credit unlock chatId + markReadAt all GREEN
-Last activity: 2026-05-03 -- Phase 08 Plan 04 complete — all 12 chat integration tests pass with real assertions; VERIFICATION.md gaps closed; project v1.0 complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v2.0 Clean Architecture Refactor
+Last activity: 2026-05-04 -- Milestone v2.0 started — migrating from src/modules/ to 4-layer Clean Architecture
 
 Progress: [██████████] 100%
 

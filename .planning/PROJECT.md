@@ -4,6 +4,18 @@
 
 Backend completo de uma plataforma de match entre candidatos e vagas de emprego, no estilo swipe. Candidatos deslizam pelas vagas, recrutadores veem um ranking de fit dos candidatos com perfis censurados ou visíveis dependendo do swipe, e empresas podem desbloquear candidatos que deram "não" pagando créditos.
 
+## Current Milestone: v2.0 Clean Architecture Refactor
+
+**Goal:** Migrar o codebase de `src/modules/` para Clean Architecture em 4 camadas, eliminando violações de dependência e tornando use cases 100% testáveis sem banco.
+
+**Target features:**
+- Camada Domain — entities TypeScript puras + interfaces de repositório (zero imports externos)
+- Camada Application — use cases por caso de uso + ports para bcrypt, JWT e Neo4j
+- Camada Adapters — controllers + implementações de repositório (Prisma) + adapters de serviço
+- Camada Infrastructure — rotas Fastify, plugins, singletons de banco, app.ts, server.ts
+
+---
+
 ## Core Value
 
 O sistema de recomendação via Neo4j que calcula o score de fit entre candidato e vaga — sem isso, o produto não existe.
