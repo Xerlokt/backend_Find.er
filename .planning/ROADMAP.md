@@ -183,7 +183,12 @@ Plans:
   3. All port interfaces exist under `src/application/ports/` — `IHashPort`, `ITokenPort`, `IGraphPort` — with no concrete implementation
   4. `DomainError` class exists at `src/application/errors/domain.error.ts` as the sole application error type
   5. All 41 existing integration tests continue to pass after the scaffold is created (no imports changed yet)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 09-01-PLAN.md — Domain entity files: 11 pure TypeScript interfaces in src/domain/entities/, UserRole/Modality/SwipeDirection/ChatInitiator union types, zero external imports, tsc clean
+- [ ] 09-02-PLAN.md — Repository interfaces: IUserRepository, ICandidateRepository, ICompanyRepository, IRecruiterRepository, IJobRepository, ISwipeRepository, ICreditRepository, IChatRepository, IRefreshTokenRepository in src/domain/interfaces/
+- [ ] 09-03-PLAN.md — Application layer: ports (IHashPort, ITokenPort, IGraphPort) + DomainError in src/application/
 
 ### Phase 10: Infrastructure + Auth Migration
 **Goal**: The shared infrastructure files and the complete auth module are migrated into the new layer structure; the auth integration tests run against the new wiring
@@ -256,7 +261,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 9. Domain Layer Scaffold | 0/? | Not started | - |
+| 9. Domain Layer Scaffold | 1/3 | In progress | - |
 | 10. Infrastructure + Auth Migration | 0/? | Not started | - |
 | 11. Core Modules Migration | 0/? | Not started | - |
 | 12. Swipe, Credits, Recommendation, Chat Migration | 0/? | Not started | - |

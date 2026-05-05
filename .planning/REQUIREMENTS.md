@@ -86,7 +86,7 @@
 
 ### Architecture — Layer Isolation (ARCH)
 
-- [ ] **ARCH-05**: Domain entities em `src/domain/entities/` não importam nenhuma lib externa (Prisma, Fastify, bcrypt, JWT)
+- [x] **ARCH-05**: Domain entities em `src/domain/entities/` não importam nenhuma lib externa (Prisma, Fastify, bcrypt, JWT)
 - [ ] **ARCH-06**: Repository interfaces em `src/domain/interfaces/` definem contratos de acesso a dados sem implementação (portas de saída)
 - [ ] **ARCH-07**: Use cases em `src/application/use-cases/` recebem todas as dependências exclusivamente via interfaces e ports — nunca implementações concretas
 - [ ] **ARCH-08**: Ports em `src/application/ports/` definem contratos para serviços externos: `IHashPort` (bcrypt), `ITokenPort` (JWT), `IGraphPort` (Neo4j)
@@ -177,7 +177,7 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| ARCH-05 | Phase 9 | Pending |
+| ARCH-05 | Phase 9 | Complete |
 | ARCH-06 | Phase 9 | Pending |
 | ARCH-07 | Phase 12 | Pending |
 | ARCH-08 | Phase 9 | Pending |
