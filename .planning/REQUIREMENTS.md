@@ -87,9 +87,9 @@
 ### Architecture — Layer Isolation (ARCH)
 
 - [x] **ARCH-05**: Domain entities em `src/domain/entities/` não importam nenhuma lib externa (Prisma, Fastify, bcrypt, JWT)
-- [ ] **ARCH-06**: Repository interfaces em `src/domain/interfaces/` definem contratos de acesso a dados sem implementação (portas de saída)
+- [x] **ARCH-06**: Repository interfaces em `src/domain/interfaces/` definem contratos de acesso a dados sem implementação (portas de saída)
 - [ ] **ARCH-07**: Use cases em `src/application/use-cases/` recebem todas as dependências exclusivamente via interfaces e ports — nunca implementações concretas
-- [ ] **ARCH-08**: Ports em `src/application/ports/` definem contratos para serviços externos: `IHashPort` (bcrypt), `ITokenPort` (JWT), `IGraphPort` (Neo4j)
+- [x] **ARCH-08**: Ports em `src/application/ports/` definem contratos para serviços externos: `IHashPort` (bcrypt), `ITokenPort` (JWT), `IGraphPort` (Neo4j)
 - [ ] **ARCH-09**: Controllers em `src/adapters/controllers/` orquestram use cases e formatam resposta HTTP sem conter lógica de negócio
 - [ ] **ARCH-10**: Repository implementations em `src/adapters/repositories/` implementam as interfaces definidas em `src/domain/interfaces/`
 - [ ] **ARCH-11**: Service adapters em `src/adapters/services/` implementam os ports definidos em `src/application/ports/`
@@ -178,9 +178,9 @@
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
 | ARCH-05 | Phase 9 | Complete |
-| ARCH-06 | Phase 9 | Pending |
+| ARCH-06 | Phase 9 | Complete |
 | ARCH-07 | Phase 12 | Pending |
-| ARCH-08 | Phase 9 | Pending |
+| ARCH-08 | Phase 9 | Complete |
 | ARCH-09 | Phase 10 | Pending |
 | ARCH-10 | Phase 10 | Pending |
 | ARCH-11 | Phase 10 | Pending |
