@@ -187,8 +187,8 @@ Plans:
 
 Plans:
 - [x] 09-01-PLAN.md — Domain entity files: 11 pure TypeScript interfaces in src/domain/entities/, UserRole/Modality/SwipeDirection/ChatInitiator union types, zero external imports, tsc clean
-- [ ] 09-02-PLAN.md — Repository interfaces: IUserRepository, ICandidateRepository, ICompanyRepository, IRecruiterRepository, IJobRepository, ISwipeRepository, ICreditRepository, IChatRepository, IRefreshTokenRepository in src/domain/interfaces/
-- [ ] 09-03-PLAN.md — Application layer: ports (IHashPort, ITokenPort, IGraphPort) + DomainError in src/application/
+- [x] 09-02-PLAN.md — Application layer: ports (IHashPort, ITokenPort, IGraphPort) + DomainError in src/application/
+- [x] 09-03-PLAN.md — Repository interfaces: 10 files in src/domain/interfaces/ covering all modules; IUserRepository, IRefreshTokenRepository, ICandidateRepository, ICompanyRepository, IRecruiterRepository, IJobRepository, ISwipeRepository, ICreditRepository, IChatRepository, IRecommendationRepository; helper types co-located; zero @prisma/client imports; tsc clean
 
 ### Phase 10: Infrastructure + Auth Migration
 **Goal**: The shared infrastructure files and the complete auth module are migrated into the new layer structure; the auth integration tests run against the new wiring
@@ -261,7 +261,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 9. Domain Layer Scaffold | 1/3 | In progress | - |
+| 9. Domain Layer Scaffold | 3/3 | Complete | 2026-05-07 |
 | 10. Infrastructure + Auth Migration | 0/? | Not started | - |
 | 11. Core Modules Migration | 0/? | Not started | - |
 | 12. Swipe, Credits, Recommendation, Chat Migration | 0/? | Not started | - |

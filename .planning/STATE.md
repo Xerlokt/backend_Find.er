@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Clean Architecture Refactor
 status: in_progress
-stopped_at: Phase 9 Plan 01 complete — domain entities scaffold done; 09-02 and 09-03 remaining
-last_updated: "2026-05-05T22:36:00Z"
-last_activity: 2026-05-05 -- Plan 09-01 executed — 11 domain entity files created in src/domain/entities/
+stopped_at: Phase 9 Plan 03 complete — all 3 domain scaffold plans done; Phase 9 complete
+last_updated: "2026-05-07T00:30:26Z"
+last_activity: 2026-05-07 -- Plan 09-03 executed — 10 repository interface files created in src/domain/interfaces/
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 9 — Domain Layer Scaffold
-Plan: 01 complete, 02–03 remaining
-Status: In progress — plan 09-01 done
-Last activity: 2026-05-05 -- Plan 09-01 complete — 11 domain entity files created, zero external imports, tsc clean
+Phase: 9 — Domain Layer Scaffold (COMPLETE)
+Plan: All 3 plans complete (09-01, 09-02, 09-03)
+Status: Phase 9 complete — ready to start Phase 10
+Last activity: 2026-05-07 -- Plan 09-03 complete — 10 repository interface files created in src/domain/interfaces/, tsc clean
 
-Progress: [███░░░░░░░] 33% (v2.0 milestone, 1/3 plans in phase 9)
+Progress: [██████████] 100% (v2.0 Phase 9 complete, 3/3 plans done)
 
 ## Performance Metrics
 
@@ -98,6 +98,9 @@ Recent decisions affecting current work:
 - 08-03: fastifyWebsocket registered before chatRoutes in buildApp (RESEARCH Pitfall 1 — plugin must precede any route using websocket: true)
 - v2.0 roadmap: Migration strategy is module-by-module (not layer-by-layer) — keeps 41 integration tests green after every phase; Phase 9 creates the skeleton before any imports change
 - 09-01: Domain entities use TypeScript string union types (not enum keyword) — matches plan-architecture.md canonical examples; Job entity includes recruiterId field from Prisma schema
+- 09-03: Repository interfaces derive ALL methods verbatim from existing src/modules/*/*.repository.ts files (D-02) — no ad-hoc method invention; method contracts locked before Phase 10 adapter implementations begin
+- 09-03: IRefreshTokenRepository created per D-03 — required by auth use cases; helper types (SwipeWithCandidateInfo, RecruiterWithCompany, UnlockResult, ChatParticipants, ChatListItem, FitScoreInput, FitScoreJobInput) co-located with consuming interface files
+- 09-03: Zero Prisma/modules/shared imports in src/domain/interfaces/ — ARCH-06 enforced; all types come exclusively from src/domain/entities/
 
 ### v2.0 Architecture Context
 
@@ -135,6 +138,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-05T22:36:00Z
-Stopped at: Completed 09-01-PLAN.md — domain entity scaffold complete; run 09-02 next
+Last session: 2026-05-07T00:30:26Z
+Stopped at: Completed 09-03-PLAN.md — Phase 9 Domain Layer Scaffold complete; run Phase 10 next
 Resume file: None
