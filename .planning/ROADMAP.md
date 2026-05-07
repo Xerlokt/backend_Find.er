@@ -201,7 +201,13 @@ Plans:
   4. Auth use cases (`register`, `login`, `refresh-token`, `logout`, `login-with-google`) live under `src/application/use-cases/auth/` and receive all dependencies via `IUserRepository`, `IHashPort`, `ITokenPort` — no direct Prisma or bcrypt imports
   5. Auth repository implementation `src/adapters/repositories/user.repository.ts` implements `IUserRepository` and maps Prisma rows to domain entities
   6. All 41 integration tests remain green after the auth module is fully migrated
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Infrastructure copies (database + plugins) + IRefreshTokenRepository.revokeByHash extension + errorHandler DomainError branch
+- [ ] 10-02-PLAN.md — Adapter services (BcryptAdapter, JwtAdapter) + repository implementations (UserRepository, RefreshTokenRepository)
+- [ ] 10-03-PLAN.md — Auth use cases: RegisterUseCase, LoginUseCase, RefreshTokenUseCase, LogoutUseCase, LoginWithGoogleUseCase
+- [ ] 10-04-PLAN.md — AuthController + auth.routes.ts (new) + app.ts import swap + integration test verification
 
 ### Phase 11: Core Modules Migration
 **Goal**: Candidate, company, recruiter, job, and admin modules are fully migrated; repository implementations are tested against real DB
@@ -262,7 +268,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 9. Domain Layer Scaffold | 3/3 | Complete | 2026-05-07 |
-| 10. Infrastructure + Auth Migration | 0/? | Not started | - |
+| 10. Infrastructure + Auth Migration | 0/4 | Not started | - |
 | 11. Core Modules Migration | 0/? | Not started | - |
 | 12. Swipe, Credits, Recommendation, Chat Migration | 0/? | Not started | - |
 | 13. Cleanup + Unit Test Layer | 0/? | Not started | - |
