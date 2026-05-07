@@ -2,12 +2,19 @@ import { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import { ZodError } from 'zod'
 import { Prisma } from '@prisma/client'
 import { AppError } from './AppError'
+import { DomainError } from '../../application/errors/domain.error'
 
 export function errorHandler(
   error: FastifyError | AppError | Error,
   _request: FastifyRequest,
   reply: FastifyReply,
 ): void {
+  // DomainError — clean architecture use case errors
+  if (error instanceof DomainError) {
+    reply.status(error.statusCode).send({ error: error.message, code: error.code })
+    return
+  }
+
   // AppError — domain errors with explicit status
   if (error instanceof AppError) {
     reply.status(error.statusCode).send({ error: error.message, code: error.code })
