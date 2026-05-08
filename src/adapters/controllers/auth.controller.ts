@@ -10,6 +10,9 @@ import { RefreshTokenRepository } from '../repositories/refresh-token.repository
 import { BcryptAdapter } from '../services/bcrypt.adapter'
 import { JwtAdapter } from '../services/jwt.adapter'
 import { DomainError } from '../../application/errors/domain.error'
+import { IUserRepository } from '../../domain/interfaces/user.repository.interface'
+import { IRefreshTokenRepository } from '../../domain/interfaces/refresh-token.repository.interface'
+import { IHashPort } from '../../application/ports/hash.port'
 
 const RegisterBodySchema = z.object({
   email: z.string().email(),
@@ -36,12 +39,26 @@ const GoogleBodySchema = z.object({
 })
 
 export class AuthController {
+  private readonly userRepo: IUserRepository
+  private readonly refreshTokenRepo: IRefreshTokenRepository
+  private readonly hash: IHashPort
+
+  constructor(
+    userRepo?: IUserRepository,
+    refreshTokenRepo?: IRefreshTokenRepository,
+    hash?: IHashPort,
+  ) {
+    this.userRepo = userRepo ?? new UserRepository()
+    this.refreshTokenRepo = refreshTokenRepo ?? new RefreshTokenRepository()
+    this.hash = hash ?? new BcryptAdapter()
+  }
+
   async register(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = RegisterBodySchema.parse(request.body)
     const useCase = new RegisterUseCase(
-      new UserRepository(),
-      new RefreshTokenRepository(),
-      new BcryptAdapter(),
+      this.userRepo,
+      this.refreshTokenRepo,
+      this.hash,
       new JwtAdapter(request.server),
     )
     try {
@@ -59,9 +76,9 @@ export class AuthController {
   async login(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = LoginBodySchema.parse(request.body)
     const useCase = new LoginUseCase(
-      new UserRepository(),
-      new RefreshTokenRepository(),
-      new BcryptAdapter(),
+      this.userRepo,
+      this.refreshTokenRepo,
+      this.hash,
       new JwtAdapter(request.server),
     )
     try {
@@ -79,8 +96,8 @@ export class AuthController {
   async refresh(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = RefreshBodySchema.parse(request.body)
     const useCase = new RefreshTokenUseCase(
-      new UserRepository(),
-      new RefreshTokenRepository(),
+      this.userRepo,
+      this.refreshTokenRepo,
       new JwtAdapter(request.server),
     )
     try {
@@ -98,7 +115,7 @@ export class AuthController {
   async logout(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = LogoutBodySchema.parse(request.body)
     const useCase = new LogoutUseCase(
-      new RefreshTokenRepository(),
+      this.refreshTokenRepo,
     )
     try {
       await useCase.execute(body.refreshToken)
@@ -115,8 +132,8 @@ export class AuthController {
   async loginWithGoogle(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = GoogleBodySchema.parse(request.body)
     const useCase = new LoginWithGoogleUseCase(
-      new UserRepository(),
-      new RefreshTokenRepository(),
+      this.userRepo,
+      this.refreshTokenRepo,
       new JwtAdapter(request.server),
     )
     try {
