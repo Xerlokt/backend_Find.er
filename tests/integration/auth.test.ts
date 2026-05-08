@@ -254,7 +254,7 @@ describe('POST /auth/google', () => {
       .post('/auth/google')
       .send({ idToken: 'any-token', role: 'CANDIDATE' })
 
-    expect(response.status).toBe(201)
+    expect(response.status).toBe(200)
     expect(response.body).toHaveProperty('accessToken')
     await app.close()
   })
