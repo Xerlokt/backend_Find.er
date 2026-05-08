@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Clean Architecture Refactor
 status: in_progress
-stopped_at: Phase 10 in progress — executing Infrastructure + Auth Migration
-last_updated: "2026-05-07T02:00:00Z"
-last_activity: 2026-05-07 -- Phase 10 started — executing infrastructure copies + adapter layer + auth use cases
+stopped_at: Plan 11-01 complete — candidate and recruiter modules migrated; ready for 11-02 (company)
+last_updated: "2026-05-08T23:48:04Z"
+last_activity: 2026-05-08 -- Plan 11-01 complete — candidate+recruiter repos, use cases, controllers, routes created; app.ts swapped; 142/142 tests green
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 4
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 25
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 9 — Domain Layer Scaffold (COMPLETE)
-Plan: All 3 plans complete (09-01, 09-02, 09-03)
-Status: Phase 9 complete — ready to start Phase 10
-Last activity: 2026-05-07 -- Plan 09-03 complete — 10 repository interface files created in src/domain/interfaces/, tsc clean
+Phase: 11 — Core Modules Migration (IN PROGRESS)
+Plan: 11-01 complete (candidate+recruiter); 11-02 next (company)
+Status: Plan 11-01 complete — 10 new files + app.ts swap; 142/142 integration tests green
+Last activity: 2026-05-08 -- Plan 11-01 complete — candidate and recruiter modules migrated to Clean Architecture (repos, use cases, controllers, routes)
 
-Progress: [██████████] 100% (v2.0 Phase 9 complete, 3/3 plans done)
+Progress: [██░░░░░░░░] 25% (v2.0 Phase 11 in progress, 1/4 plans done)
 
 ## Performance Metrics
 
@@ -101,6 +101,9 @@ Recent decisions affecting current work:
 - 09-03: Repository interfaces derive ALL methods verbatim from existing src/modules/*/*.repository.ts files (D-02) — no ad-hoc method invention; method contracts locked before Phase 10 adapter implementations begin
 - 09-03: IRefreshTokenRepository created per D-03 — required by auth use cases; helper types (SwipeWithCandidateInfo, RecruiterWithCompany, UnlockResult, ChatParticipants, ChatListItem, FitScoreInput, FitScoreJobInput) co-located with consuming interface files
 - 09-03: Zero Prisma/modules/shared imports in src/domain/interfaces/ — ARCH-06 enforced; all types come exclusively from src/domain/entities/
+- 11-01: CandidateRepository.toDomain() maps every field explicitly — no spread — to enforce domain/adapter boundary and allow safe Modality enum cast (Prisma enum → domain union type)
+- 11-01: RecruiterRepository.findCompanyById() calls prisma.company directly with ARCH-04 module isolation comment — never imports CompanyRepository
+- 11-01: Old src/modules/candidate/ and src/modules/recruiter/ files NOT deleted — additive migration pattern; cleanup deferred to Phase 13
 
 ### v2.0 Architecture Context
 
@@ -138,6 +141,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-07T00:30:26Z
-Stopped at: Completed 09-03-PLAN.md — Phase 9 Domain Layer Scaffold complete; run Phase 10 next
+Last session: 2026-05-08T23:48:04Z
+Stopped at: Completed 11-01-PLAN.md — candidate and recruiter modules migrated; run 11-02 next (company module)
 Resume file: None
