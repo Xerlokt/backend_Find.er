@@ -120,8 +120,8 @@ export class AuthController {
       new JwtAdapter(request.server),
     )
     try {
-      const tokens = await useCase.execute(body)
-      reply.status(201).send(tokens)
+      const { isNew, ...tokens } = await useCase.execute(body)
+      reply.status(isNew ? 201 : 200).send(tokens)
     } catch (err) {
       if (err instanceof DomainError) {
         reply.status(err.statusCode).send({ error: err.message, code: err.code })

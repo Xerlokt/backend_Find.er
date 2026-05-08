@@ -20,7 +20,7 @@ export class LoginWithGoogleUseCase {
     private readonly token: ITokenPort,
   ) {}
 
-  async execute(input: LoginWithGoogleInput): Promise<{ accessToken: string; refreshToken: string }> {
+  async execute(input: LoginWithGoogleInput): Promise<{ accessToken: string; refreshToken: string; isNew: boolean }> {
     let googlePayload: { sub: string; email: string; picture?: string }
 
     try {
@@ -38,7 +38,7 @@ export class LoginWithGoogleUseCase {
       throw new DomainError('Invalid Google token', 'INVALID_CREDENTIALS', 401)
     }
 
-    const { user } = await this.userRepo.findOrCreateGoogle({
+    const { user, isNew } = await this.userRepo.findOrCreateGoogle({
       googleId: googlePayload.sub,
       email: googlePayload.email,
       avatarUrl: googlePayload.picture,
@@ -51,6 +51,6 @@ export class LoginWithGoogleUseCase {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     await this.refreshTokenRepo.create({ tokenHash: hashed, familyId, userId: user.id, expiresAt })
 
-    return { accessToken, refreshToken: raw }
+    return { accessToken, refreshToken: raw, isNew }
   }
 }
