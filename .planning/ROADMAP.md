@@ -219,7 +219,13 @@ Plans:
   3. Repository implementations are exercised by integration tests running against the real Docker DB — no mocks for DB interaction
   4. Controllers for these modules live under `src/adapters/controllers/` and contain no business logic
   5. All 41 existing integration tests remain green after each module is migrated
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — Candidate + Recruiter modules (repos, use cases, controllers, routes, app.ts swap)
+- [ ] 11-02-PLAN.md — Company module (ICompanyRepository.getTransactions extension, repo, use cases, controller, routes, app.ts swap)
+- [ ] 11-03-PLAN.md — Job module (scheduler infrastructure, repo, 5 use cases, controller, routes, app.ts swap)
+- [ ] 11-04-PLAN.md — Admin module (IUserRepository extensions, UserRepository update, 4 use cases, controller, routes, app.ts swap)
 
 ### Phase 12: Swipe, Credits, Recommendation, Chat Migration
 **Goal**: All remaining modules are migrated; every use case receives dependencies exclusively via interfaces; the full 41-test suite is green
