@@ -1,8 +1,8 @@
 import fp from 'fastify-plugin'
 import { FastifyInstance } from 'fastify'
 import cron from 'node-cron'
-import { JobRepository } from '../../../modules/job/job.repository'
-import { runExpiryCheck } from '../../../modules/job/job.scheduler'
+import { JobRepository } from '../../../adapters/repositories/job.repository'
+import { runExpiryCheck } from '../../scheduler/job-expiry.scheduler'
 
 async function plugin(app: FastifyInstance): Promise<void> {
   const repo = new JobRepository()
