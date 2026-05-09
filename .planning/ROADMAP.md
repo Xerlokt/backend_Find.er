@@ -237,7 +237,13 @@ Plans:
   3. Route files under `src/infrastructure/http/routes/` only register endpoints and instantiate controllers — no business logic, no direct use-case logic
   4. All 41 integration tests pass green — zero regressions introduced by the migration
   5. Running the app end-to-end (register → swipe → recommendation → unlock → chat) produces correct responses via the new wiring
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — Chat module: IChatPort, ChatRepository adapter (8 methods), 5 chat use cases, ChatController, infrastructure chat.routes.ts with WebSocket gateway
+- [ ] 12-02-PLAN.md — Neo4jAdapter + credits module: Neo4jAdapter (wraps RecommendationRepository), credits constants, CreditRepository adapter, 2 credits use cases, CreditsController, infrastructure credits.routes.ts
+- [ ] 12-03-PLAN.md — Swipe module: SwipeRepository adapter (7 methods), 3 swipe use cases, SwipeController, dual-export infrastructure swipe.routes.ts (swipeRoutes + swipeJobRoutes)
+- [ ] 12-04-PLAN.md — app.ts import swaps for all 4 modules + Neo4jAdapter composition + full 41-test integration suite green
 
 ### Phase 13: Cleanup + Unit Test Layer
 **Goal**: The old module structure is gone, the dependency rule is mechanically enforced, and use cases are independently unit-testable without a database
@@ -276,5 +282,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. Domain Layer Scaffold | 3/3 | Complete | 2026-05-07 |
 | 10. Infrastructure + Auth Migration | 0/4 | Not started | - |
 | 11. Core Modules Migration | 4/4 | Complete | 2026-05-08 |
-| 12. Swipe, Credits, Recommendation, Chat Migration | 0/? | Not started | - |
+| 12. Swipe, Credits, Recommendation, Chat Migration | 0/4 | Not started | - |
 | 13. Cleanup + Unit Test Layer | 0/? | Not started | - |
