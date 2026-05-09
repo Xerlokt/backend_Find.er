@@ -12,6 +12,8 @@ const CreateCompanySchema = z.object({
   description: z.string().max(1000).optional(),
 })
 
+const CompanyParamsSchema = z.object({ id: z.string().uuid() })
+
 const AdjustCreditsSchema = z.object({
   amount: z.number().int().positive(),
 })
@@ -33,7 +35,7 @@ export class CompanyController {
   }
 
   async getById(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { id } = request.params as { id: string }
+    const { id } = CompanyParamsSchema.parse(request.params)
     const useCase = new GetCompanyUseCase(new CompanyRepository())
     try {
       const result = await useCase.execute(id)
@@ -49,7 +51,7 @@ export class CompanyController {
 
   async adjustCredits(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = AdjustCreditsSchema.parse(request.body)
-    const { id } = request.params as { id: string }
+    const { id } = CompanyParamsSchema.parse(request.params)
     const useCase = new AdjustCompanyCreditsUseCase(new CompanyRepository())
     try {
       const result = await useCase.execute(id, body.amount)
