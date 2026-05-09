@@ -6,6 +6,7 @@ import { requireRole } from '../../../shared/hooks/requireRole'
 import { AppError } from '../../../shared/errors/AppError'
 import { DomainError } from '../../../application/errors/domain.error'
 import type { IChatService } from '../../../shared/interfaces/chat.interface'
+import type { IChatRepository } from '../../../domain/interfaces/chat.repository.interface'
 import { ChatController } from '../../../adapters/controllers/chat.controller'
 
 // In-memory connection store — module-level singleton (D-10)
@@ -58,10 +59,10 @@ export interface IChatRouteService extends IChatService {
 
 export async function chatRoutes(
   app: FastifyInstance,
-  opts: { service: IChatRouteService },
+  opts: { service: IChatRouteService; repo: IChatRepository },
 ): Promise<void> {
   const service = opts.service
-  const ctrl = new ChatController()
+  const ctrl = new ChatController(opts.repo)
 
   // GET /chats — list chats for authenticated user (D-12)
   app.get('/', {

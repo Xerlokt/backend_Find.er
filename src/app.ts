@@ -72,8 +72,8 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   const creditService = new CreditService(creditRepo, chatService) // chatService injected (NEW)
   await app.register(adminRoutes, { prefix: '/admin', creditService })
 
-  // Chat routes under /chats prefix — chatService injected as IChatRouteService
-  await app.register(chatRoutes, { prefix: '/chats', service: chatService })
+  // Chat routes under /chats prefix — chatService and chatRepo injected (WR-03: DI fix)
+  await app.register(chatRoutes, { prefix: '/chats', service: chatService, repo: chatRepo })
 
   if (!opts.testing) {
     await app.register(schedulerPlugin)

@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
 import { z } from 'zod'
-import { ChatRepository } from '../repositories/chat.repository'
+import { IChatRepository } from '../../domain/interfaces/chat.repository.interface'
 import { GetMessagesUseCase } from '../../application/use-cases/chat/get-messages.use-case'
 import { ListChatsUseCase } from '../../application/use-cases/chat/list-chats.use-case'
 import { DomainError } from '../../application/errors/domain.error'
@@ -15,8 +15,10 @@ const MessagesQuerySchema = z.object({
 })
 
 export class ChatController {
+  constructor(private readonly repo: IChatRepository) {}
+
   async listChats(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const useCase = new ListChatsUseCase(new ChatRepository())
+    const useCase = new ListChatsUseCase(this.repo)
     try {
       const chats = await useCase.execute(request.user.id)
       reply.status(200).send(chats)
@@ -32,7 +34,7 @@ export class ChatController {
   async getMessages(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const { chatId } = ChatIdParamsSchema.parse(request.params)
     const { cursor, limit } = MessagesQuerySchema.parse(request.query)
-    const useCase = new GetMessagesUseCase(new ChatRepository())
+    const useCase = new GetMessagesUseCase(this.repo)
     try {
       const result = await useCase.execute(chatId, request.user.id, cursor, limit)
       reply.status(200).send(result)
