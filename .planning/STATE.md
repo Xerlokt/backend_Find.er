@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 12-02 complete — Neo4jAdapter + credits module migrated; Wave 1 in progress (12-01 chat may still be running)
-last_updated: "2026-05-09T18:23:35Z"
-last_activity: 2026-05-09 -- Plan 12-02 complete — Neo4jAdapter wrapping RecommendationRepository, CreditRepository adapter with atomic $transaction, 2 credits use cases (UnlockCandidateUseCase + GrantCreditsUseCase), CreditsController with haversineKm enrichment, creditsJobRoutes infrastructure route; 7 new files, tsc clean
+stopped_at: Plan 12-03 complete — Swipe module migrated; SwipeRepository, 3 use cases, SwipeController, dual-export infrastructure swipe.routes.ts; Plan 12-04 (app.ts swaps + integration tests) next
+last_updated: "2026-05-09T18:30:07Z"
+last_activity: 2026-05-09 -- Plan 12-03 complete — SwipeRepository (7 methods, P2002 guard, avatarUrl flatten), RecordSwipeUseCase (IChatPort injection, zero @prisma/client), GetFeedUseCase (FitScoreInput { id } satisfies pattern), GetRankingUseCase (recruiter ownership guard, DISLIKE censoring T-12-03-03, haversineKm, fitScore sort), SwipeController (3 handlers, DomainError catch), swipe.routes.ts DUAL EXPORT (/feed before /:jobId/ranking, rateLimit max:30); 6 new files, tsc clean
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 42
-  completed_plans: 39
-  percent: 97
+  completed_plans: 40
+  percent: 98
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 ## Current Position
 
 Phase: 12 — Swipe, Credits, Recommendation, Chat Migration (executing)
-Plan: 12-02 complete (Neo4jAdapter + credits); 12-01 (chat) running in parallel Wave 1; 12-03 (swipe) and 12-04 (app.ts swaps) next
-Status: Plan 12-02 complete — 7 new files: Neo4jAdapter, credits constants, CreditRepository adapter, 2 use cases, CreditsController, creditsJobRoutes; tsc clean
-Last activity: 2026-05-09 -- Plan 12-02 complete — Neo4jAdapter wrapping RecommendationRepository (private readonly inner), CreditRepository with 7 ICreditRepository methods + 2 atomic $transaction methods (TOCTOU protection, P2002 as DomainError), UnlockCandidateUseCase (zero @prisma/client, IChatPort injection, 'DISLIKE' string literal), GrantCreditsUseCase (Number.isInteger guard), CreditsController (haversineKm enrichment as controller concern), creditsJobRoutes infrastructure route
+Plan: 12-03 complete (swipe module migrated); 12-04 (app.ts swaps + integration tests) next
+Status: Plan 12-03 complete — 6 new files: SwipeRepository, 3 swipe use cases, SwipeController, dual-export swipe.routes.ts; tsc clean
+Last activity: 2026-05-09 -- Plan 12-03 complete — SwipeRepository (7 methods, P2002 inside $transaction → DomainError DUPLICATE_SWIPE, avatarUrl flatten from candidate.user.avatarUrl, swipes:none feed filter, Set<string> unlocks), RecordSwipeUseCase (IChatPort injection, 'LIKE'/'MATCH' domain literals, zero @prisma/client), GetFeedUseCase (FitScoreInput { id: candidate.id } satisfies pattern, cursor pagination), GetRankingUseCase (recruiter ownership guard job.recruiterId !== recruiterProfile.id, DISLIKE censoring T-12-03-03, haversineKm, fitScore DESC sort + rank), SwipeController (3 handlers, DomainError catch), infrastructure swipe.routes.ts (DUAL EXPORT: swipeRoutes POST / rateLimit max:30, swipeJobRoutes /feed before /:jobId/ranking Pitfall 1)
 
 Progress: [████████░░] 85% (v2.0 Phase 11 complete, Phase 12 next)
 
@@ -121,6 +121,12 @@ Recent decisions affecting current work:
 - 12-02: P2002 duplicate unlock caught inside prisma.$transaction in CreditRepository.executeUnlock — never bubbles to use case layer (clean separation; use case stays @prisma/client-free)
 - 12-02: UnlockCandidateUseCase compares swipe.direction !== 'DISLIKE' via domain string literal — zero @prisma/client imports in use case (ARCH-07)
 - 12-02: CreditsController enrichment (candidateProfile + haversineKm distanceKm) is explicit controller concern — documented with comment; not business logic
+- 12-03: P2002 duplicate swipe caught inside prisma.$transaction in SwipeRepository — never bubbles to use case layer (clean separation; use case stays @prisma/client-free)
+- 12-03: avatarUrl flattened from row.candidate.user.avatarUrl into SwipeWithCandidateInfo.candidate.avatarUrl at repository boundary — use cases never see nested Prisma structure
+- 12-03: FitScoreInput requires id field (added in 12-02) — use cases use 'satisfies FitScoreInput' to enforce at compile time (Pitfall 3)
+- 12-03: swipe.routes.ts DUAL EXPORT pattern — swipeRoutes (POST /swipes under /swipes prefix) + swipeJobRoutes (GET routes under /jobs prefix); same pattern as modules/swipe/swipe.routes.ts
+- 12-03: /feed registered BEFORE /:jobId/ranking in swipeJobRoutes — Fastify static-before-parameterized rule (Pitfall 1); 'feed' would match as UUID param if /:jobId registered first
+- 12-03: GetRankingUseCase DISLIKE censoring — profile: null unless direction === 'LIKE' || unlockedCandidateIds.has(candidateId); T-12-03-03 information disclosure mitigation
 
 ### v2.0 Architecture Context
 
@@ -161,6 +167,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-08T00:12:12Z
-Stopped at: Completed 11-04-PLAN.md — admin module migrated; Phase 11 complete; run Phase 12 next (swipe/credits/recommendation/chat migration)
+Last session: 2026-05-09T18:30:07Z
+Stopped at: Completed 12-03-PLAN.md — swipe module migrated; run 12-04 next (app.ts import swaps for all 4 modules + full 41-test integration suite)
 Resume file: None
