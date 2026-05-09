@@ -11,8 +11,7 @@ import { authRoutes } from './infrastructure/http/routes/auth.routes'
 import { candidateRoutes } from './infrastructure/http/routes/candidate.routes'
 import { companyRoutes } from './infrastructure/http/routes/company.routes'
 import { recruiterRoutes } from './infrastructure/http/routes/recruiter.routes'
-import { adminRoutes } from './modules/admin/admin.routes'
-import { AdminService } from './modules/admin/admin.service'
+import { adminRoutes } from './infrastructure/http/routes/admin.routes'
 import { CreditRepository } from './modules/credits/credits.repository'
 import { CreditService } from './modules/credits/credits.service'
 import { jobRoutes } from './infrastructure/http/routes/job.routes'
@@ -66,8 +65,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   // Composition root: admin — CreditService receives chatService (D-01)
   const creditRepo = new CreditRepository()
   const creditService = new CreditService(creditRepo, chatService) // chatService injected (NEW)
-  const adminService = new AdminService(creditService)
-  await app.register(adminRoutes, { prefix: '/admin', service: adminService })
+  await app.register(adminRoutes, { prefix: '/admin', creditService })
 
   // Chat routes under /chats prefix — chatService injected as IChatRouteService
   await app.register(chatRoutes, { prefix: '/chats', service: chatService })
