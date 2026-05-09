@@ -72,8 +72,8 @@ export class GetRankingUseCase {
               }
             : null // DISLIKE not unlocked — identity fully censored
 
-        // Step 8: Compute distance
-        const distanceKm = haversineKm(
+        // Step 8: Compute distance — returns number | null when any coordinate is null (WR-04)
+        const distanceKm: number | null = haversineKm(
           swipe.candidate.lat,
           swipe.candidate.lng,
           job.lat,
