@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Plan 12-03 complete — Swipe module migrated; SwipeRepository, 3 use cases, SwipeController, dual-export infrastructure swipe.routes.ts; Plan 12-04 (app.ts swaps + integration tests) next
-last_updated: "2026-05-09T18:30:07Z"
-last_activity: 2026-05-09 -- Plan 12-03 complete — SwipeRepository (7 methods, P2002 guard, avatarUrl flatten), RecordSwipeUseCase (IChatPort injection, zero @prisma/client), GetFeedUseCase (FitScoreInput { id } satisfies pattern), GetRankingUseCase (recruiter ownership guard, DISLIKE censoring T-12-03-03, haversineKm, fitScore sort), SwipeController (3 handlers, DomainError catch), swipe.routes.ts DUAL EXPORT (/feed before /:jobId/ranking, rateLimit max:30); 6 new files, tsc clean
+stopped_at: Plan 12-04 complete — app.ts composition root fully wired to infrastructure/adapter layers; Neo4jAdapter injected into swipe routes; 134 integration tests green; Phase 12 migration complete; Phase 13 (Cleanup) next
+last_updated: "2026-05-09T19:02:00Z"
+last_activity: 2026-05-09 -- Plan 12-04 complete — app.ts swaps (swipe/credits/chat routes to infrastructure/, repositories to adapters/), Neo4jAdapter instantiation at composition root, ChatService/CreditService updated to accept IChatRepository/ICreditRepository interfaces, unit test updated, 134 integration tests green, tsc clean, ARCH-07 verified
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 42
-  completed_plans: 40
+  completed_plans: 41
   percent: 98
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 12 — Swipe, Credits, Recommendation, Chat Migration (executing)
-Plan: 12-03 complete (swipe module migrated); 12-04 (app.ts swaps + integration tests) next
-Status: Plan 12-03 complete — 6 new files: SwipeRepository, 3 swipe use cases, SwipeController, dual-export swipe.routes.ts; tsc clean
-Last activity: 2026-05-09 -- Plan 12-03 complete — SwipeRepository (7 methods, P2002 inside $transaction → DomainError DUPLICATE_SWIPE, avatarUrl flatten from candidate.user.avatarUrl, swipes:none feed filter, Set<string> unlocks), RecordSwipeUseCase (IChatPort injection, 'LIKE'/'MATCH' domain literals, zero @prisma/client), GetFeedUseCase (FitScoreInput { id: candidate.id } satisfies pattern, cursor pagination), GetRankingUseCase (recruiter ownership guard job.recruiterId !== recruiterProfile.id, DISLIKE censoring T-12-03-03, haversineKm, fitScore DESC sort + rank), SwipeController (3 handlers, DomainError catch), infrastructure swipe.routes.ts (DUAL EXPORT: swipeRoutes POST / rateLimit max:30, swipeJobRoutes /feed before /:jobId/ranking Pitfall 1)
+Phase: 12 — Swipe, Credits, Recommendation, Chat Migration (complete)
+Plan: 12-04 complete (app.ts composition root fully wired); Phase 13 (Cleanup + Unit Test Layer) next
+Status: Plan 12-04 complete — app.ts fully wired to infrastructure/adapter layers; Neo4jAdapter injected; 134 integration tests green; tsc clean
+Last activity: 2026-05-09 -- Plan 12-04 complete — app.ts swaps (swipeRoutes/creditsJobRoutes/chatRoutes from infrastructure/, ChatRepository/CreditRepository from adapters/), Neo4jAdapter instantiated at composition root (new Neo4jAdapter(getNeo4jDriver())), injected into swipeRoutes+swipeJobRoutes via {neo4j: neo4jAdapter} opts, ChatService/CreditService updated to accept IChatRepository/ICreditRepository interfaces (constructor type widening), modules/credits/credits.routes.ts updated to use adapter CreditRepository, unit test chat.service.test.ts updated to mock IChatRepository, 134 integration tests green (zero regressions), ARCH-07 verified (zero @prisma/client in application/use-cases/ or application/ports/)
 
-Progress: [████████░░] 85% (v2.0 Phase 11 complete, Phase 12 next)
+Progress: [████████░░] 98% (Phase 12 complete, Phase 13 next)
 
 ## Performance Metrics
 
@@ -127,6 +127,10 @@ Recent decisions affecting current work:
 - 12-03: swipe.routes.ts DUAL EXPORT pattern — swipeRoutes (POST /swipes under /swipes prefix) + swipeJobRoutes (GET routes under /jobs prefix); same pattern as modules/swipe/swipe.routes.ts
 - 12-03: /feed registered BEFORE /:jobId/ranking in swipeJobRoutes — Fastify static-before-parameterized rule (Pitfall 1); 'feed' would match as UUID param if /:jobId registered first
 - 12-03: GetRankingUseCase DISLIKE censoring — profile: null unless direction === 'LIKE' || unlockedCandidateIds.has(candidateId); T-12-03-03 information disclosure mitigation
+- 12-04: ChatService constructor typed to IChatRepository (not concrete modules/chat/ChatRepository) — sendMessage uses findParticipants() returning flat ChatParticipants; listChats uses findByUserId() returning ChatListItem[]
+- 12-04: CreditService constructor typed to ICreditRepository — enables adapter CreditRepository injection without changing service logic
+- 12-04: modules/credits/credits.routes.ts (old, not imported by app.ts) updated to use adapter CreditRepository — required for tsc clean across whole project; avatarUrl access flattened from user.avatarUrl to direct field
+- 12-04: chat.service unit test updated to mock IChatRepository interface — old method names (findChatWithParticipants, findChatsByUserId) replaced with domain interface names (findParticipants, findByUserId)
 
 ### v2.0 Architecture Context
 
@@ -167,6 +171,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-09T18:30:07Z
-Stopped at: Completed 12-03-PLAN.md — swipe module migrated; run 12-04 next (app.ts import swaps for all 4 modules + full 41-test integration suite)
+Last session: 2026-05-09T19:02:00Z
+Stopped at: Completed 12-04-PLAN.md — Phase 12 migration complete; all 4 modules wired to infrastructure/adapter layers; 134 integration tests green; Phase 13 (Cleanup + Unit Test Layer) next
 Resume file: None
