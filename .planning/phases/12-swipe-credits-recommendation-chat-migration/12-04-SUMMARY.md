@@ -154,7 +154,17 @@ None — no new network endpoints, auth paths, or schema changes introduced. app
 - Phase 13 (Cleanup + Unit Test Layer) can now safely delete `modules/swipe/`, `modules/credits/credits.repository.ts`, `modules/chat/chat.repository.ts`, and `modules/chat/chat.routes.ts` — they are no longer imported anywhere
 - `CreditService` and `ChatService` from modules/ are still needed until Phase 13 migrates adminRoutes to use the new application-layer use cases
 
-## Self-Check
+## Self-Check: PASSED
+
+All files verified present. All commits verified in git log.
+
+- FOUND: src/app.ts
+- FOUND: src/modules/chat/chat.service.ts
+- FOUND: src/modules/credits/credits.service.ts
+- FOUND: 12-04-SUMMARY.md
+- FOUND: commit 5509bc5 (Task 1)
+- FOUND: commit d1c5dab (Task 2)
+- FOUND: commit c8b24b5 (docs/metadata)
 
 ---
 *Phase: 12-swipe-credits-recommendation-chat-migration*
