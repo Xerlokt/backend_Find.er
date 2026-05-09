@@ -1,8 +1,9 @@
 import { AppError } from '../../shared/errors/AppError'
-import { ChatInitiator, Prisma } from '@prisma/client'
+import { ChatInitiator } from '@prisma/client'
 import { UNLOCK_COST_BY_PLAN } from './credits.constants'
 import type { IChatService } from '../../shared/interfaces/chat.interface'
 import type { ICreditRepository } from '../../domain/interfaces/credit.repository.interface'
+import { DomainError } from '../../application/errors/domain.error'
 
 export class CreditService {
   constructor(
@@ -31,14 +32,8 @@ export class CreditService {
     try {
       unlock = await this.repo.executeUnlock(recruiter.companyId, candidateId, jobId, cost)
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        throw new AppError('Already unlocked', 409, 'ALREADY_UNLOCKED')
-      }
-      if (err instanceof Error && err.message === 'INSUFFICIENT_CREDITS') {
-        throw new AppError('Insufficient credits', 402, 'INSUFFICIENT_CREDITS')
-      }
-      if (err instanceof Error && err.message === 'COMPANY_NOT_FOUND') {
-        throw new AppError('Company not found', 404, 'NOT_FOUND')
+      if (err instanceof DomainError) {
+        throw new AppError(err.message, err.statusCode, err.code)
       }
       throw err
     }
