@@ -143,7 +143,7 @@ describe('Company Routes — Integration', () => {
 
   // ── PATCH /companies/admin/:id/credits ────────────────────────────────
 
-  describe('PATCH /companies/admin/:id/credits', () => {
+  describe('PATCH /admin/companies/:id/credits', () => {
     it('200 e empresa com credits: 100 após ajuste de 100 (partindo de 0)', async () => {
       const admin = await createUser({ role: 'ADMIN' })
       const token = await loginAs(admin.email)
@@ -153,7 +153,7 @@ describe('Company Routes — Integration', () => {
       await app.ready()
 
       const response = await supertest(app.server)
-        .patch(`/companies/admin/${company.id}/credits`)
+        .patch(`/admin/companies/${company.id}/credits`)
         .set('Authorization', `Bearer ${token}`)
         .send({ amount: 100 })
 
@@ -172,7 +172,7 @@ describe('Company Routes — Integration', () => {
       await app.ready()
 
       const response = await supertest(app.server)
-        .patch(`/companies/admin/${company.id}/credits`)
+        .patch(`/admin/companies/${company.id}/credits`)
         .set('Authorization', `Bearer ${token}`)
         .send({ amount: 100 })
 
@@ -190,7 +190,7 @@ describe('Company Routes — Integration', () => {
       await app.ready()
 
       const response = await supertest(app.server)
-        .patch(`/companies/admin/${company.id}/credits`)
+        .patch(`/admin/companies/${company.id}/credits`)
         .set('Authorization', `Bearer ${token}`)
         .send({ amount: 0 })
 
@@ -208,7 +208,7 @@ describe('Company Routes — Integration', () => {
       await app.ready()
 
       const response = await supertest(app.server)
-        .patch(`/companies/admin/${company.id}/credits`)
+        .patch(`/admin/companies/${company.id}/credits`)
         .set('Authorization', `Bearer ${token}`)
         .send({ amount: -50 })
 
