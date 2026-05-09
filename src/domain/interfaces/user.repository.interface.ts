@@ -11,4 +11,10 @@ export interface IUserRepository {
     avatarUrl?: string
     role: UserRole
   }): Promise<{ user: User; isNew: boolean }>
+
+  // Admin-facing read methods — select-projected, never expose passwordHash or googleId
+  findMany(opts: { skip: number; take: number }): Promise<UserPublic[]>
+  findByIdPublic(id: string): Promise<UserPublic | null>
 }
+
+export type UserPublic = Omit<User, 'passwordHash' | 'googleId'>

@@ -1,6 +1,6 @@
 import { Role } from '@prisma/client'
 import { prisma } from '../../infrastructure/database/prisma'
-import { IUserRepository } from '../../domain/interfaces/user.repository.interface'
+import { IUserRepository, UserPublic } from '../../domain/interfaces/user.repository.interface'
 import { User, UserRole } from '../../domain/entities/user.entity'
 
 export class UserRepository implements IUserRepository {
@@ -62,6 +62,24 @@ export class UserRepository implements IUserRepository {
       })
       return { user: this.toDomain(created), isNew: true }
     })
+  }
+
+  async findMany(opts: { skip: number; take: number }): Promise<UserPublic[]> {
+    const rows = await prisma.user.findMany({
+      skip: opts.skip,
+      take: opts.take,
+      select: { id: true, email: true, role: true, avatarUrl: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    })
+    return rows as UserPublic[]
+  }
+
+  async findByIdPublic(id: string): Promise<UserPublic | null> {
+    const row = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, email: true, role: true, avatarUrl: true, createdAt: true },
+    })
+    return row as UserPublic | null
   }
 
   private toDomain(row: {
