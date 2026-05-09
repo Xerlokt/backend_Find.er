@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Completed 11-04-PLAN.md — admin module migrated; Phase 11 complete; run Phase 12 next (swipe/credits/recommendation/chat migration)
-last_updated: "2026-05-08T00:12:12Z"
-last_activity: 2026-05-08 -- Plan 11-04 complete — admin module migrated to Clean Architecture (IUserRepository extended with UserPublic/findMany/findByIdPublic, 4 admin use cases, AdminController with ICreditGrantPort injection, admin.routes.ts in infrastructure layer, app.ts swapped; 134/134 integration tests green)
+status: executing
+stopped_at: Plan 12-02 complete — Neo4jAdapter + credits module migrated; Wave 1 in progress (12-01 chat may still be running)
+last_updated: "2026-05-09T18:23:35Z"
+last_activity: 2026-05-09 -- Plan 12-02 complete — Neo4jAdapter wrapping RecommendationRepository, CreditRepository adapter with atomic $transaction, 2 credits use cases (UnlockCandidateUseCase + GrantCreditsUseCase), CreditsController with haversineKm enrichment, creditsJobRoutes infrastructure route; 7 new files, tsc clean
 progress:
   total_phases: 13
   completed_phases: 10
-  total_plans: 38
-  completed_plans: 38
+  total_plans: 42
+  completed_plans: 39
   percent: 97
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 11 — Core Modules Migration (COMPLETE)
-Plan: 11-04 complete (admin); Phase 11 done; Phase 12 next (swipe/credits/recommendation/chat migration)
-Status: Plan 11-04 complete — 6 new files + IUserRepository/UserRepository extended + app.ts swap; 134/134 integration tests green
-Last activity: 2026-05-08 -- Plan 11-04 complete — admin module migrated to Clean Architecture (IUserRepository extended with UserPublic/findMany/findByIdPublic, 4 admin use cases, AdminController with ICreditGrantPort injection, admin.routes.ts in infrastructure layer, app.ts swapped; 134/134 integration tests green)
+Phase: 12 — Swipe, Credits, Recommendation, Chat Migration (executing)
+Plan: 12-02 complete (Neo4jAdapter + credits); 12-01 (chat) running in parallel Wave 1; 12-03 (swipe) and 12-04 (app.ts swaps) next
+Status: Plan 12-02 complete — 7 new files: Neo4jAdapter, credits constants, CreditRepository adapter, 2 use cases, CreditsController, creditsJobRoutes; tsc clean
+Last activity: 2026-05-09 -- Plan 12-02 complete — Neo4jAdapter wrapping RecommendationRepository (private readonly inner), CreditRepository with 7 ICreditRepository methods + 2 atomic $transaction methods (TOCTOU protection, P2002 as DomainError), UnlockCandidateUseCase (zero @prisma/client, IChatPort injection, 'DISLIKE' string literal), GrantCreditsUseCase (Number.isInteger guard), CreditsController (haversineKm enrichment as controller concern), creditsJobRoutes infrastructure route
 
 Progress: [████████░░] 85% (v2.0 Phase 11 complete, Phase 12 next)
 
@@ -116,6 +116,11 @@ Recent decisions affecting current work:
 - 11-04: ICreditGrantPort defined locally in adjust-admin-credits.use-case.ts and admin.controller.ts — avoids importing CreditService from src/modules/credits/ (Phase 12 migration); TypeScript structural typing ensures compatibility
 - 11-04: UserPublic = Omit<User, 'passwordHash' | 'googleId'> exported from user.repository.interface.ts — findMany and findByIdPublic return this safe projection; sensitive fields never reach the controller (T-11-04-02)
 - 11-04: Old src/modules/admin/ files NOT deleted — additive migration pattern; cleanup deferred to Phase 13
+- 12-02: Neo4jAdapter stores RecommendationRepository as private readonly inner in constructor — FitScoreInput structural superset of CandidateData makes call compatible with RecommendationRepository.computeFitScore
+- 12-02: UNLOCK_COST_BY_PLAN lives in application/use-cases/credits/ (not modules/) — application layer owns business constants
+- 12-02: P2002 duplicate unlock caught inside prisma.$transaction in CreditRepository.executeUnlock — never bubbles to use case layer (clean separation; use case stays @prisma/client-free)
+- 12-02: UnlockCandidateUseCase compares swipe.direction !== 'DISLIKE' via domain string literal — zero @prisma/client imports in use case (ARCH-07)
+- 12-02: CreditsController enrichment (candidateProfile + haversineKm distanceKm) is explicit controller concern — documented with comment; not business logic
 
 ### v2.0 Architecture Context
 

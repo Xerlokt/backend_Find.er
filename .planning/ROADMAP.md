@@ -241,7 +241,7 @@ Plans:
 
 Plans:
 - [ ] 12-01-PLAN.md — Chat module: IChatPort, ChatRepository adapter (8 methods), 5 chat use cases, ChatController, infrastructure chat.routes.ts with WebSocket gateway
-- [ ] 12-02-PLAN.md — Neo4jAdapter + credits module: Neo4jAdapter (wraps RecommendationRepository), credits constants, CreditRepository adapter, 2 credits use cases, CreditsController, infrastructure credits.routes.ts
+- [x] 12-02-PLAN.md — Neo4jAdapter + credits module: Neo4jAdapter (wraps RecommendationRepository), credits constants, CreditRepository adapter, 2 credits use cases, CreditsController, infrastructure credits.routes.ts
 - [ ] 12-03-PLAN.md — Swipe module: SwipeRepository adapter (7 methods), 3 swipe use cases, SwipeController, dual-export infrastructure swipe.routes.ts (swipeRoutes + swipeJobRoutes)
 - [ ] 12-04-PLAN.md — app.ts import swaps for all 4 modules + Neo4jAdapter composition + full 41-test integration suite green
 
@@ -282,5 +282,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 9. Domain Layer Scaffold | 3/3 | Complete | 2026-05-07 |
 | 10. Infrastructure + Auth Migration | 0/4 | Not started | - |
 | 11. Core Modules Migration | 4/4 | Complete | 2026-05-08 |
-| 12. Swipe, Credits, Recommendation, Chat Migration | 0/4 | Not started | - |
+| 12. Swipe, Credits, Recommendation, Chat Migration | 1/4 | Executing | - |
 | 13. Cleanup + Unit Test Layer | 0/? | Not started | - |
