@@ -1,34 +1,22 @@
 import { ChatService } from '../../src/modules/chat/chat.service'
-import { ChatRepository } from '../../src/modules/chat/chat.repository'
+import { IChatRepository, ChatParticipants, ChatListItem } from '../../src/domain/interfaces/chat.repository.interface'
 import { AppError } from '../../src/shared/errors/AppError'
 
 // Mock repository — no DB in unit tests
-const makeRepo = (): jest.Mocked<ChatRepository> => ({
+const makeRepo = (): jest.Mocked<IChatRepository> => ({
   createOrGetChat: jest.fn(),
   createMessage: jest.fn(),
   findMessages: jest.fn(),
-  findChatById: jest.fn(),
-  findChatWithParticipants: jest.fn(),
+  findById: jest.fn(),
+  findParticipants: jest.fn(),
   countRecruiterMessages: jest.fn(),
-  findChatsByUserId: jest.fn(),
+  findByUserId: jest.fn(),
   markMessagesRead: jest.fn(),
-} as unknown as jest.Mocked<ChatRepository>)
+} as jest.Mocked<IChatRepository>)
 
-const makeChat = (overrides: Partial<{
-  id: string
-  candidateId: string
-  companyId: string
-  jobId: string
-  job: { recruiterId: string; recruiter: { userId: string } }
-}> = {}) => ({
-  id: overrides.id ?? 'chat-1',
-  candidateId: overrides.candidateId ?? 'candidate-profile-1',
-  companyId: overrides.companyId ?? 'company-1',
-  jobId: overrides.jobId ?? 'job-1',
-  job: overrides.job ?? {
-    recruiterId: 'recruiter-profile-1',
-    recruiter: { userId: 'recruiter-user-1' },
-  },
+const makeParticipants = (overrides: Partial<ChatParticipants> = {}): ChatParticipants => ({
+  candidateUserId: overrides.candidateUserId ?? 'candidate-user-1',
+  recruiterUserId: overrides.recruiterUserId ?? 'recruiter-user-1',
 })
 
 const makeMessage = (overrides: Partial<{
@@ -47,8 +35,20 @@ const makeMessage = (overrides: Partial<{
   readAt: overrides.readAt ?? null,
 })
 
+const makeChatListItem = (overrides: Partial<ChatListItem> = {}): ChatListItem => ({
+  id: overrides.id ?? 'chat-1',
+  jobId: overrides.jobId ?? 'job-1',
+  initiatedBy: overrides.initiatedBy ?? 'MATCH' as any,
+  isActive: overrides.isActive ?? true,
+  createdAt: overrides.createdAt ?? new Date(),
+  candidateName: overrides.candidateName ?? 'John Candidate',
+  candidateUserId: overrides.candidateUserId ?? 'candidate-user-1',
+  companyName: overrides.companyName ?? 'Acme Corp',
+  recruiterUserId: overrides.recruiterUserId ?? 'recruiter-user-1',
+})
+
 describe('ChatService', () => {
-  let repo: jest.Mocked<ChatRepository>
+  let repo: jest.Mocked<IChatRepository>
   let service: ChatService
 
   beforeEach(() => {
@@ -76,36 +76,27 @@ describe('ChatService', () => {
 
   describe('sendMessage', () => {
     it('lança AppError 404 NOT_FOUND quando chat não existe', async () => {
-      repo.findChatWithParticipants.mockResolvedValue(null)
+      repo.findParticipants.mockResolvedValue(null)
       await expect(service.sendMessage('chat-x', 'user-1', 'Hello'))
         .rejects.toMatchObject({ statusCode: 404, code: 'NOT_FOUND' })
       expect(repo.createMessage).not.toHaveBeenCalled()
     })
 
     it('lança AppError 403 NOT_PARTICIPANT quando user não é participante', async () => {
-      repo.findChatWithParticipants.mockResolvedValue(makeChat({
-        candidateId: 'candidate-profile-OTHER',
-        job: { recruiterId: 'recruiter-OTHER', recruiter: { userId: 'recruiter-user-OTHER' } },
-      }) as any)
-      // user-1 maps to no candidate profile and is not the recruiter user
-      // service must check: is senderId the candidate's userId? is senderId the recruiter's userId?
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-OTHER',
+        recruiterUserId: 'recruiter-user-OTHER',
+      }))
       await expect(service.sendMessage('chat-1', 'user-UNKNOWN', 'Hello'))
         .rejects.toMatchObject({ statusCode: 403, code: 'NOT_PARTICIPANT' })
       expect(repo.createMessage).not.toHaveBeenCalled()
     })
 
     it('lança AppError 403 RECRUITER_MUST_INITIATE quando candidato tenta enviar antes do recrutador', async () => {
-      const chat = makeChat({
-        candidateId: 'candidate-profile-1',
-        job: { recruiterId: 'recruiter-profile-1', recruiter: { userId: 'recruiter-user-1' } },
-      })
-      // The candidate's userId is 'candidate-user-1'
-      // senderId = 'candidate-user-1' (candidate user)
-      // recruiter userId = 'recruiter-user-1' (different)
-      repo.findChatWithParticipants.mockResolvedValue({
-        ...chat,
-        candidate: { userId: 'candidate-user-1' },
-      } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+      }))
       repo.countRecruiterMessages.mockResolvedValue(0)
       await expect(service.sendMessage('chat-1', 'candidate-user-1', 'Hello first'))
         .rejects.toMatchObject({ statusCode: 403, code: 'RECRUITER_MUST_INITIATE' })
@@ -113,11 +104,10 @@ describe('ChatService', () => {
     })
 
     it('persiste e retorna mensagem quando recrutador envia primeira mensagem', async () => {
-      const chat = makeChat()
-      repo.findChatWithParticipants.mockResolvedValue({
-        ...chat,
-        candidate: { userId: 'candidate-user-1' },
-      } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+      }))
       repo.countRecruiterMessages.mockResolvedValue(0)
       repo.createMessage.mockResolvedValue(makeMessage({ senderId: 'recruiter-user-1' }) as any)
       const result = await service.sendMessage('chat-1', 'recruiter-user-1', 'Welcome!')
@@ -126,11 +116,10 @@ describe('ChatService', () => {
     })
 
     it('persiste mensagem do candidato quando recrutador já enviou antes', async () => {
-      const chat = makeChat()
-      repo.findChatWithParticipants.mockResolvedValue({
-        ...chat,
-        candidate: { userId: 'candidate-user-1' },
-      } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+      }))
       repo.countRecruiterMessages.mockResolvedValue(1) // recruiter has sent a message
       repo.createMessage.mockResolvedValue(makeMessage({ senderId: 'candidate-user-1' }) as any)
       const result = await service.sendMessage('chat-1', 'candidate-user-1', 'Thanks!')
@@ -141,7 +130,7 @@ describe('ChatService', () => {
 
   describe('getMessages', () => {
     it('retorna { data, nextCursor: null } quando não há próxima página', async () => {
-      repo.findChatWithParticipants.mockResolvedValue({ ...makeChat(), candidate: { userId: 'candidate-user-1' } } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants())
       const msgs = [makeMessage({ id: 'msg-1' }), makeMessage({ id: 'msg-2' })]
       repo.findMessages.mockResolvedValue(msgs as any)
       repo.markMessagesRead.mockResolvedValue(undefined as any)
@@ -151,7 +140,7 @@ describe('ChatService', () => {
     })
 
     it('retorna nextCursor quando há mais mensagens', async () => {
-      repo.findChatWithParticipants.mockResolvedValue({ ...makeChat(), candidate: { userId: 'candidate-user-1' } } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants())
       // Return limit+1 items to signal there is a next page
       const msgs = Array.from({ length: 21 }, (_, i) => makeMessage({ id: `msg-${i}` }))
       repo.findMessages.mockResolvedValue(msgs as any)
@@ -164,36 +153,61 @@ describe('ChatService', () => {
 
   describe('verifyParticipant', () => {
     it('retorna true quando userId é o candidato', async () => {
-      repo.findChatWithParticipants.mockResolvedValue({
-        ...makeChat({ candidateId: 'cand-profile-1' }),
-        candidate: { userId: 'candidate-user-1' },
-      } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+      }))
       const result = await service.verifyParticipant('chat-1', 'candidate-user-1')
       expect(result).toBe(true)
     })
 
     it('retorna true quando userId é o recrutador do job', async () => {
-      repo.findChatWithParticipants.mockResolvedValue({
-        ...makeChat(),
-        candidate: { userId: 'candidate-user-1' },
-      } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+      }))
       const result = await service.verifyParticipant('chat-1', 'recruiter-user-1')
       expect(result).toBe(true)
     })
 
     it('retorna false quando userId não é participante', async () => {
-      repo.findChatWithParticipants.mockResolvedValue({
-        ...makeChat(),
-        candidate: { userId: 'candidate-user-1' },
-      } as any)
+      repo.findParticipants.mockResolvedValue(makeParticipants({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+      }))
       const result = await service.verifyParticipant('chat-1', 'random-user-id')
       expect(result).toBe(false)
     })
 
     it('retorna false quando chat não encontrado', async () => {
-      repo.findChatWithParticipants.mockResolvedValue(null)
+      repo.findParticipants.mockResolvedValue(null)
       const result = await service.verifyParticipant('chat-99', 'any-user')
       expect(result).toBe(false)
+    })
+  })
+
+  describe('listChats', () => {
+    it('mapeia chats com otherParticipantName correto para candidato', async () => {
+      const chat = makeChatListItem({
+        candidateUserId: 'candidate-user-1',
+        companyName: 'Acme Corp',
+        candidateName: 'John Doe',
+      })
+      repo.findByUserId.mockResolvedValue([chat])
+      const result = await service.listChats('candidate-user-1')
+      expect(result[0].otherParticipantName).toBe('Acme Corp')
+    })
+
+    it('mapeia chats com otherParticipantName correto para recrutador', async () => {
+      const chat = makeChatListItem({
+        candidateUserId: 'candidate-user-1',
+        recruiterUserId: 'recruiter-user-1',
+        companyName: 'Acme Corp',
+        candidateName: 'John Doe',
+      })
+      repo.findByUserId.mockResolvedValue([chat])
+      const result = await service.listChats('recruiter-user-1')
+      expect(result[0].otherParticipantName).toBe('John Doe')
     })
   })
 })
