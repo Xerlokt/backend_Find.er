@@ -26,7 +26,7 @@ Eight phases delivered the complete Job Tinder backend (v1.0). Five more phases 
 - [ ] **Phase 9: Domain Layer Scaffold** - Create src/domain/ and src/application/ skeletons: entities, repository interfaces, ports, DomainError
 - [ ] **Phase 10: Infrastructure + Auth Migration** - Migrate shared infrastructure and the full auth module end-to-end into the new layer structure
 - [ ] **Phase 11: Core Modules Migration** - Migrate candidate, company, recruiter, job, and admin modules; all tests remain green
-- [ ] **Phase 12: Swipe, Credits, Recommendation, Chat Migration** - Migrate remaining modules; 41 integration tests green; all use cases wired via interfaces only
+- [x] **Phase 12: Swipe, Credits, Recommendation, Chat Migration** - Migrate remaining modules; 41 integration tests green; all use cases wired via interfaces only
 - [ ] **Phase 13: Cleanup + Unit Test Layer** - Delete src/modules/ and src/shared/; enforce dependency rule; add use-case unit tests
 
 ## Phase Details
@@ -240,7 +240,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Chat module: IChatPort, ChatRepository adapter (8 methods), 5 chat use cases, ChatController, infrastructure chat.routes.ts with WebSocket gateway
+- [x] 12-01-PLAN.md — Chat module: IChatPort, ChatRepository adapter (8 methods), 5 chat use cases, ChatController, infrastructure chat.routes.ts with WebSocket gateway
 - [x] 12-02-PLAN.md — Neo4jAdapter + credits module: Neo4jAdapter (wraps RecommendationRepository), credits constants, CreditRepository adapter, 2 credits use cases, CreditsController, infrastructure credits.routes.ts
 - [x] 12-03-PLAN.md — Swipe module: SwipeRepository adapter (7 methods), 3 swipe use cases, SwipeController, dual-export infrastructure swipe.routes.ts (swipeRoutes + swipeJobRoutes)
 - [x] 12-04-PLAN.md — app.ts import swaps for all 4 modules + Neo4jAdapter composition + full 41-test integration suite green
