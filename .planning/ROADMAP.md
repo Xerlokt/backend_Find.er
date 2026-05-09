@@ -224,7 +224,7 @@ Plans:
 Plans:
 - [x] 11-01-PLAN.md — Candidate + Recruiter modules (repos, use cases, controllers, routes, app.ts swap)
 - [x] 11-02-PLAN.md — Company module (ICompanyRepository.getTransactions extension, repo, use cases, controller, routes, app.ts swap)
-- [ ] 11-03-PLAN.md — Job module (scheduler infrastructure, repo, 5 use cases, controller, routes, app.ts swap)
+- [x] 11-03-PLAN.md — Job module (scheduler infrastructure, repo, 5 use cases, controller, routes, app.ts swap)
 - [ ] 11-04-PLAN.md — Admin module (IUserRepository extensions, UserRepository update, 4 use cases, controller, routes, app.ts swap)
 
 ### Phase 12: Swipe, Credits, Recommendation, Chat Migration
@@ -275,6 +275,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 |-------|----------------|--------|-----------|
 | 9. Domain Layer Scaffold | 3/3 | Complete | 2026-05-07 |
 | 10. Infrastructure + Auth Migration | 0/4 | Not started | - |
-| 11. Core Modules Migration | 2/4 | In progress | - |
+| 11. Core Modules Migration | 3/4 | In progress | - |
 | 12. Swipe, Credits, Recommendation, Chat Migration | 0/? | Not started | - |
 | 13. Cleanup + Unit Test Layer | 0/? | Not started | - |

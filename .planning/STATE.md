@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 11-02-PLAN.md — company module migrated; run 11-03 next (job module)
-last_updated: "2026-05-09T00:04:04Z"
-last_activity: 2026-05-09 -- Plan 11-02 complete — company module migrated to Clean Architecture (ICompanyRepository extended with getTransactions, CompanyRepository adapter with $transaction, use cases, controller, routes)
+stopped_at: Completed 11-03-PLAN.md — job module migrated; run 11-04 next (admin module)
+last_updated: "2026-05-09T00:17:23Z"
+last_activity: 2026-05-09 -- Plan 11-03 complete — job module migrated to Clean Architecture (scheduler infrastructure decoupled to IJobRepository interface, JobRepository adapter, 5 use cases, JobController, job.routes.ts with /mine before /:id, app.ts swapped)
 progress:
   total_phases: 13
   completed_phases: 10
   total_plans: 38
-  completed_plans: 37
+  completed_plans: 38
   percent: 97
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 ## Current Position
 
 Phase: 11 — Core Modules Migration (IN PROGRESS)
-Plan: 11-02 complete (company); 11-03 next (job)
-Status: Plan 11-02 complete — 6 new files + ICompanyRepository + app.ts swap; 134/134 integration tests green
-Last activity: 2026-05-09 -- Plan 11-02 complete — company module migrated to Clean Architecture (ICompanyRepository extended with getTransactions, CompanyRepository adapter with $transaction, use cases, controller, routes)
+Plan: 11-03 complete (job); 11-04 next (admin)
+Status: Plan 11-03 complete — 9 new files + scheduler infra + app.ts swap; 134/134 integration tests green
+Last activity: 2026-05-09 -- Plan 11-03 complete — job module migrated to Clean Architecture (scheduler infrastructure decoupled to IJobRepository interface, JobRepository adapter, 5 use cases, JobController, job.routes.ts with /mine before /:id, app.ts swapped)
 
-Progress: [████░░░░░░] 50% (v2.0 Phase 11 in progress, 2/4 plans done)
+Progress: [██████░░░░] 75% (v2.0 Phase 11 in progress, 3/4 plans done)
 
 ## Performance Metrics
 
@@ -108,6 +108,11 @@ Recent decisions affecting current work:
 - 11-02: CompanyRepository.getTransactions returns Prisma rows directly — CreditTransaction entity shape exactly matches Prisma creditTransaction model, no toDomain needed
 - 11-02: adjustCredits uses DomainError(message, code, statusCode) — opposite arg order from AppError(message, statusCode, code); both error cases updated correctly
 - 11-02: Old src/modules/company/ files NOT deleted — additive migration pattern; cleanup deferred to Phase 13
+- 11-03: scheduler.plugin.ts now imports JobRepository from adapters/repositories and runExpiryCheck from infrastructure/scheduler — removes last modules/job/ import from infrastructure layer
+- 11-03: job-expiry.scheduler.ts accepts IJobRepository interface — scheduler decoupled from concrete adapter; can be tested without DB
+- 11-03: findRecruiterProfileByUserId uses direct prisma.recruiterProfile.findUnique inside JobRepository — ARCH-04 module isolation: JobRepository must not import RecruiterRepository
+- 11-03: Old src/modules/job/ files NOT deleted — additive migration; modules/job/job.routes.ts stays because swipe.routes.ts imports RankingItem from it; cleanup in Phase 13
+- 11-03: /mine route registered before /:id in job.routes.ts — Fastify registration-order sensitive; 'mine' treated as UUID param and fails Zod validation if /:id registered first
 
 ### v2.0 Architecture Context
 
@@ -148,6 +153,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-09T00:04:04Z
-Stopped at: Completed 11-02-PLAN.md — company module migrated; run 11-03 next (job module)
+Last session: 2026-05-09T00:17:23Z
+Stopped at: Completed 11-03-PLAN.md — job module migrated; run 11-04 next (admin module)
 Resume file: None
