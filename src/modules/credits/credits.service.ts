@@ -1,12 +1,12 @@
-import { CreditRepository } from './credits.repository'
 import { AppError } from '../../shared/errors/AppError'
 import { ChatInitiator, Prisma } from '@prisma/client'
 import { UNLOCK_COST_BY_PLAN } from './credits.constants'
 import type { IChatService } from '../../shared/interfaces/chat.interface'
+import type { ICreditRepository } from '../../domain/interfaces/credit.repository.interface'
 
 export class CreditService {
   constructor(
-    private readonly repo: CreditRepository,
+    private readonly repo: ICreditRepository,
     private readonly chat: IChatService, // NEW — injected at composition root (D-01, ARCH-04)
   ) {}
 

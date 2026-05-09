@@ -1,10 +1,10 @@
-import { ChatRepository } from './chat.repository'
 import { AppError } from '../../shared/errors/AppError'
 import { ChatInitiator } from '@prisma/client'
 import type { IChatService } from '../../shared/interfaces/chat.interface'
+import type { IChatRepository } from '../../domain/interfaces/chat.repository.interface'
 
 export class ChatService implements IChatService {
-  constructor(private readonly repo: ChatRepository) {}
+  constructor(private readonly repo: IChatRepository) {}
 
   async createOrGetChat(
     candidateId: string,
@@ -28,11 +28,10 @@ export class ChatService implements IChatService {
     createdAt: Date
     readAt: Date | null
   }> {
-    const chat = await this.repo.findChatWithParticipants(chatId)
-    if (!chat) throw new AppError('Chat not found', 404, 'NOT_FOUND')
+    const participants = await this.repo.findParticipants(chatId)
+    if (!participants) throw new AppError('Chat not found', 404, 'NOT_FOUND')
 
-    const candidateUserId = chat.candidate?.userId ?? null
-    const recruiterUserId = chat.job?.recruiter?.userId ?? null
+    const { candidateUserId, recruiterUserId } = participants
 
     // Participant check (D-09): sender must be candidate or recruiter
     if (senderId !== candidateUserId && senderId !== recruiterUserId) {
@@ -40,9 +39,7 @@ export class ChatService implements IChatService {
     }
 
     // Recruiter-first rule (D-04): check by senderId vs recruiter's userId, NOT by role
-    const recruiterMessageCount = recruiterUserId
-      ? await this.repo.countRecruiterMessages(chatId, recruiterUserId)
-      : 0
+    const recruiterMessageCount = await this.repo.countRecruiterMessages(chatId, recruiterUserId)
     if (recruiterMessageCount === 0 && senderId !== recruiterUserId) {
       throw new AppError('Recruiter must send first message', 403, 'RECRUITER_MUST_INITIATE')
     }
@@ -51,11 +48,9 @@ export class ChatService implements IChatService {
   }
 
   async verifyParticipant(chatId: string, userId: string): Promise<boolean> {
-    const chat = await this.repo.findChatWithParticipants(chatId)
-    if (!chat) return false
-    const candidateUserId = chat.candidate.userId
-    const recruiterUserId = chat.job.recruiter.userId
-    return userId === candidateUserId || userId === recruiterUserId
+    const participants = await this.repo.findParticipants(chatId)
+    if (!participants) return false
+    return userId === participants.candidateUserId || userId === participants.recruiterUserId
   }
 
   async getMessages(
@@ -79,7 +74,7 @@ export class ChatService implements IChatService {
   }
 
   async listChats(userId: string) {
-    const chats = await this.repo.findChatsByUserId(userId)
+    const chats = await this.repo.findByUserId(userId)
     return chats.map((chat) => ({
       chatId: chat.id,
       jobId: chat.jobId,
@@ -88,9 +83,9 @@ export class ChatService implements IChatService {
       createdAt: chat.createdAt,
       // Other participant's display name (D-12)
       otherParticipantName:
-        chat.candidate.userId === userId
-          ? chat.job.company.name // candidate sees company name
-          : chat.candidate.name,  // recruiter sees candidate name
+        chat.candidateUserId === userId
+          ? chat.companyName   // candidate sees company name
+          : chat.candidateName, // recruiter sees candidate name
     }))
   }
 }

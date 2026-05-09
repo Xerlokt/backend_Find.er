@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { authenticate } from '../../shared/hooks/authenticate'
 import { requireRole } from '../../shared/hooks/requireRole'
-import { CreditRepository } from './credits.repository'
+import { CreditRepository } from '../../adapters/repositories/credit.repository'
 import { CreditService } from './credits.service'
 import { haversineKm } from '../../shared/utils/haversine'
 import type { IChatService } from '../../shared/interfaces/chat.interface'
@@ -43,7 +43,7 @@ export async function creditsJobRoutes(app: FastifyInstance, opts: { chat: IChat
       profile: candidateProfile
         ? {
             name: candidateProfile.name,
-            avatarUrl: candidateProfile.user.avatarUrl,
+            avatarUrl: candidateProfile.avatarUrl,
             bio: candidateProfile.bio,
             skills: candidateProfile.skills,
             professionId: candidateProfile.professionId,

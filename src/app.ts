@@ -12,14 +12,16 @@ import { candidateRoutes } from './infrastructure/http/routes/candidate.routes'
 import { companyRoutes } from './infrastructure/http/routes/company.routes'
 import { recruiterRoutes } from './infrastructure/http/routes/recruiter.routes'
 import { adminRoutes } from './infrastructure/http/routes/admin.routes'
-import { CreditRepository } from './modules/credits/credits.repository'
+import { CreditRepository } from './adapters/repositories/credit.repository'
 import { CreditService } from './modules/credits/credits.service'
 import { jobRoutes } from './infrastructure/http/routes/job.routes'
-import { swipeRoutes, swipeJobRoutes } from './modules/swipe/swipe.routes'
-import { creditsJobRoutes } from './modules/credits/credits.routes'
-import { ChatRepository } from './modules/chat/chat.repository'
+import { swipeRoutes, swipeJobRoutes } from './infrastructure/http/routes/swipe.routes'
+import { creditsJobRoutes } from './infrastructure/http/routes/credits.routes'
+import { ChatRepository } from './adapters/repositories/chat.repository'
 import { ChatService } from './modules/chat/chat.service'
-import { chatRoutes } from './modules/chat/chat.routes'
+import { chatRoutes } from './infrastructure/http/routes/chat.routes'
+import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
+import { getNeo4jDriver } from './shared/db/neo4j'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -47,6 +49,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   const chatRepo = new ChatRepository()
   const chatService = new ChatService(chatRepo)
 
+  // Composition root: Neo4jAdapter — injected into swipe routes for fit score computation
+  const neo4jAdapter = new Neo4jAdapter(getNeo4jDriver())
+
   // Routes
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/auth' })
@@ -55,9 +60,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(recruiterRoutes, { prefix: '/recruiters' })
   await app.register(jobRoutes, { prefix: '/jobs' })
 
-  // Swipe routes — IChatService injected via opts (D-01, ARCH-04)
-  await app.register(swipeRoutes, { prefix: '/swipes', chat: chatService })
-  await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService })
+  // Swipe routes — IChatService and Neo4jAdapter injected via opts (D-01, ARCH-04)
+  await app.register(swipeRoutes, { prefix: '/swipes', chat: chatService, neo4j: neo4jAdapter })
+  await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService, neo4j: neo4jAdapter })
 
   // Credits routes — IChatService injected via opts (D-01, ARCH-04)
   await app.register(creditsJobRoutes, { prefix: '/jobs', chat: chatService })
