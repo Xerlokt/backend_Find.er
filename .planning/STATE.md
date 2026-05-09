@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Clean Architecture Refactor
-status: in_progress
-stopped_at: Plan 11-01 complete — candidate and recruiter modules migrated; ready for 11-02 (company)
-last_updated: "2026-05-08T23:48:04Z"
-last_activity: 2026-05-08 -- Plan 11-01 complete — candidate+recruiter repos, use cases, controllers, routes created; app.ts swapped; 142/142 tests green
+milestone: v1.0
+milestone_name: milestone
+status: completed
+stopped_at: Completed 11-02-PLAN.md — company module migrated; run 11-03 next (job module)
+last_updated: "2026-05-09T00:04:04Z"
+last_activity: 2026-05-09 -- Plan 11-02 complete — company module migrated to Clean Architecture (ICompanyRepository extended with getTransactions, CompanyRepository adapter with $transaction, use cases, controller, routes)
 progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 1
-  percent: 25
+  total_phases: 13
+  completed_phases: 10
+  total_plans: 38
+  completed_plans: 37
+  percent: 97
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 ## Current Position
 
 Phase: 11 — Core Modules Migration (IN PROGRESS)
-Plan: 11-01 complete (candidate+recruiter); 11-02 next (company)
-Status: Plan 11-01 complete — 10 new files + app.ts swap; 142/142 integration tests green
-Last activity: 2026-05-08 -- Plan 11-01 complete — candidate and recruiter modules migrated to Clean Architecture (repos, use cases, controllers, routes)
+Plan: 11-02 complete (company); 11-03 next (job)
+Status: Plan 11-02 complete — 6 new files + ICompanyRepository + app.ts swap; 134/134 integration tests green
+Last activity: 2026-05-09 -- Plan 11-02 complete — company module migrated to Clean Architecture (ICompanyRepository extended with getTransactions, CompanyRepository adapter with $transaction, use cases, controller, routes)
 
-Progress: [██░░░░░░░░] 25% (v2.0 Phase 11 in progress, 1/4 plans done)
+Progress: [████░░░░░░] 50% (v2.0 Phase 11 in progress, 2/4 plans done)
 
 ## Performance Metrics
 
@@ -104,21 +104,28 @@ Recent decisions affecting current work:
 - 11-01: CandidateRepository.toDomain() maps every field explicitly — no spread — to enforce domain/adapter boundary and allow safe Modality enum cast (Prisma enum → domain union type)
 - 11-01: RecruiterRepository.findCompanyById() calls prisma.company directly with ARCH-04 module isolation comment — never imports CompanyRepository
 - 11-01: Old src/modules/candidate/ and src/modules/recruiter/ files NOT deleted — additive migration pattern; cleanup deferred to Phase 13
+- 11-02: ICompanyRepository.getTransactions declared on interface so admin use case (plan 04) can query credit transactions via ICompanyRepository contract without importing Prisma directly
+- 11-02: CompanyRepository.getTransactions returns Prisma rows directly — CreditTransaction entity shape exactly matches Prisma creditTransaction model, no toDomain needed
+- 11-02: adjustCredits uses DomainError(message, code, statusCode) — opposite arg order from AppError(message, statusCode, code); both error cases updated correctly
+- 11-02: Old src/modules/company/ files NOT deleted — additive migration pattern; cleanup deferred to Phase 13
 
 ### v2.0 Architecture Context
 
 **Current src/ structure (before migration):**
+
 - `src/modules/` — flat module directories (auth, candidate, company, recruiter, job, swipe, credits, recommendation, chat, admin, health)
 - `src/shared/` — db clients (prisma.ts, neo4j.ts), plugins, hooks, errors, interfaces, utils
 - `src/app.ts`, `src/server.ts` — entry points
 
 **Target src/ structure:**
+
 - `src/domain/` — entities, value-objects, interfaces (repository contracts)
 - `src/application/` — use-cases by module, ports (IHashPort, ITokenPort, IGraphPort), errors
 - `src/adapters/` — controllers, repository implementations, service adapters
 - `src/infrastructure/` — http/routes, http/plugins, database singletons, app.ts, server.ts, scheduler
 
 **Dependency rule (enforced in Phase 13):**
+
 - `domain/` imports nothing from the project
 - `application/` imports only `domain/`
 - `adapters/` imports `application/` and `domain/`
@@ -141,6 +148,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-08T23:48:04Z
-Stopped at: Completed 11-01-PLAN.md — candidate and recruiter modules migrated; run 11-02 next (company module)
+Last session: 2026-05-09T00:04:04Z
+Stopped at: Completed 11-02-PLAN.md — company module migrated; run 11-03 next (job module)
 Resume file: None
