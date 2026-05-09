@@ -26,7 +26,7 @@ export class GetMessagesUseCase {
       throw new DomainError('Not a participant', 'FORBIDDEN', 403)
     }
 
-    const messages = await this.repo.findMessages(chatId, cursor, limit + 1)
+    const messages = await this.repo.findMessages(chatId, cursor, limit)
     const hasNext = messages.length > limit
     const data = hasNext ? messages.slice(0, limit) : messages
     const nextCursor = hasNext ? data[data.length - 1].id : null
