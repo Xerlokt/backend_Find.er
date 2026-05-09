@@ -8,5 +8,4 @@ export async function companyRoutes(app: FastifyInstance): Promise<void> {
 
   app.post('/', { preHandler: [authenticate, requireRole('ADMIN')] }, ctrl.create.bind(ctrl))
   app.get('/:id', { preHandler: [authenticate] }, ctrl.getById.bind(ctrl))
-  app.patch('/admin/:id/credits', { preHandler: [authenticate, requireRole('ADMIN')] }, ctrl.adjustCredits.bind(ctrl))
 }
