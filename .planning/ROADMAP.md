@@ -255,7 +255,12 @@ Plans:
   3. A static import-check (or `madge --circular` / custom script) confirms: `domain/` has no project imports; `application/` imports only `domain/`; `adapters/` imports only `application/` and `domain/`; `infrastructure/` is the only layer that imports all others
   4. At least one use case per module (auth, candidate, job, swipe, credits, chat) has a Jest unit test that runs with mocked interfaces — no DB, no HTTP server required
   5. All 41 integration tests continue to pass after cleanup; `npm run build` produces zero TypeScript errors
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Fix all 6 import chains: create 8 new layer files (haversine, recommendation.repository, chat.service, credit.service, require-role.hook, error-handler, app.error, health route); update 29 files (adapters, infrastructure, test helpers, integration tests, unit tests, jest.config); npm run build + npm test green
+- [ ] 13-02-PLAN.md — Delete src/modules/ and src/shared/; delete 8 old module service unit test files; verify tsc + 41 integration tests green
+- [ ] 13-03-PLAN.md — scripts/check-deps.ts (madge dependency rule enforcement) + 6 use-case unit tests (auth, candidate, job, swipe, credits, chat) with mocked interfaces; npm run check:deps + npm run test:unit green
 
 ## Progress
 
@@ -283,4 +288,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 10. Infrastructure + Auth Migration | 0/4 | Not started | - |
 | 11. Core Modules Migration | 4/4 | Complete | 2026-05-08 |
 | 12. Swipe, Credits, Recommendation, Chat Migration | 4/4 | Complete | 2026-05-09 |
-| 13. Cleanup + Unit Test Layer | 0/? | Not started | - |
+| 13. Cleanup + Unit Test Layer | 0/3 | Not started | - |
