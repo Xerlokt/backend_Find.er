@@ -8,8 +8,9 @@ async function plugin(app: FastifyInstance): Promise<void> {
   const repo = new JobRepository()
 
   // node-cron v4: schedule returns a ScheduledTask; { scheduled: false } suppresses auto-start
+  // Run hourly at minute 0 — jobs expire on the order of days/weeks, per-minute is wasteful
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const task = cron.schedule('* * * * *', async () => {
+  const task = cron.schedule('0 * * * *', async () => {
     try {
       const count = await runExpiryCheck(repo)
       if (count > 0) {
