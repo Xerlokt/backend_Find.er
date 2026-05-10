@@ -1,42 +1,76 @@
 Summary of all failing tests
- FAIL  tests/unit/company.service.test.ts
-  ● CompanyService › adjustCredits › chama repo.findById e repo.adjustCredits quando saldo é suficiente
+ FAIL  tests/integration/company.test.ts (10.788 s)
+  ● Company Routes — Integration › PATCH /companies/admin/:id/credits › 200 e empresa com credits: 100 após ajuste de 100 (partindo de 0)
 
-    AppError: Company not found
+    expect(received).toBe(expected) // Object.is equality
 
-      21 |     return prisma.$transaction(async (tx) => {
-      22 |       const company = await tx.company.findUnique({ where: { id: companyId } })
-    > 23 |       if (!company) throw new AppError('Company not found', 404, 'NOT_FOUND')
-         |                           ^
-      24 |       if (company.credits + delta < 0) {
-      25 |         throw new AppError('Insufficient credits', 400, 'INSUFFICIENT_CREDITS')
-      26 |       }
+    Expected: 200
+    Received: 404
 
-      at src/modules/company/company.service.ts:23:27
-      at async Proxy._transactionWithCallback (node_modules/@prisma/client/src/runtime/getPrismaClient.ts:785:18)
-      at async Object.<anonymous> (tests/unit/company.service.test.ts:64:22)
+      158 |         .send({ amount: 100 })
+      159 |
+    > 160 |       expect(response.status).toBe(200)
+          |                               ^
+      161 |       expect(response.body.credits).toBe(100)
+      162 |
+      163 |       await app.close()
 
-  ● CompanyService › adjustCredits › lança AppError 400 INSUFFICIENT_CREDITS quando saldo ficaria negativo
+      at Object.<anonymous> (tests/integration/company.test.ts:160:31)
 
-    expect(received).rejects.toMatchObject(expected)
+  ● Company Routes — Integration › PATCH /companies/admin/:id/credits › 403 para usuário RECRUITER
 
-    - Expected  - 2
-    + Received  + 2
+    expect(received).toBe(expected) // Object.is equality
 
-      Object {
-    -   "code": "INSUFFICIENT_CREDITS",
-    -   "statusCode": 400,
-    +   "code": "NOT_FOUND",
-    +   "statusCode": 404,
-      }
+    Expected: 403
+    Received: 404
 
-      73 |       repo.findById.mockResolvedValue(company as any)
-      74 |
-    > 75 |       await expect(service.adjustCredits('company-1', -999)).rejects.toMatchObject({
-         |                                                                      ^
-      76 |         statusCode: 400,
-      77 |         code: 'INSUFFICIENT_CREDITS',
-      78 |       })
+      177 |         .send({ amount: 100 })
+      178 |
+    > 179 |       expect(response.status).toBe(403)
+          |                               ^
+      180 |
+      181 |       await app.close()
+      182 |     })
 
-      at Object.toMatchObject (node_modules/expect/build/index.js:2155:20)
-      at Object.<anonymous> (tests/unit/company.service.test.ts:75:70)
+      at Object.<anonymous> (tests/integration/company.test.ts:179:31)
+
+  ● Company Routes — Integration › PATCH /companies/admin/:id/credits › 400 quando amount é 0 (Zod rejeita não-positivo)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 404
+
+      195 |         .send({ amount: 0 })
+      196 |
+    > 197 |       expect(response.status).toBe(400)
+          |                               ^
+      198 |
+      199 |       await app.close()
+      200 |     })
+
+      at Object.<anonymous> (tests/integration/company.test.ts:197:31)
+
+  ● Company Routes — Integration › PATCH /companies/admin/:id/credits › 400 quando amount é negativo (Zod rejeita não-positivo)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 404
+
+      214 |
+      215 |       // amount negativo é rejeitado pelo Zod (positive() rejeita valores <= 0)
+    > 216 |       expect(response.status).toBe(400)
+          |                               ^
+      217 |
+      218 |       await app.close()
+      219 |     })
+
+      at Object.<anonymous> (tests/integration/company.test.ts:216:31)
+
+
+Test Suites: 1 failed, 23 passed, 24 total
+Tests:       4 failed, 238 passed, 242 total
+Snapshots:   0 total
+Time:        193.478 s, estimated 205 s
+Ran all test suites.
