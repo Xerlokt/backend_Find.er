@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { SwipeController } from '../../../adapters/controllers/swipe.controller'
 import { authenticate } from '../plugins/authenticate.hook'
-import { requireRole } from '../../../shared/hooks/requireRole'
+import { requireRole } from '../plugins/require-role.hook'
 import { IChatPort } from '../../../application/ports/chat.port'
 import { IRecommendationRepository } from '../../../domain/interfaces/recommendation.repository.interface'
 

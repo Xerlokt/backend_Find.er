@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify'
-import { AppError } from '../../../shared/errors/AppError'
+import { DomainError } from '../../../application/errors/domain.error'
 
 // Augment FastifyJWT to type the JWT payload (user property on request)
 // @fastify/jwt maps FastifyJWT.user → FastifyRequest.user
@@ -19,6 +19,6 @@ export async function authenticate(
   try {
     await request.jwtVerify()
   } catch {
-    throw new AppError('Unauthorized', 401, 'UNAUTHORIZED')
+    throw new DomainError('Unauthorized', 'UNAUTHORIZED', 401)
   }
 }

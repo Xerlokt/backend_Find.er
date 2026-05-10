@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { JobController } from '../../../adapters/controllers/job.controller'
 import { authenticate } from '../plugins/authenticate.hook'
-import { requireRole } from '../../../shared/hooks/requireRole'
+import { requireRole } from '../plugins/require-role.hook'
 
 export async function jobRoutes(app: FastifyInstance): Promise<void> {
   const ctrl = new JobController()

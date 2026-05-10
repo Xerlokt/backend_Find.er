@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { AdminController } from '../../../adapters/controllers/admin.controller'
 import { authenticate } from '../plugins/authenticate.hook'
-import { requireRole } from '../../../shared/hooks/requireRole'
+import { requireRole } from '../plugins/require-role.hook'
 
 interface ICreditGrantPort {
   grantCredits(companyId: string, amount: number, reason?: string): Promise<unknown>

@@ -4,7 +4,7 @@ import {
   FitScoreInput,
   FitScoreJobInput,
 } from '../../domain/interfaces/recommendation.repository.interface'
-import { RecommendationRepository } from '../../modules/recommendation/recommendation.repository'
+import { RecommendationRepository } from './recommendation.repository'
 
 export class Neo4jAdapter implements IRecommendationRepository {
   private readonly inner: RecommendationRepository

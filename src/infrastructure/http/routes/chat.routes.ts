@@ -2,10 +2,9 @@ import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import type { WebSocket } from '@fastify/websocket'
 import { authenticate } from '../plugins/authenticate.hook'
-import { requireRole } from '../../../shared/hooks/requireRole'
-import { AppError } from '../../../shared/errors/AppError'
+import { requireRole } from '../plugins/require-role.hook'
 import { DomainError } from '../../../application/errors/domain.error'
-import type { IChatService } from '../../../shared/interfaces/chat.interface'
+import type { IChatPort } from '../../../application/ports/chat.port'
 import type { IChatRepository } from '../../../domain/interfaces/chat.repository.interface'
 import { ChatController } from '../../../adapters/controllers/chat.controller'
 
@@ -45,8 +44,13 @@ const IncomingMessageSchema = z.object({
   content: z.string().min(1).max(5000),
 })
 
-// Extended service interface — beyond IChatService (only needed in routes layer)
-export interface IChatRouteService extends IChatService {
+// Extended service interface — beyond IChatPort (only needed in routes layer)
+export interface IChatRouteService extends IChatPort {
+  sendMessage(
+    chatId: string,
+    senderId: string,
+    content: string,
+  ): Promise<{ id: string; chatId: string; senderId: string; content: string; createdAt: Date; readAt: Date | null }>
   verifyParticipant(chatId: string, userId: string): Promise<boolean>
   getMessages(
     chatId: string,
@@ -108,9 +112,7 @@ export async function chatRoutes(
         const message = await service.sendMessage(chatId, request.user.id, payload.content)
         broadcast(chatId, message) // Broadcast AFTER persist (D-11)
       } catch (err: unknown) {
-        const code = err instanceof DomainError ? err.code
-                   : err instanceof AppError ? err.code
-                   : 'SEND_ERROR'
+        const code = err instanceof DomainError ? err.code : 'SEND_ERROR'
         socket.send(JSON.stringify({ error: code }))
       }
     }

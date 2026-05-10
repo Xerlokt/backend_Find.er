@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { CreditRepository } from '../repositories/credit.repository'
 import { UnlockCandidateUseCase } from '../../application/use-cases/credits/unlock-candidate.use-case'
 import { DomainError } from '../../application/errors/domain.error'
-import { haversineKm } from '../../shared/utils/haversine'
+import { haversineKm } from '../../application/utils/haversine'
 import { IChatPort } from '../../application/ports/chat.port'
 
 const UnlockParamsSchema = z.object({

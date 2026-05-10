@@ -1,7 +1,7 @@
 import { ISwipeRepository } from '../../../domain/interfaces/swipe.repository.interface'
 import { IRecommendationRepository, FitScoreInput, FitScoreJobInput } from '../../../domain/interfaces/recommendation.repository.interface'
 import { DomainError } from '../../errors/domain.error'
-import { haversineKm } from '../../../shared/utils/haversine'
+import { haversineKm } from '../../utils/haversine'
 
 export class GetRankingUseCase {
   constructor(

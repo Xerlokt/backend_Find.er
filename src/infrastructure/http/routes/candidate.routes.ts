@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { CandidateController } from '../../../adapters/controllers/candidate.controller'
 import { authenticate } from '../plugins/authenticate.hook'
-import { requireRole } from '../../../shared/hooks/requireRole'
+import { requireRole } from '../plugins/require-role.hook'
 
 export async function candidateRoutes(app: FastifyInstance): Promise<void> {
   const ctrl = new CandidateController()
