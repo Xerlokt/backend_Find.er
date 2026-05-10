@@ -1,5 +1,5 @@
-import { AppError } from '../../src/shared/errors/AppError'
-import { errorHandler } from '../../src/shared/errors/errorHandler'
+import { AppError } from '../../src/infrastructure/http/errors/app.error'
+import { errorHandler } from '../../src/infrastructure/http/plugins/error-handler'
 import { ZodError, z } from 'zod'
 import { FastifyRequest, FastifyReply } from 'fastify'
 

@@ -1,7 +1,10 @@
 import '../helpers/setup'
-import { prisma } from '../../src/shared/db/prisma'
-import { JobRepository } from '../../src/modules/job/job.repository'
-import { JobService } from '../../src/modules/job/job.service'
+import { prisma } from '../../src/infrastructure/database/prisma'
+import { JobRepository } from '../../src/adapters/repositories/job.repository'
+import { CreateJobUseCase } from '../../src/application/use-cases/job/create-job.use-case'
+import { UpdateJobUseCase } from '../../src/application/use-cases/job/update-job.use-case'
+import { DeactivateJobUseCase } from '../../src/application/use-cases/job/deactivate-job.use-case'
+import { ListJobsByRecruiterUseCase } from '../../src/application/use-cases/job/list-jobs-by-recruiter.use-case'
 import { createUser, createCompany, createJob } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
 
@@ -15,13 +18,11 @@ async function createRecruiterWithProfile(companyId: string, emailSuffix: string
   return { user, profile }
 }
 
-describe('JobService — integration', () => {
+describe('Job Use Cases — integration', () => {
   let repo: JobRepository
-  let service: JobService
 
   beforeEach(() => {
     repo = new JobRepository()
-    service = new JobService(repo)
   })
 
   // ── createJob ──────────────────────────────────────────────────────────────
@@ -31,7 +32,8 @@ describe('JobService — integration', () => {
       const company = await createCompany()
       const { user, profile } = await createRecruiterWithProfile(company.id, 'create1')
 
-      const job = await service.createJob(user.id, {
+      const uc = new CreateJobUseCase(repo)
+      const job = await uc.execute(user.id, {
         title: 'Senior Dev',
         description: 'desc',
         professionId: 'backend-dev',
@@ -49,8 +51,9 @@ describe('JobService — integration', () => {
     it('404: throws when user has no recruiter profile', async () => {
       const userWithNoProfile = await createUser({ role: 'RECRUITER', email: 'no-profile@test.com' })
 
+      const uc = new CreateJobUseCase(repo)
       await expect(
-        service.createJob(userWithNoProfile.id, {
+        uc.execute(userWithNoProfile.id, {
           title: 'Dev',
           description: 'desc',
           professionId: 'backend-dev',
@@ -70,7 +73,8 @@ describe('JobService — integration', () => {
       const { user, profile } = await createRecruiterWithProfile(company.id, 'update1')
       const job = await createJob(company.id, profile.id)
 
-      const updated = await service.updateJob(user.id, job.id, { title: 'Updated Title' })
+      const uc = new UpdateJobUseCase(repo)
+      const updated = await uc.execute(user.id, job.id, { title: 'Updated Title' })
 
       expect(updated.title).toBe('Updated Title')
     })
@@ -82,8 +86,9 @@ describe('JobService — integration', () => {
 
       const job = await createJob(company.id, profile1.id)
 
+      const uc = new UpdateJobUseCase(repo)
       await expect(
-        service.updateJob(user2.id, job.id, { title: 'Hack' })
+        uc.execute(user2.id, job.id, { title: 'Hack' })
       ).rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' })
     })
 
@@ -91,8 +96,9 @@ describe('JobService — integration', () => {
       const company = await createCompany()
       const { user } = await createRecruiterWithProfile(company.id, 'notfound1')
 
+      const uc = new UpdateJobUseCase(repo)
       await expect(
-        service.updateJob(user.id, '00000000-0000-0000-0000-000000000000', {})
+        uc.execute(user.id, '00000000-0000-0000-0000-000000000000', {})
       ).rejects.toMatchObject({ statusCode: 404, code: 'NOT_FOUND' })
     })
   })
@@ -105,7 +111,8 @@ describe('JobService — integration', () => {
       const { user, profile } = await createRecruiterWithProfile(company.id, 'deact1')
       const job = await createJob(company.id, profile.id, { isActive: true })
 
-      await service.deactivateJob(user.id, job.id)
+      const uc = new DeactivateJobUseCase(repo)
+      await uc.execute(user.id, job.id)
 
       const persisted = await prisma.job.findUnique({ where: { id: job.id } })
       expect(persisted?.isActive).toBe(false)
@@ -118,8 +125,9 @@ describe('JobService — integration', () => {
 
       const job = await createJob(company.id, profile1.id)
 
+      const uc = new DeactivateJobUseCase(repo)
       await expect(
-        service.deactivateJob(user2.id, job.id)
+        uc.execute(user2.id, job.id)
       ).rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' })
     })
   })
@@ -137,7 +145,8 @@ describe('JobService — integration', () => {
       await createJob(company.id, profile1.id, { professionId: 'frontend-dev' })
       await createJob(company.id, profile2.id)
 
-      const jobs = await service.listJobsByRecruiter(user1.id)
+      const uc = new ListJobsByRecruiterUseCase(repo)
+      const jobs = await uc.execute(user1.id)
 
       expect(jobs).toHaveLength(2)
       expect(jobs.every(j => j.recruiterId === profile1.id)).toBe(true)

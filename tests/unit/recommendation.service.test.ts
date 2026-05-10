@@ -1,8 +1,9 @@
-import { RecommendationRepository } from '../../src/modules/recommendation/recommendation.repository'
-import type { CandidateData, JobData } from '../../src/shared/interfaces/recommendation.interface'
+import { RecommendationRepository } from '../../src/adapters/services/recommendation.repository'
+import type { FitScoreInput, FitScoreJobInput } from '../../src/domain/interfaces/recommendation.repository.interface'
 
 // Factory helpers — use neutral values on fields not under test for each case
-const makeCandidate = (overrides: Partial<CandidateData> = {}): CandidateData => ({
+const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput => ({
+  id: overrides.id ?? 'test-candidate',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
   skills: overrides.skills ?? ['Node.js', 'TypeScript'],
   preferredModalities: overrides.preferredModalities ?? ['REMOTE'],
@@ -12,7 +13,8 @@ const makeCandidate = (overrides: Partial<CandidateData> = {}): CandidateData =>
   searchRadiusKm: overrides.searchRadiusKm ?? 50,
 })
 
-const makeJob = (overrides: Partial<JobData> = {}): JobData => ({
+const makeJob = (overrides: Partial<FitScoreJobInput> = {}): FitScoreJobInput => ({
+  id: overrides.id ?? 'test-job',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
   requiredSkills: overrides.requiredSkills ?? ['Node.js', 'TypeScript'],
   modality: overrides.modality ?? 'REMOTE',

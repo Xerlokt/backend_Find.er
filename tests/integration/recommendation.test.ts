@@ -1,10 +1,11 @@
 import '../helpers/setup'
 import { setupNeo4j } from '../helpers/neo4j-setup'
-import { getNeo4jDriver } from '../../src/shared/db/neo4j'
-import { RecommendationRepository } from '../../src/modules/recommendation/recommendation.repository'
-import type { CandidateData, JobData } from '../../src/shared/interfaces/recommendation.interface'
+import { getNeo4jDriver } from '../../src/infrastructure/database/neo4j'
+import { RecommendationRepository } from '../../src/adapters/services/recommendation.repository'
+import type { FitScoreInput, FitScoreJobInput } from '../../src/domain/interfaces/recommendation.repository.interface'
 
-const makeCandidate = (overrides: Partial<CandidateData> = {}): CandidateData => ({
+const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput => ({
+  id: overrides.id ?? 'test-candidate',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
   skills: overrides.skills ?? ['Node.js', 'TypeScript'],
   preferredModalities: overrides.preferredModalities ?? ['REMOTE'],
@@ -14,7 +15,8 @@ const makeCandidate = (overrides: Partial<CandidateData> = {}): CandidateData =>
   searchRadiusKm: overrides.searchRadiusKm ?? 50,
 })
 
-const makeJob = (overrides: Partial<JobData> = {}): JobData => ({
+const makeJob = (overrides: Partial<FitScoreJobInput> = {}): FitScoreJobInput => ({
+  id: overrides.id ?? 'test-job',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
   requiredSkills: overrides.requiredSkills ?? ['Node.js', 'TypeScript'],
   modality: overrides.modality ?? 'REMOTE',
@@ -162,7 +164,7 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
       const { buildApp } = await import('../../src/app')
       const supertest = (await import('supertest')).default
       const { createUser, createCompany, createJob, createSwipe } = await import('../helpers/factories')
-      const { prisma } = await import('../../src/shared/db/prisma')
+      const { prisma } = await import('../../src/infrastructure/database/prisma')
 
       const app = await buildApp({ testing: true })
       await app.ready()

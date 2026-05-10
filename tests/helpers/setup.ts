@@ -1,5 +1,5 @@
 import { execSync } from 'child_process'
-import { prisma } from '../../src/shared/db/prisma'
+import { prisma } from '../../src/infrastructure/database/prisma'
 
 beforeAll(async () => {
   // Override DATABASE_URL to point at test DB

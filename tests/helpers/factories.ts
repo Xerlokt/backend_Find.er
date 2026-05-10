@@ -1,4 +1,4 @@
-import { prisma } from '../../src/shared/db/prisma'
+import { prisma } from '../../src/infrastructure/database/prisma'
 import bcrypt from 'bcryptjs'
 import { Modality, Role } from '@prisma/client'
 import { createHash, randomBytes } from 'crypto'

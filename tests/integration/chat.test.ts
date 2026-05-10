@@ -11,7 +11,7 @@ import {
   createMessage,
 } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../src/shared/db/prisma'
+import { prisma } from '../../src/infrastructure/database/prisma'
 import type { WebSocket as WS } from 'ws'
 
 async function loginUser(

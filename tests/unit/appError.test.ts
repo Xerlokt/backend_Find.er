@@ -1,4 +1,4 @@
-import { AppError } from '../../src/shared/errors/AppError'
+import { AppError } from '../../src/infrastructure/http/errors/app.error'
 
 describe('AppError', () => {
   it('sets message and statusCode', () => {

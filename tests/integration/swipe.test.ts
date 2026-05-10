@@ -3,7 +3,7 @@ import { buildApp } from '../../src/app'
 import supertest from 'supertest'
 import { createUser, createCompany, createJob, createCandidate, createSwipe, createUnlock } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../src/shared/db/prisma'
+import { prisma } from '../../src/infrastructure/database/prisma'
 
 const PASSWORD = 'password123'
 

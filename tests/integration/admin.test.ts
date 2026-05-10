@@ -3,7 +3,7 @@ import { buildApp } from '../../src/app'
 import supertest from 'supertest'
 import { createUser, createCompany } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
-import { prisma } from '../../src/shared/db/prisma'
+import { prisma } from '../../src/infrastructure/database/prisma'
 
 describe('Admin Routes — Integration', () => {
   // Helper: login de um usuário e retorna accessToken

@@ -11,10 +11,7 @@ const config: Config = {
       },
     ],
   },
-  moduleNameMapper: {
-    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
-    '^@modules/(.*)$': '<rootDir>/src/modules/$1',
-  },
+  moduleNameMapper: {},
   // setup.ts is imported directly in each integration test file (see tests/integration/*)
   globalSetup: '<rootDir>/tests/jest.global-setup.ts',
   setupFiles: ['<rootDir>/tests/jest.setup-env.ts'],
