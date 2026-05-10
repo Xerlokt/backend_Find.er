@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: complete
-stopped_at: Phase 12 COMPLETE — all 4 plans executed; 134/134 integration tests green; verification passed 9/9; Phase 13 next (Cleanup + Unit Test Layer)
-last_updated: "2026-05-09T19:30:00Z"
-last_activity: 2026-05-09 -- Phase 12 complete — swipe/credits/recommendation/chat migrated to Clean Architecture; Neo4jAdapter wired at composition root; 134/134 integration tests green; verification 9/9 passed; 2 critical code review findings logged in 12-REVIEW.md
+stopped_at: Phase 13 Plan 01 COMPLETE — import surgery done; 8 new layer files created; 28 files updated; npm run build 0 errors; tsc clean
+last_updated: "2026-05-10T14:02:00Z"
+last_activity: 2026-05-10 -- Plan 13-01 complete — fixed all 6 cross-boundary import chains; created 8 new files (haversine, recommendation.repository, chat.service, credit.service, require-role.hook, error-handler, app.error, health.routes); updated 29 source+test files; jest.config @shared/@modules aliases removed; npm run build exits 0
 progress:
   total_phases: 13
   completed_phases: 12
   total_plans: 46
-  completed_plans: 42
+  completed_plans: 43
   percent: 98
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 12 — Swipe, Credits, Recommendation, Chat Migration (complete)
-Plan: 12-04 complete (app.ts composition root fully wired); Phase 13 (Cleanup + Unit Test Layer) next
-Status: Plan 12-04 complete — app.ts fully wired to infrastructure/adapter layers; Neo4jAdapter injected; 134 integration tests green; tsc clean
-Last activity: 2026-05-09 -- Plan 12-04 complete — app.ts swaps (swipeRoutes/creditsJobRoutes/chatRoutes from infrastructure/, ChatRepository/CreditRepository from adapters/), Neo4jAdapter instantiated at composition root (new Neo4jAdapter(getNeo4jDriver())), injected into swipeRoutes+swipeJobRoutes via {neo4j: neo4jAdapter} opts, ChatService/CreditService updated to accept IChatRepository/ICreditRepository interfaces (constructor type widening), modules/credits/credits.routes.ts updated to use adapter CreditRepository, unit test chat.service.test.ts updated to mock IChatRepository, 134 integration tests green (zero regressions), ARCH-07 verified (zero @prisma/client in application/use-cases/ or application/ports/)
+Phase: 13 — Cleanup + Unit Test Layer (in progress)
+Plan: 13-01 complete; 13-02 next (delete src/modules/ and src/shared/)
+Status: Plan 13-01 complete — all 6 cross-boundary import chains fixed; 8 new layer files created; 29 files updated; npm run build 0 errors; jest.config aliases removed
+Last activity: 2026-05-10 -- Plan 13-01 complete — import surgery done; haversine/recommendation.repository/chat.service/credit.service/require-role.hook/error-handler/app.error/health.routes created; neo4j.adapter/get-ranking/credits.controller/authenticate.hook/chat.routes/app.ts updated; all 7 infra route files updated; test helpers+integration tests repointed; unit tests appError/errorHandler/job.scheduler/recommendation.service updated; jest.config @shared/@modules aliases removed; npm run build exits 0
 
-Progress: [████████░░] 98% (Phase 12 complete, Phase 13 next)
+Progress: [█████████░] 98% (Phase 13 in progress, plan 1/3 done)
 
 ## Performance Metrics
 
@@ -131,6 +131,10 @@ Recent decisions affecting current work:
 - 12-04: CreditService constructor typed to ICreditRepository — enables adapter CreditRepository injection without changing service logic
 - 12-04: modules/credits/credits.routes.ts (old, not imported by app.ts) updated to use adapter CreditRepository — required for tsc clean across whole project; avatarUrl access flattened from user.avatarUrl to direct field
 - 12-04: chat.service unit test updated to mock IChatRepository interface — old method names (findChatWithParticipants, findChatsByUserId) replaced with domain interface names (findParticipants, findByUserId)
+- 13-01: credit.service.ts UNLOCK_COST_BY_PLAN import path is ../../application/use-cases/credits/credits.constants (not ../use-cases/ which resolves to nonexistent adapters/use-cases/)
+- 13-01: IChatRouteService.sendMessage added explicitly in chat.routes.ts — IChatPort only has createOrGetChat; WS handler calls sendMessage which needed explicit declaration in IChatRouteService
+- 13-01: job.test.ts rewritten to use 4 new use cases (CreateJob/UpdateJob/DeactivateJob/ListJobsByRecruiter) + adapter JobRepository — no JobService exists in adapters/services/
+- 13-01: FitScoreInput.id required — all recommendation test factory defaults updated with id: 'test-candidate' / id: 'test-job' per Phase 12-03 contract
 
 ### v2.0 Architecture Context
 
@@ -171,6 +175,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-09T19:02:00Z
-Stopped at: Completed 12-04-PLAN.md — Phase 12 migration complete; all 4 modules wired to infrastructure/adapter layers; 134 integration tests green; Phase 13 (Cleanup + Unit Test Layer) next
+Last session: 2026-05-10T14:02:00Z
+Stopped at: Completed 13-01-PLAN.md — import surgery done; 8 new files created; 28 files updated; build clean; 13-02 next (delete src/modules/ and src/shared/)
 Resume file: None
