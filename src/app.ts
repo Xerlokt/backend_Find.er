@@ -67,9 +67,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   // Credits routes — IChatService injected via opts (D-01, ARCH-04)
   await app.register(creditsJobRoutes, { prefix: '/jobs', chat: chatService })
 
-  // Composition root: admin — CreditService receives chatService (D-01)
+  // Composition root: admin — CreditService for grantCredits only (unlockCandidate removed, CR-01)
   const creditRepo = new CreditRepository()
-  const creditService = new CreditService(creditRepo, chatService) // chatService injected (NEW)
+  const creditService = new CreditService(creditRepo)
   await app.register(adminRoutes, { prefix: '/admin', creditService })
 
   // Chat routes under /chats prefix — chatService and chatRepo injected (WR-03: DI fix)
