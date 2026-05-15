@@ -12,26 +12,30 @@ const UnlockParamsSchema = z.object({
 })
 
 export class CreditsController {
-  constructor(private readonly chat: IChatPort) {}
+  private readonly creditRepo: CreditRepository
+  private readonly useCase: UnlockCandidateUseCase
+
+  constructor(chat: IChatPort) {
+    this.creditRepo = new CreditRepository()
+    this.useCase = new UnlockCandidateUseCase(this.creditRepo, chat)
+  }
 
   async unlock(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const { jobId, candidateId } = UnlockParamsSchema.parse(request.params)
-    const creditRepo = new CreditRepository()
-    const useCase = new UnlockCandidateUseCase(creditRepo, this.chat)
 
     try {
-      const unlock = await useCase.execute(request.user.id, jobId, candidateId)
+      const unlock = await this.useCase.execute(request.user.id, jobId, candidateId)
 
       // Response enrichment — controller concern, not business logic
+      // job cannot be null here: use case would have thrown NOT_FOUND otherwise
       const [candidateProfile, job] = await Promise.all([
-        creditRepo.findCandidateProfileById(candidateId),
-        creditRepo.findJobById(jobId),
+        this.creditRepo.findCandidateProfileById(candidateId),
+        this.creditRepo.findJobById(jobId),
       ])
 
-      const distanceKm =
-        candidateProfile && job
-          ? haversineKm(candidateProfile.lat, candidateProfile.lng, job.lat, job.lng)
-          : null
+      const distanceKm = candidateProfile
+        ? haversineKm(candidateProfile.lat, candidateProfile.lng, job!.lat, job!.lng)
+        : null
 
       reply.status(201).send({
         ...unlock,
