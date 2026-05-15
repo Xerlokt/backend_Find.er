@@ -145,7 +145,7 @@ export class CreditRepository implements ICreditRepository {
     })
   }
 
-  private toJobDomain(row: any): Job {
+  private toJobDomain(row: Prisma.JobGetPayload<Record<string, never>>): Job {
     return {
       id: row.id,
       companyId: row.companyId,
@@ -165,7 +165,7 @@ export class CreditRepository implements ICreditRepository {
     }
   }
 
-  private toCompanyDomain(row: any): Company {
+  private toCompanyDomain(row: Prisma.CompanyGetPayload<Record<string, never>>): Company {
     return {
       id: row.id,
       name: row.name,
