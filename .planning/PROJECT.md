@@ -4,15 +4,20 @@
 
 Backend completo de uma plataforma de match entre candidatos e vagas de emprego, no estilo swipe. Candidatos deslizam pelas vagas, recrutadores veem um ranking de fit dos candidatos com perfis censurados ou visíveis dependendo do swipe, e empresas podem desbloquear candidatos que deram "não" pagando créditos.
 
-## Current Milestone: v2.0 Clean Architecture Refactor
+## Current Milestone: v2.0 Clean Architecture Refactor — COMPLETE
 
 **Goal:** Migrar o codebase de `src/modules/` para Clean Architecture em 4 camadas, eliminando violações de dependência e tornando use cases 100% testáveis sem banco.
 
-**Target features:**
+**Status:** Phase 13 complete (2026-05-15) — all 46 plans, 13 phases done. 172 tests pass.
+
+**Delivered:**
 - Camada Domain — entities TypeScript puras + interfaces de repositório (zero imports externos)
 - Camada Application — use cases por caso de uso + ports para bcrypt, JWT e Neo4j
 - Camada Adapters — controllers + implementações de repositório (Prisma) + adapters de serviço
 - Camada Infrastructure — rotas Fastify, plugins, singletons de banco, app.ts, server.ts
+- `scripts/check-deps.ts` — static layer rule enforcement via madge (ARCH-13)
+- 6 use-case unit tests — auth, candidate, job, swipe, credits, chat (TEST-02)
+- `src/modules/` e `src/shared/` deletados (MIGRATE-01, MIGRATE-02)
 
 ---
 
