@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
+milestone: v2.0
+milestone_name: Clean Architecture Refactor COMPLETE
 status: complete
-stopped_at: Phase 13 Plan 01 COMPLETE — import surgery done; 8 new layer files created; 28 files updated; npm run build 0 errors; tsc clean
-last_updated: "2026-05-10T14:02:00Z"
-last_activity: 2026-05-10 -- Plan 13-01 complete — fixed all 6 cross-boundary import chains; created 8 new files (haversine, recommendation.repository, chat.service, credit.service, require-role.hook, error-handler, app.error, health.routes); updated 29 source+test files; jest.config @shared/@modules aliases removed; npm run build exits 0
+stopped_at: Phase 13 Plan 03 COMPLETE — check-deps.ts created; 6 use-case unit tests added; npm run check:deps exits 0; npm run test:unit 38 tests pass; Phase 13 complete
+last_updated: "2026-05-15T22:30:00Z"
+last_activity: 2026-05-15 -- Plan 13-03 complete — madge installed; scripts/check-deps.ts created with 3 layer rules; 6 use-case unit tests written (register, upsert-candidate-profile, create-job, record-swipe, unlock-candidate, create-or-get-chat); all 38 unit tests pass; npm run build exits 0; Phase 13 complete — Clean Architecture refactor DONE
 progress:
   total_phases: 13
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 46
-  completed_plans: 43
-  percent: 98
+  completed_plans: 46
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-03)
 
 ## Current Position
 
-Phase: 13 — Cleanup + Unit Test Layer (in progress)
-Plan: 13-01 complete; 13-02 next (delete src/modules/ and src/shared/)
-Status: Plan 13-01 complete — all 6 cross-boundary import chains fixed; 8 new layer files created; 29 files updated; npm run build 0 errors; jest.config aliases removed
-Last activity: 2026-05-10 -- Plan 13-01 complete — import surgery done; haversine/recommendation.repository/chat.service/credit.service/require-role.hook/error-handler/app.error/health.routes created; neo4j.adapter/get-ranking/credits.controller/authenticate.hook/chat.routes/app.ts updated; all 7 infra route files updated; test helpers+integration tests repointed; unit tests appError/errorHandler/job.scheduler/recommendation.service updated; jest.config @shared/@modules aliases removed; npm run build exits 0
+Phase: 13 — Cleanup + Unit Test Layer (COMPLETE)
+Plan: 13-03 complete — Phase 13 done; all 3 plans executed; Clean Architecture refactor complete
+Status: Plan 13-03 complete — check-deps.ts exits 0; 6 use-case unit tests passing; npm run test:unit 38/38; npm run build exits 0
+Last activity: 2026-05-15 -- Plan 13-03 complete — madge@8.0.0 installed; scripts/check-deps.ts with 3 layer rules (domain/application/adapters); 6 use-case unit tests (register, upsert-candidate-profile, create-job, record-swipe, unlock-candidate, create-or-get-chat); 38 unit tests; build clean; ARCH-13 + TEST-02 fulfilled; Phase 13 + v2.0 refactor COMPLETE
 
-Progress: [█████████░] 98% (Phase 13 in progress, plan 1/3 done)
+Progress: [██████████] 100% (Phase 13 complete — all 46 plans done)
 
 ## Performance Metrics
 
@@ -135,6 +135,9 @@ Recent decisions affecting current work:
 - 13-01: IChatRouteService.sendMessage added explicitly in chat.routes.ts — IChatPort only has createOrGetChat; WS handler calls sendMessage which needed explicit declaration in IChatRouteService
 - 13-01: job.test.ts rewritten to use 4 new use cases (CreateJob/UpdateJob/DeactivateJob/ListJobsByRecruiter) + adapter JobRepository — no JobService exists in adapters/services/
 - 13-01: FitScoreInput.id required — all recommendation test factory defaults updated with id: 'test-candidate' / id: 'test-job' per Phase 12-03 contract
+- 13-03: Layer rule refined — adapters may import infrastructure/database (Prisma/Neo4j clients) because repositories ARE the adapters to the DB; forbidden boundary is adapters importing infrastructure/http
+- 13-03: ts-node --transpile-only used for check-deps.ts to bypass tsconfig rootDir restriction (scripts/ is outside src/)
+- 13-03: INSUFFICIENT_CREDITS tested via repo.executeUnlock mock rejection — use case delegates credit sufficiency check to repository/Prisma transaction layer; use case itself does not check credits directly
 
 ### v2.0 Architecture Context
 
@@ -175,6 +178,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-10T14:02:00Z
-Stopped at: Completed 13-01-PLAN.md — import surgery done; 8 new files created; 28 files updated; build clean; 13-02 next (delete src/modules/ and src/shared/)
+Last session: 2026-05-15T22:30:00Z
+Stopped at: Completed 13-03-PLAN.md — check-deps.ts + 6 use-case unit tests; Phase 13 complete; v2.0 Clean Architecture refactor DONE
 Resume file: None

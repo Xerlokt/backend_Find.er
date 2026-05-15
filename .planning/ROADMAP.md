@@ -27,7 +27,7 @@ Eight phases delivered the complete Job Tinder backend (v1.0). Five more phases 
 - [ ] **Phase 10: Infrastructure + Auth Migration** - Migrate shared infrastructure and the full auth module end-to-end into the new layer structure
 - [ ] **Phase 11: Core Modules Migration** - Migrate candidate, company, recruiter, job, and admin modules; all tests remain green
 - [x] **Phase 12: Swipe, Credits, Recommendation, Chat Migration** - Migrate remaining modules; 41 integration tests green; all use cases wired via interfaces only
-- [ ] **Phase 13: Cleanup + Unit Test Layer** - Delete src/modules/ and src/shared/; enforce dependency rule; add use-case unit tests
+- [x] **Phase 13: Cleanup + Unit Test Layer** - Delete src/modules/ and src/shared/; enforce dependency rule; add use-case unit tests
 
 ## Phase Details
 
@@ -259,8 +259,8 @@ Plans:
 
 Plans:
 - [x] 13-01-PLAN.md — Fix all 6 import chains: create 8 new layer files (haversine, recommendation.repository, chat.service, credit.service, require-role.hook, error-handler, app.error, health route); update 29 files (adapters, infrastructure, test helpers, integration tests, unit tests, jest.config); npm run build + npm test green
-- [ ] 13-02-PLAN.md — Delete src/modules/ and src/shared/; delete 8 old module service unit test files; verify tsc + 41 integration tests green
-- [ ] 13-03-PLAN.md — scripts/check-deps.ts (madge dependency rule enforcement) + 6 use-case unit tests (auth, candidate, job, swipe, credits, chat) with mocked interfaces; npm run check:deps + npm run test:unit green
+- [x] 13-02-PLAN.md — Delete src/modules/ and src/shared/; delete 8 old module service unit test files; verify tsc + 41 integration tests green
+- [x] 13-03-PLAN.md — scripts/check-deps.ts (madge dependency rule enforcement) + 6 use-case unit tests (auth, candidate, job, swipe, credits, chat) with mocked interfaces; npm run check:deps + npm run test:unit green
 
 ## Progress
 
@@ -288,4 +288,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 10. Infrastructure + Auth Migration | 0/4 | Not started | - |
 | 11. Core Modules Migration | 4/4 | Complete | 2026-05-08 |
 | 12. Swipe, Credits, Recommendation, Chat Migration | 4/4 | Complete | 2026-05-09 |
-| 13. Cleanup + Unit Test Layer | 1/3 | In progress | - |
+| 13. Cleanup + Unit Test Layer | 3/3 | Complete | 2026-05-15 |
