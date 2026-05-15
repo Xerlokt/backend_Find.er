@@ -14,7 +14,8 @@ export function requireRole(...roles: Role[]) {
   ): Promise<void> {
     if (!request.user) {
       // authenticate hook was not run before requireRole — programming error, not a client error
-      throw new DomainError('authenticate hook missing before requireRole', 'INTERNAL', 500)
+      request.log.error('requireRole invoked without prior authenticate hook')
+      throw new DomainError('Internal server error', 'INTERNAL', 500)
     }
     if (!roles.includes(request.user.role)) {
       throw new DomainError('Forbidden', 'FORBIDDEN', 403)
