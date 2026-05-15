@@ -6,16 +6,7 @@ import type {
   FitScoreInput,
   FitScoreJobInput,
 } from '../../domain/interfaces/recommendation.repository.interface'
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLng = ((lng2 - lng1) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
+import { haversineKm } from '../../application/utils/haversine'
 
 export class RecommendationRepository implements IRecommendationRepository {
   constructor(private readonly driver: Driver) {}
@@ -48,7 +39,8 @@ export class RecommendationRepository implements IRecommendationRepository {
       locationScore = 0.5 // Neutral — cannot penalise candidate for not sharing location
     } else {
       const radius = candidate.searchRadiusKm > 0 ? candidate.searchRadiusKm : 50
-      const distKm = haversineKm(candidate.lat, candidate.lng, job.lat, job.lng)
+      const distKmRaw = haversineKm(candidate.lat, candidate.lng, job.lat, job.lng)
+      const distKm = distKmRaw ?? 0
       locationScore = Math.max(0, 1 - distKm / radius)
     }
 
