@@ -62,7 +62,7 @@ export class ChatService implements IChatPort {
     const isParticipant = await this.verifyParticipant(chatId, userId)
     if (!isParticipant) throw new DomainError('Not a participant', 'NOT_PARTICIPANT', 403)
 
-    const results = await this.repo.findMessages(chatId, cursor, limit)
+    const results = await this.repo.findMessages(chatId, cursor, limit + 1)
     const hasNext = results.length > limit
     const data = hasNext ? results.slice(0, limit) : results
     const nextCursor = hasNext ? data[data.length - 1].id : null
