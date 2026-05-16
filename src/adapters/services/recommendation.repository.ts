@@ -20,15 +20,37 @@ export class RecommendationRepository implements IRecommendationRepository {
         ? 1.0
         : 0.0
 
-    // Factor 2: Skills overlap (35%) — case-insensitive exact match (RELATED_TO traversal deferred to v1.1)
+    // Factor 2: Skills overlap (35%) — Neo4j RELATED_TO*0..2 traversal with hop decay (Phase 14, D-01)
+    const WEIGHT: Record<number, number> = { 0: 1.0, 1: 0.8, 2: 0.6 }
     let skillsScore: number
     if (job.requiredSkillIds.length === 0) {
       skillsScore = 1.0
     } else {
-      const matched = job.requiredSkillIds.filter((req) =>
-        candidate.skillIds.some((cs) => cs.toLowerCase() === req.toLowerCase()),
-      )
-      skillsScore = matched.length / job.requiredSkillIds.length
+      const session = this.driver.session({ defaultAccessMode: neo4j.session.READ })
+      let adjacency: Array<{ skill: string; hops: number }> = []
+      try {
+        const result = await session.run(
+          `UNWIND $requiredSkillIds AS reqId
+           MATCH (req:Skill {id: reqId})
+           OPTIONAL MATCH path = (cand:Skill)-[:RELATED_TO*0..2]->(req)
+             WHERE cand.id IN $candidateSkillIds
+           WITH reqId, min(length(path)) AS hops
+           WHERE hops IS NOT NULL
+           RETURN reqId AS skill, hops`,
+          {
+            requiredSkillIds: job.requiredSkillIds,
+            candidateSkillIds: candidate.skillIds,
+          },
+        )
+        adjacency = result.records.map((r) => ({
+          skill: r.get('skill') as string,
+          hops: r.get('hops') as number,
+        }))
+      } finally {
+        await session.close()
+      }
+      const totalWeight = adjacency.reduce((sum, { hops }) => sum + (WEIGHT[hops] ?? 0), 0)
+      skillsScore = Math.min(totalWeight / job.requiredSkillIds.length, 1.0)
     }
 
     // Factor 3: Location proximity (20%)
