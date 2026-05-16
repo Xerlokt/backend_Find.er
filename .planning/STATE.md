@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Intelligence, Growth & Scale
-status: defining_requirements
-stopped_at: —
+status: roadmap_created
+stopped_at: Phase 14 — not started
 last_updated: "2026-05-16T00:00:00Z"
-last_activity: 2026-05-16 — Milestone v3.0 started — defining requirements
+last_activity: 2026-05-16 — v3.0 roadmap created (Phases 14–19)
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** v3.0 Intelligence, Growth & Scale — defining requirements
+**Current focus:** v3.0 Intelligence, Growth & Scale — Phase 14: Graph Recommendation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 14 — Graph Recommendation
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-16 — Milestone v3.0 started
+Status: Not started
+Last activity: 2026-05-16 — Roadmap created, ready to plan Phase 14
 
-Progress: [██████████] 100% (Phase 13 complete — all 46 plans done)
+Progress: [░░░░░░░░░░] 0% v3.0 (0/6 phases)
 
 ## Performance Metrics
 
@@ -57,11 +57,22 @@ Progress: [██████████] 100% (Phase 13 complete — all 46 pl
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 9. Domain Layer Scaffold | TBD | - | - |
-| 10. Infrastructure + Auth Migration | TBD | - | - |
-| 11. Core Modules Migration | TBD | - | - |
-| 12. Swipe, Credits, Recommendation, Chat Migration | TBD | - | - |
-| 13. Cleanup + Unit Test Layer | TBD | - | - |
+| 9. Domain Layer Scaffold | 3 | - | - |
+| 10. Infrastructure + Auth Migration | 4 | - | - |
+| 11. Core Modules Migration | 4 | - | - |
+| 12. Swipe, Credits, Recommendation, Chat Migration | 4 | - | - |
+| 13. Cleanup + Unit Test Layer | 3 | - | - |
+
+**v3.0 By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| 14. Graph Recommendation | TBD | - | - |
+| 15. Redis Caching | TBD | - | - |
+| 16. Recruiter Skill Preview | TBD | - | - |
+| 17. DISC Personality Assessment | TBD | - | - |
+| 18. Learning System | TBD | - | - |
+| 19. Admin Dashboard API + Load Testing | TBD | - | - |
 
 *Updated after each plan completion*
 
@@ -139,29 +150,29 @@ Recent decisions affecting current work:
 - 13-03: ts-node --transpile-only used for check-deps.ts to bypass tsconfig rootDir restriction (scripts/ is outside src/)
 - 13-03: INSUFFICIENT_CREDITS tested via repo.executeUnlock mock rejection — use case delegates credit sufficiency check to repository/Prisma transaction layer; use case itself does not check credits directly
 
-### v2.0 Architecture Context
+### v3.0 Architecture Context
 
-**Current src/ structure (before migration):**
+**Current src/ structure (v2.0 final):**
 
-- `src/modules/` — flat module directories (auth, candidate, company, recruiter, job, swipe, credits, recommendation, chat, admin, health)
-- `src/shared/` — db clients (prisma.ts, neo4j.ts), plugins, hooks, errors, interfaces, utils
-- `src/app.ts`, `src/server.ts` — entry points
+- `src/domain/` — 11 entity interfaces + 10 repository interfaces + 3 ports (IHashPort, ITokenPort, IGraphPort)
+- `src/application/` — use cases by module + DomainError
+- `src/adapters/` — controllers + Prisma repositories + BcryptAdapter, JwtAdapter, Neo4jAdapter
+- `src/infrastructure/` — Fastify routes, plugins, DB singletons, app.ts, server.ts, scheduler
 
-**Target src/ structure:**
-
-- `src/domain/` — entities, value-objects, interfaces (repository contracts)
-- `src/application/` — use-cases by module, ports (IHashPort, ITokenPort, IGraphPort), errors
-- `src/adapters/` — controllers, repository implementations, service adapters
-- `src/infrastructure/` — http/routes, http/plugins, database singletons, app.ts, server.ts, scheduler
-
-**Dependency rule (enforced in Phase 13):**
+**Dependency rule (enforced by check-deps.ts):**
 
 - `domain/` imports nothing from the project
 - `application/` imports only `domain/`
 - `adapters/` imports `application/` and `domain/`
 - `infrastructure/` imports all layers
 
-**File mapping reference:** `plan-architecture.md` (root of repo)
+**v3.0 additions planned:**
+
+- `ICachePort` — new port in `src/application/ports/`
+- `RedisAdapter` — new adapter in `src/adapters/`
+- `DiscResult`, `CandidateWeights`, `Job.discProfile` — 3 Prisma schema additions (2 migrations)
+- `fastify-metrics` plugin — new infrastructure plugin
+- `tests/load/` — k6 scripts (Docker-only tooling)
 
 ### Pending Todos
 
@@ -169,7 +180,14 @@ None.
 
 ### Blockers/Concerns
 
-None.
+Open questions from research (resolve before relevant phase):
+
+- **Phase 14:** Skill taxonomy seed scope — how many skills/edges; hand-crafted or imported from O*NET/ESCO?
+- **Phase 15:** Redis test isolation strategy — separate `redis_test` service on port 6380, or env flag to bypass cache in test environment?
+- **Phase 15:** check-deps.ts tightening impact — run `tsc + npm run check:deps` dry run against v2.0 codebase before writing any cache code.
+- **Phase 17:** DISC question bank authoring — 4-question simplified format needs question text authored before phase begins.
+- **Phase 18:** CandidateWeights update algorithm — exponential moving average vs Bayesian update; decision needed before Phase 18 begins.
+- **Phase 19:** Admin scheduler availability — is the scheduler in `src/infrastructure/scheduler/` ready for pre-aggregation, or does it need extension?
 
 ## Deferred Items
 
@@ -186,6 +204,6 @@ Items acknowledged and deferred at milestone close on 2026-05-16:
 
 ## Session Continuity
 
-Last session: 2026-05-15T22:30:00Z
-Stopped at: Completed 13-03-PLAN.md — check-deps.ts + 6 use-case unit tests; Phase 13 complete; v2.0 Clean Architecture refactor DONE
+Last session: 2026-05-16T00:00:00Z
+Stopped at: v3.0 roadmap created — Phases 14–19 defined; ready to plan Phase 14
 Resume file: None

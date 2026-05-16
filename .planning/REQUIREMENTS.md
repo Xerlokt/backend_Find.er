@@ -75,29 +75,29 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GRAPH-01 | — | Pending |
-| GRAPH-02 | — | Pending |
-| GRAPH-03 | — | Pending |
-| REC-01 | — | Pending |
-| REC-02 | — | Pending |
-| REC-03 | — | Pending |
-| DISC-01 | — | Pending |
-| DISC-02 | — | Pending |
-| DISC-03 | — | Pending |
-| DISC-04 | — | Pending |
-| LEARN-01 | — | Pending |
-| LEARN-02 | — | Pending |
-| LEARN-03 | — | Pending |
-| ADMIN-01 | — | Pending |
-| ADMIN-02 | — | Pending |
-| ADMIN-03 | — | Pending |
-| ADMIN-04 | — | Pending |
-| SCALE-01 | — | Pending |
-| SCALE-02 | — | Pending |
-| SCALE-03 | — | Pending |
-| SCALE-04 | — | Pending |
-| SCALE-05 | — | Pending |
+| GRAPH-01 | Phase 14 | Pending |
+| GRAPH-02 | Phase 14 | Pending |
+| GRAPH-03 | Phase 14 | Pending |
+| REC-01 | Phase 16 | Pending |
+| REC-02 | Phase 16 | Pending |
+| REC-03 | Phase 16 | Pending |
+| DISC-01 | Phase 17 | Pending |
+| DISC-02 | Phase 17 | Pending |
+| DISC-03 | Phase 17 | Pending |
+| DISC-04 | Phase 17 | Pending |
+| LEARN-01 | Phase 18 | Pending |
+| LEARN-02 | Phase 18 | Pending |
+| LEARN-03 | Phase 18 | Pending |
+| ADMIN-01 | Phase 19 | Pending |
+| ADMIN-02 | Phase 19 | Pending |
+| ADMIN-03 | Phase 19 | Pending |
+| ADMIN-04 | Phase 19 | Pending |
+| SCALE-01 | Phase 15 | Pending |
+| SCALE-02 | Phase 15 | Pending |
+| SCALE-03 | Phase 15 | Pending |
+| SCALE-04 | Phase 15 | Pending |
+| SCALE-05 | Phase 19 | Pending |
 
 ---
 
-*Last updated: 2026-05-16 — v3.0 milestone requirements defined*
+*Last updated: 2026-05-16 — traceability table filled with phase assignments (Phases 14–19)*
