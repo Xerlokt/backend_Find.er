@@ -7,7 +7,7 @@ import type { FitScoreInput, FitScoreJobInput } from '../../src/domain/interface
 const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput => ({
   id: overrides.id ?? 'test-candidate',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
-  skills: overrides.skills ?? ['Node.js', 'TypeScript'],
+  skillIds: overrides.skillIds ?? ['nodejs', 'typescript'],
   preferredModalities: overrides.preferredModalities ?? ['REMOTE'],
   salaryExpectation: overrides.salaryExpectation !== undefined ? overrides.salaryExpectation : 5000,
   lat: overrides.lat !== undefined ? overrides.lat : -23.5505,
@@ -18,7 +18,7 @@ const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput =>
 const makeJob = (overrides: Partial<FitScoreJobInput> = {}): FitScoreJobInput => ({
   id: overrides.id ?? 'test-job',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
-  requiredSkills: overrides.requiredSkills ?? ['Node.js', 'TypeScript'],
+  requiredSkillIds: overrides.requiredSkillIds ?? ['nodejs', 'typescript'],
   modality: overrides.modality ?? 'REMOTE',
   salaryMin: overrides.salaryMin !== undefined ? overrides.salaryMin : 4000,
   salaryMax: overrides.salaryMax !== undefined ? overrides.salaryMax : 8000,
@@ -54,13 +54,13 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
       }
     })
 
-    it('creates Skill nodes for all 10 skills', async () => {
+    it('creates Skill nodes for all 36 skills', async () => {
       const driver = getNeo4jDriver()
       const session = driver.session()
       try {
         const result = await session.run('MATCH (s:Skill) RETURN count(s) AS count')
         const count = result.records[0].get('count') as number
-        expect(count).toBe(10)
+        expect(count).toBe(36)
       } finally {
         await session.close()
       }
@@ -73,8 +73,8 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
       try {
         const result = await session.run('MATCH (n) RETURN count(n) AS count')
         const count = result.records[0].get('count') as number
-        // Should still be 16 (6 professions + 10 skills) — not 32
-        expect(count).toBe(16)
+        // Should still be 42 (6 professions + 36 skills) — not 84
+        expect(count).toBe(42)
       } finally {
         await session.close()
       }
@@ -94,6 +94,33 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
         await session.close()
       }
     })
+
+    it('creates at least 50 RELATED_TO edges (GRAPH-02)', async () => {
+      const driver = getNeo4jDriver()
+      const session = driver.session()
+      try {
+        const result = await session.run(
+          'MATCH ()-[:RELATED_TO]->() RETURN count(*) AS count'
+        )
+        const count = result.records[0].get('count') as number
+        expect(count).toBeGreaterThanOrEqual(50)
+      } finally {
+        await session.close()
+      }
+    })
+
+    it('Skill.id and Profession.id unique constraints exist after seedTaxonomy (GRAPH-03)', async () => {
+      const driver = getNeo4jDriver()
+      const session = driver.session()
+      try {
+        const result = await session.run('SHOW CONSTRAINTS')
+        const names = result.records.map((r) => r.get('name') as string)
+        expect(names).toContain('skill_id_unique')
+        expect(names).toContain('profession_id_unique')
+      } finally {
+        await session.close()
+      }
+    })
   })
 
   describe('computeFitScore (REC-01)', () => {
@@ -107,7 +134,7 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
     it('perfect match candidate scores 100', async () => {
       const candidate = makeCandidate({
         professionId: 'backend-dev',
-        skills: ['Node.js', 'TypeScript'],
+        skillIds: ['nodejs', 'typescript'],
         preferredModalities: ['REMOTE'],
         salaryExpectation: 5000,
         lat: -23.5505,
@@ -116,7 +143,7 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
       })
       const job = makeJob({
         professionId: 'backend-dev',
-        requiredSkills: ['Node.js', 'TypeScript'],
+        requiredSkillIds: ['nodejs', 'typescript'],
         modality: 'REMOTE',
         salaryMin: 4000,
         salaryMax: 8000,
@@ -130,7 +157,7 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
     it('zero match candidate scores 0', async () => {
       const candidate = makeCandidate({
         professionId: 'devops',
-        skills: [],
+        skillIds: [],
         preferredModalities: ['IN_PERSON'],
         salaryExpectation: 100000,
         lat: -3.1190,
@@ -139,7 +166,7 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
       })
       const job = makeJob({
         professionId: 'frontend-dev',
-        requiredSkills: ['React'],
+        requiredSkillIds: ['react'],
         modality: 'REMOTE',
         salaryMin: 1000,
         salaryMax: 2000,
@@ -151,11 +178,36 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
     })
 
     it('partial match candidate scores between 0 and 100', async () => {
-      const candidate = makeCandidate({ professionId: 'backend-dev', skills: ['Node.js'] })
-      const job = makeJob({ professionId: 'backend-dev', requiredSkills: ['Node.js', 'TypeScript'] })
+      const candidate = makeCandidate({ professionId: 'backend-dev', skillIds: ['nodejs'] })
+      const job = makeJob({ professionId: 'backend-dev', requiredSkillIds: ['nodejs', 'typescript'] })
       const score = await recRepo.computeFitScore(candidate, job)
       expect(score).toBeGreaterThan(0)
       expect(score).toBeLessThan(100)
+    })
+  })
+
+  describe('adjacency scoring — integration (GRAPH-01)', () => {
+    it('candidate with SQL skill scores nonzero on PostgreSQL job (1-hop adjacency)', async () => {
+      // Requires seed to have: (sql:Skill)-[:RELATED_TO]->(postgresql:Skill)
+      const candidate = makeCandidate({ skillIds: ['sql'] })
+      const job = makeJob({ requiredSkillIds: ['postgresql'] })
+      const score = await recRepo.computeFitScore(candidate, job)
+      expect(score).toBeGreaterThan(0)
+
+      // Direct match must score higher than 1-hop adjacency
+      const directMatch = makeCandidate({ skillIds: ['postgresql'] })
+      const directScore = await recRepo.computeFitScore(directMatch, job)
+      expect(score).toBeLessThan(directScore)
+    })
+
+    it('candidate with no path to required skill scores 0 on skills factor', async () => {
+      // rust has no RELATED_TO path to postgresql in the seed
+      const candidate = makeCandidate({ skillIds: ['rust'], professionId: 'frontend-dev' })
+      const job = makeJob({ requiredSkillIds: ['postgresql'], professionId: 'frontend-dev' })
+      const scoreNoPath = await recRepo.computeFitScore(candidate, job)
+      const candidateDirect = makeCandidate({ skillIds: ['postgresql'], professionId: 'frontend-dev' })
+      const scoreDirects = await recRepo.computeFitScore(candidateDirect, job)
+      expect(scoreNoPath).toBeLessThan(scoreDirects)
     })
   })
 
@@ -172,14 +224,14 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
         const company = await createCompany()
         const recUser = await createUser({ role: 'RECRUITER', email: 'rec-int-rec@test.com' })
         const recProfile = await prisma.recruiterProfile.create({ data: { userId: recUser.id, companyId: company.id } })
-        const job = await createJob(company.id, recProfile.id, { professionId: 'backend-dev', requiredSkills: ['Node.js', 'TypeScript'] })
+        const job = await createJob(company.id, recProfile.id, { professionId: 'backend-dev', requiredSkills: ['nodejs', 'typescript'] })
         const candUser = await createUser({ role: 'CANDIDATE', email: 'rec-int-cand@test.com' })
         const candProfile = await prisma.candidateProfile.create({
           data: {
             userId: candUser.id,
             name: 'Neo4j Candidate',
             professionId: 'backend-dev',
-            skills: ['Node.js', 'TypeScript'],
+            skills: ['nodejs', 'typescript'],
             preferredModalities: ['REMOTE'],
             searchRadiusKm: 50,
           },
@@ -196,7 +248,7 @@ describe('RecommendationRepository — integration (requires Neo4j Docker)', () 
         expect(rankRes.body.length).toBe(1)
         expect(typeof rankRes.body[0].fitScore).toBe('number')
         // If Neo4j is running: fitScore > 0 for a matching candidate
-        // (backend-dev profession + Node.js + TypeScript + REMOTE = high score)
+        // (backend-dev profession + nodejs + typescript + REMOTE = high score)
         // Soft assertion: placeholder was replaced
         expect(rankRes.body[0].fitScore).toBeGreaterThanOrEqual(0)
       } finally {
