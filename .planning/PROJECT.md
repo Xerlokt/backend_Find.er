@@ -4,7 +4,21 @@
 
 Backend completo de uma plataforma de match entre candidatos e vagas de emprego, no estilo swipe. Candidatos deslizam pelas vagas, recrutadores veem um ranking de fit dos candidatos com perfis censurados ou visíveis dependendo do swipe, e empresas podem desbloquear candidatos que deram "não" pagando créditos.
 
-## Current State: v2.0 Shipped — Planning Next Milestone
+## Current Milestone: v3.0 Intelligence, Growth & Scale
+
+**Goal:** Tornar a plataforma mais inteligente com recomendações reais via grafo Neo4j, aprendizado por candidato, preview de skills para recrutadores antes do paywall, personalidade DISC, admin dashboard API, e base para escala horizontal.
+
+**Target features:**
+- Graph Recommendation Real — traversal Neo4j para skills adjacentes (SQL → PostgreSQL, React → JavaScript)
+- Learning System — pesos de fit personalizados por candidato baseados no histórico de likes
+- Recruiter Skill Preview — candidatos não-liked mostram skills que batem + motivos do fit; paywall só para contato/identidade
+- DISC Personality Test — candidatos completam teste; vagas têm perfil DISC desejado; entra no fit score
+- Admin Dashboard API — endpoints REST: usuários, requests, receita (créditos), métricas de engajamento
+- Escala Horizontal — Redis caching (feed, ranking), query optimization, load testing baseline (k6)
+
+---
+
+## Previous: v2.0 Shipped
 
 **Last shipped:** v2.0 Clean Architecture Refactor (2026-05-15)
 **All 13 phases complete. 18 v2.0 plans + 27 v1.0 plans. 172 tests pass.**
@@ -40,7 +54,12 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 
 ### Active
 
-(none — all v1.0 requirements validated)
+- [ ] Graph recommendation via Neo4j traversal (skills adjacentes) — v3.0 target (REC, GRAPH)
+- [ ] Learning system de pesos por candidato baseado em likes — v3.0 target (LEARN)
+- [ ] Recruiter skill preview para candidatos não-liked — v3.0 target (REC)
+- [ ] DISC personality test para candidatos; perfil DISC em vagas — v3.0 target (DISC)
+- [ ] Admin dashboard API (usuários, requests, receita, engajamento) — v3.0 target (ADMIN)
+- [ ] Redis caching + query optimization + load testing — v3.0 target (SCALE)
 
 ### Out of Scope
 
@@ -96,4 +115,4 @@ Este documento evolui a cada transição de fase e marco de milestone.
 4. Atualizar Context com estado atual
 
 ---
-*Last updated: 2026-05-16 after v2.0 milestone close — Clean Architecture Refactor complete*
+*Last updated: 2026-05-16 — v3.0 milestone started — Intelligence, Growth & Scale*

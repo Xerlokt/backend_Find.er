@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Clean Architecture Refactor — ARCHIVED
-status: archived
-stopped_at: v2.0 milestone closed 2026-05-16 — all 13 phases complete, archived to .planning/milestones/v2.0-ROADMAP.md
+milestone: v3.0
+milestone_name: Intelligence, Growth & Scale
+status: defining_requirements
+stopped_at: —
 last_updated: "2026-05-16T00:00:00Z"
-last_activity: 2026-05-16 -- v2.0 milestone close — ROADMAP reorganized, REQUIREMENTS archived, PROJECT.md evolved, MILESTONES.md created, git tag v2.0 pending
+last_activity: 2026-05-16 — Milestone v3.0 started — defining requirements
 progress:
-  total_phases: 13
-  completed_phases: 13
-  total_plans: 46
-  completed_plans: 46
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-16)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** Planning next milestone — run /gsd-new-milestone to start
+**Current focus:** v3.0 Intelligence, Growth & Scale — defining requirements
 
 ## Current Position
 
-Phase: 13 — Cleanup + Unit Test Layer (COMPLETE)
-Plan: 13-03 complete — Phase 13 done; all 3 plans executed; Clean Architecture refactor complete
-Status: Plan 13-03 complete — check-deps.ts exits 0; 6 use-case unit tests passing; npm run test:unit 38/38; npm run build exits 0
-Last activity: 2026-05-15 -- Plan 13-03 complete — madge@8.0.0 installed; scripts/check-deps.ts with 3 layer rules (domain/application/adapters); 6 use-case unit tests (register, upsert-candidate-profile, create-job, record-swipe, unlock-candidate, create-or-get-chat); 38 unit tests; build clean; ARCH-13 + TEST-02 fulfilled; Phase 13 + v2.0 refactor COMPLETE
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-16 — Milestone v3.0 started
 
 Progress: [██████████] 100% (Phase 13 complete — all 46 plans done)
 
