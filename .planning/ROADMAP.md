@@ -58,7 +58,12 @@
 3. Neo4j `Skill` and `Profession` nodes have unique constraints so every `computeFitScore` call uses `NodeIndexSeek` instead of `NodeByLabelScan`.
 4. Cypher queries are depth-bounded at `*1..2` — no unbounded traversal pattern exists anywhere in the adapter.
 5. All existing 172 tests remain green after the Neo4j adapter and seed script are updated.
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Wave 0: TDD test setup (unit + integration, RED state — factories, mock driver, adjacency cases)
+- [ ] 14-02-PLAN.md — Wave 1: Interface rename + callers update (tsc clean, tests still RED at runtime)
+- [ ] 14-03-PLAN.md — Wave 2: Neo4j traversal engine + expanded seed + constraints (all tests GREEN)
 
 ### Phase 15: Redis Caching
 **Goal:** Feed and ranking responses are served from Redis on warm cache hits with correct invalidation on swipe and profile update; the architectural layer rule is extended to block all `infrastructure/` imports from `application/` before any cache code is written.
