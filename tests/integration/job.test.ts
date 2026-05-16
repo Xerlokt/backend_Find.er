@@ -38,7 +38,7 @@ describe('Job Use Cases — integration', () => {
         description: 'desc',
         professionId: 'backend-dev',
         modality: 'REMOTE',
-        requiredSkills: ['Node.js'],
+        requiredSkills: ['nodejs'],
         expiresAt: new Date(Date.now() + 86400000),
       })
 
@@ -58,7 +58,7 @@ describe('Job Use Cases — integration', () => {
           description: 'desc',
           professionId: 'backend-dev',
           modality: 'REMOTE',
-          requiredSkills: ['Node.js'],
+          requiredSkills: ['nodejs'],
           expiresAt: new Date(Date.now() + 86400000),
         })
       ).rejects.toMatchObject({ statusCode: 404, code: 'NOT_FOUND' })

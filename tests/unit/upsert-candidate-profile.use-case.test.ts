@@ -17,7 +17,7 @@ describe('UpsertCandidateProfileUseCase', () => {
     const input = {
       name: 'Alice',
       professionId: 'backend-dev',
-      skills: ['Node.js'],
+      skills: ['nodejs'],
       preferredModalities: ['REMOTE' as any],
     }
     const result = await uc.execute('user-1', input as any)

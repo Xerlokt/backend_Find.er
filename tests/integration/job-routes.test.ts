@@ -45,7 +45,7 @@ function buildValidJobBody() {
     description: 'We need a senior backend developer',
     professionId: 'backend-dev',
     modality: 'REMOTE',
-    requiredSkills: ['Node.js', 'TypeScript'],
+    requiredSkills: ['nodejs', 'typescript'],
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
   }
 }
