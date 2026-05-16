@@ -38,7 +38,7 @@ export class GetRankingUseCase {
           {
             id: swipe.candidate.id,
             professionId: swipe.candidate.professionId,
-            skills: swipe.candidate.skills,
+            skillIds: swipe.candidate.skills,
             preferredModalities: swipe.candidate.preferredModalities,
             salaryExpectation: swipe.candidate.salaryExpectation ?? null,
             lat: swipe.candidate.lat ?? null,
@@ -48,7 +48,7 @@ export class GetRankingUseCase {
           {
             id: job.id,
             professionId: job.professionId,
-            requiredSkills: job.requiredSkills,
+            requiredSkillIds: job.requiredSkills,
             modality: job.modality,
             salaryMin: job.salaryMin ?? null,
             salaryMax: job.salaryMax ?? null,

@@ -22,13 +22,13 @@ export class RecommendationRepository implements IRecommendationRepository {
 
     // Factor 2: Skills overlap (35%) — case-insensitive exact match (RELATED_TO traversal deferred to v1.1)
     let skillsScore: number
-    if (job.requiredSkills.length === 0) {
+    if (job.requiredSkillIds.length === 0) {
       skillsScore = 1.0
     } else {
-      const matched = job.requiredSkills.filter((req) =>
-        candidate.skills.some((cs) => cs.toLowerCase() === req.toLowerCase()),
+      const matched = job.requiredSkillIds.filter((req) =>
+        candidate.skillIds.some((cs) => cs.toLowerCase() === req.toLowerCase()),
       )
-      skillsScore = matched.length / job.requiredSkills.length
+      skillsScore = matched.length / job.requiredSkillIds.length
     }
 
     // Factor 3: Location proximity (20%)

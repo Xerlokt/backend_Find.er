@@ -25,7 +25,7 @@ export class GetFeedUseCase {
           {
             id: candidate.id,
             professionId: candidate.professionId,
-            skills: candidate.skills,
+            skillIds: candidate.skills,
             preferredModalities: candidate.preferredModalities,
             salaryExpectation: candidate.salaryExpectation ?? null,
             lat: candidate.lat ?? null,
@@ -35,7 +35,7 @@ export class GetFeedUseCase {
           {
             id: job.id,
             professionId: job.professionId,
-            requiredSkills: job.requiredSkills,
+            requiredSkillIds: job.requiredSkills,
             modality: job.modality,
             salaryMin: job.salaryMin ?? null,
             salaryMax: job.salaryMax ?? null,
