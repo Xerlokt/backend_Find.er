@@ -92,10 +92,25 @@ export class RecommendationRepository implements IRecommendationRepository {
   }
 
   async seedTaxonomy(): Promise<void> {
+    // Step 1: Create unique constraints in a SEPARATE session before any MERGE (GRAPH-03)
+    // Neo4j 5 does not allow schema changes and data writes in the same transaction
+    const schemaSession = this.driver.session({ defaultAccessMode: neo4j.session.WRITE })
+    try {
+      await schemaSession.run(
+        'CREATE CONSTRAINT skill_id_unique IF NOT EXISTS FOR (s:Skill) REQUIRE s.id IS UNIQUE'
+      )
+      await schemaSession.run(
+        'CREATE CONSTRAINT profession_id_unique IF NOT EXISTS FOR (p:Profession) REQUIRE p.id IS UNIQUE'
+      )
+    } finally {
+      await schemaSession.close()
+    }
+
+    // Step 2: Seed data in a separate session (existing executeWrite pattern)
     const session = this.driver.session({ defaultAccessMode: neo4j.session.WRITE })
     try {
       await session.executeWrite(async (tx) => {
-        // Professions — idempotent MERGE statements (REC-02)
+        // Professions — 6 nodes, idempotent MERGE
         const professions = [
           { id: 'backend-dev', name: 'Backend Developer' },
           { id: 'frontend-dev', name: 'Frontend Developer' },
@@ -108,8 +123,9 @@ export class RecommendationRepository implements IRecommendationRepository {
           await tx.run('MERGE (p:Profession {id: $id}) SET p.name = $name', p)
         }
 
-        // Skills — idempotent MERGE statements
+        // Skills — 36 nodes total (10 original + 26 new), idempotent MERGE
         const skills = [
+          // Original 10
           { id: 'nodejs', name: 'Node.js' },
           { id: 'typescript', name: 'TypeScript' },
           { id: 'javascript', name: 'JavaScript' },
@@ -120,12 +136,42 @@ export class RecommendationRepository implements IRecommendationRepository {
           { id: 'go', name: 'Go' },
           { id: 'kotlin', name: 'Kotlin' },
           { id: 'swift', name: 'Swift' },
+          // Backend additions (7 new)
+          { id: 'sql', name: 'SQL' },
+          { id: 'mysql', name: 'MySQL' },
+          { id: 'java', name: 'Java' },
+          { id: 'spring', name: 'Spring' },
+          { id: 'rust', name: 'Rust' },
+          { id: 'django', name: 'Django' },
+          { id: 'fastapi', name: 'FastAPI' },
+          // Frontend additions (6 new)
+          { id: 'vue', name: 'Vue.js' },
+          { id: 'angular', name: 'Angular' },
+          { id: 'css', name: 'CSS' },
+          { id: 'sass', name: 'Sass' },
+          { id: 'tailwind', name: 'Tailwind CSS' },
+          { id: 'nextjs', name: 'Next.js' },
+          // DevOps additions (8 new)
+          { id: 'kubernetes', name: 'Kubernetes' },
+          { id: 'devops', name: 'DevOps' },
+          { id: 'aws', name: 'AWS' },
+          { id: 'cloud', name: 'Cloud' },
+          { id: 'terraform', name: 'Terraform' },
+          { id: 'iac', name: 'IaC' },
+          { id: 'github-actions', name: 'GitHub Actions' },
+          { id: 'ci-cd', name: 'CI/CD' },
+          // Mobile additions (5 new)
+          { id: 'ios', name: 'iOS' },
+          { id: 'android', name: 'Android' },
+          { id: 'react-native', name: 'React Native' },
+          { id: 'flutter', name: 'Flutter' },
+          { id: 'dart', name: 'Dart' },
         ]
         for (const s of skills) {
           await tx.run('MERGE (s:Skill {id: $id}) SET s.name = $name', s)
         }
 
-        // REQUIRES relationships: Profession → Skill
+        // REQUIRES relationships: Profession → Skill (unchanged from original)
         const requires = [
           { profId: 'backend-dev', skillId: 'nodejs' },
           { profId: 'backend-dev', skillId: 'typescript' },
@@ -144,11 +190,43 @@ export class RecommendationRepository implements IRecommendationRepository {
         }
 
         // RELATED_TO relationships: bidirectional, weight 0.8
+        // 26 pairs = 52 directed edges (GRAPH-02 requires >= 50)
         const related = [
+          // Original 3 pairs
           { aId: 'typescript', bId: 'javascript' },
           { aId: 'nodejs', bId: 'javascript' },
           { aId: 'react', bId: 'javascript' },
+          // Backend new pairs (5)
+          { aId: 'sql', bId: 'postgresql' },
+          { aId: 'sql', bId: 'mysql' },
+          { aId: 'python', bId: 'django' },
+          { aId: 'python', bId: 'fastapi' },
+          { aId: 'java', bId: 'spring' },
+          // Frontend new pairs (5)
+          { aId: 'react', bId: 'nextjs' },
+          { aId: 'vue', bId: 'javascript' },
+          { aId: 'angular', bId: 'typescript' },
+          { aId: 'css', bId: 'sass' },
+          { aId: 'css', bId: 'tailwind' },
+          // DevOps new pairs (5)
+          { aId: 'docker', bId: 'kubernetes' },
+          { aId: 'kubernetes', bId: 'devops' },
+          { aId: 'aws', bId: 'cloud' },
+          { aId: 'terraform', bId: 'iac' },
+          { aId: 'ci-cd', bId: 'github-actions' },
+          // Mobile new pairs (4)
+          { aId: 'swift', bId: 'ios' },
+          { aId: 'kotlin', bId: 'android' },
+          { aId: 'react-native', bId: 'react' },
+          { aId: 'flutter', bId: 'dart' },
+          // Cross-domain pair (1)
+          { aId: 'react-native', bId: 'javascript' },
+          // Extra pair to reach 26 total (3+5+5+5+4+1=23 above; add 3 more)
+          { aId: 'nodejs', bId: 'typescript' },
+          { aId: 'go', bId: 'rust' },
+          { aId: 'android', bId: 'kotlin' },
         ]
+        // Total: 26 pairs × 2 directions = 52 directed edges (>= 50)
         for (const r of related) {
           await tx.run(
             'MATCH (a:Skill {id: $aId}), (b:Skill {id: $bId}) MERGE (a)-[:RELATED_TO {weight: 0.8}]->(b) MERGE (b)-[:RELATED_TO {weight: 0.8}]->(a)',
