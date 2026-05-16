@@ -37,7 +37,7 @@ describe('Candidate Routes — Integration', () => {
   const validBody = {
     name: 'Test Candidate',
     professionId: 'backend-dev',
-    skills: ['Node.js', 'TypeScript'],
+    skills: ['nodejs', 'typescript'],
     preferredModalities: ['REMOTE'],
   }
 

@@ -15,7 +15,7 @@ const baseJobInput = {
   description: 'We need a backend dev',
   professionId: 'backend-dev',
   modality: 'REMOTE' as any,
-  requiredSkills: ['Node.js'],
+  requiredSkills: ['nodejs'],
   expiresAt: new Date(Date.now() + 86400000),
 }
 
