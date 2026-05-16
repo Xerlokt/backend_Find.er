@@ -1,7 +1,7 @@
 export interface FitScoreInput {
   id: string
   professionId: string
-  skills: string[]
+  skillIds: string[]
   lat: number | null
   lng: number | null
   preferredModalities: string[]
@@ -12,7 +12,7 @@ export interface FitScoreInput {
 export interface FitScoreJobInput {
   id: string
   professionId: string
-  requiredSkills: string[]
+  requiredSkillIds: string[]
   lat: number | null
   lng: number | null
   modality: string
