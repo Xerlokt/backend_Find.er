@@ -1,11 +1,25 @@
+import type { Driver } from 'neo4j-driver'
 import { RecommendationRepository } from '../../src/adapters/services/recommendation.repository'
 import type { FitScoreInput, FitScoreJobInput } from '../../src/domain/interfaces/recommendation.repository.interface'
+
+function makeMockDriver(adjacency: Array<{ skill: string; hops: number }>): Driver {
+  const mockRun = jest.fn().mockResolvedValue({
+    records: adjacency.map(({ skill, hops }) => ({
+      get: (key: string) => (key === 'skill' ? skill : hops),
+    })),
+  })
+  const mockSession = {
+    run: mockRun,
+    close: jest.fn().mockResolvedValue(undefined),
+  }
+  return { session: jest.fn().mockReturnValue(mockSession) } as unknown as Driver
+}
 
 // Factory helpers — use neutral values on fields not under test for each case
 const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput => ({
   id: overrides.id ?? 'test-candidate',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
-  skills: overrides.skills ?? ['Node.js', 'TypeScript'],
+  skillIds: overrides.skillIds ?? ['nodejs', 'typescript'],
   preferredModalities: overrides.preferredModalities ?? ['REMOTE'],
   salaryExpectation: overrides.salaryExpectation !== undefined ? overrides.salaryExpectation : 5000,
   lat: overrides.lat !== undefined ? overrides.lat : -23.5505,
@@ -16,7 +30,7 @@ const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput =>
 const makeJob = (overrides: Partial<FitScoreJobInput> = {}): FitScoreJobInput => ({
   id: overrides.id ?? 'test-job',
   professionId: overrides.professionId !== undefined ? overrides.professionId : 'backend-dev',
-  requiredSkills: overrides.requiredSkills ?? ['Node.js', 'TypeScript'],
+  requiredSkillIds: overrides.requiredSkillIds ?? ['nodejs', 'typescript'],
   modality: overrides.modality ?? 'REMOTE',
   salaryMin: overrides.salaryMin !== undefined ? overrides.salaryMin : 4000,
   salaryMax: overrides.salaryMax !== undefined ? overrides.salaryMax : 8000,
@@ -28,8 +42,12 @@ describe('RecommendationRepository — computeFitScore', () => {
   let recRepo: RecommendationRepository
 
   beforeEach(() => {
-    // Pass fake Driver — computeFitScore is pure TypeScript math (no DB calls in unit tests)
-    recRepo = new RecommendationRepository({} as any)
+    recRepo = new RecommendationRepository(
+      makeMockDriver([
+        { skill: 'nodejs', hops: 0 },
+        { skill: 'typescript', hops: 0 },
+      ])
+    )
   })
 
   describe('profession factor (30%)', () => {
@@ -38,20 +56,22 @@ describe('RecommendationRepository — computeFitScore', () => {
       // modalityScore=1.0*0.10; salaryScore=1.0*0.05 => total=100
       // Focus: profession match — score must be > 0
       const candidate = makeCandidate({ professionId: 'backend-dev' })
-      const job = makeJob({ professionId: 'backend-dev', requiredSkills: [] })
+      const job = makeJob({ professionId: 'backend-dev', requiredSkillIds: [] })
       const score = await recRepo.computeFitScore(candidate, job)
       expect(score).toBeGreaterThan(0)
       expect(score).toBeLessThanOrEqual(100)
     })
 
     it('profession mismatch contributes 0 profession points', async () => {
-      const candidate = makeCandidate({ professionId: 'backend-dev', skills: [], preferredModalities: [] })
-      const job = makeJob({ professionId: 'frontend-dev', requiredSkills: [] })
+      recRepo = new RecommendationRepository(makeMockDriver([]))
+      const candidate = makeCandidate({ professionId: 'backend-dev', skillIds: [], preferredModalities: [] })
+      const job = makeJob({ professionId: 'frontend-dev', requiredSkillIds: [] })
       // With mismatch profession and no skills/modality match and salary null (score=1.0), locationScore=1.0
       // Expected: no profession contribution (0.30 * 0)
       const score = await recRepo.computeFitScore(candidate, job)
       // Score must be strictly less than a perfect-profession score
-      const candidateMatch = makeCandidate({ professionId: 'frontend-dev', skills: [], preferredModalities: [] })
+      recRepo = new RecommendationRepository(makeMockDriver([]))
+      const candidateMatch = makeCandidate({ professionId: 'frontend-dev', skillIds: [], preferredModalities: [] })
       const scoreMatch = await recRepo.computeFitScore(candidateMatch, job)
       expect(scoreMatch).toBeGreaterThan(score)
     })
@@ -59,39 +79,52 @@ describe('RecommendationRepository — computeFitScore', () => {
 
   describe('skills factor (35%)', () => {
     it('full skills overlap contributes up to 35 points', async () => {
-      const candidate = makeCandidate({ professionId: 'backend-dev', skills: ['Node.js', 'TypeScript'] })
-      const job = makeJob({ professionId: 'backend-dev', requiredSkills: ['Node.js', 'TypeScript'] })
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'nodejs', hops: 0 }, { skill: 'typescript', hops: 0 }])
+      )
+      const candidate = makeCandidate({ professionId: 'backend-dev', skillIds: ['nodejs', 'typescript'] })
+      const job = makeJob({ professionId: 'backend-dev', requiredSkillIds: ['nodejs', 'typescript'] })
       const scoreFullSkills = await recRepo.computeFitScore(candidate, job)
+      recRepo = new RecommendationRepository(makeMockDriver([]))
       const scoreNoSkills = await recRepo.computeFitScore(
-        makeCandidate({ professionId: 'backend-dev', skills: [] }),
+        makeCandidate({ professionId: 'backend-dev', skillIds: [] }),
         job,
       )
       expect(scoreFullSkills).toBeGreaterThan(scoreNoSkills)
     })
 
     it('no skills overlap contributes 0 skill points', async () => {
-      const candidate = makeCandidate({ professionId: 'backend-dev', skills: [] })
-      const job = makeJob({ professionId: 'backend-dev', requiredSkills: ['Node.js', 'TypeScript'] })
+      recRepo = new RecommendationRepository(makeMockDriver([]))
+      const candidate = makeCandidate({ professionId: 'backend-dev', skillIds: [] })
+      const job = makeJob({ professionId: 'backend-dev', requiredSkillIds: ['nodejs', 'typescript'] })
       const scoreEmpty = await recRepo.computeFitScore(candidate, job)
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'nodejs', hops: 0 }, { skill: 'typescript', hops: 0 }])
+      )
       const scoreFull = await recRepo.computeFitScore(
-        makeCandidate({ professionId: 'backend-dev', skills: ['Node.js', 'TypeScript'] }),
+        makeCandidate({ professionId: 'backend-dev', skillIds: ['nodejs', 'typescript'] }),
         job,
       )
       expect(scoreEmpty).toBeLessThan(scoreFull)
     })
 
     it('partial skills overlap scores between 0 and full overlap', async () => {
-      const jobWithTwoSkills = makeJob({ professionId: 'backend-dev', requiredSkills: ['Node.js', 'TypeScript'] })
+      const jobWithTwoSkills = makeJob({ professionId: 'backend-dev', requiredSkillIds: ['nodejs', 'typescript'] })
+      recRepo = new RecommendationRepository(makeMockDriver([{ skill: 'nodejs', hops: 0 }]))
       const scoreHalf = await recRepo.computeFitScore(
-        makeCandidate({ professionId: 'backend-dev', skills: ['Node.js'] }),
+        makeCandidate({ professionId: 'backend-dev', skillIds: ['nodejs'] }),
         jobWithTwoSkills,
+      )
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'nodejs', hops: 0 }, { skill: 'typescript', hops: 0 }])
       )
       const scoreFull = await recRepo.computeFitScore(
-        makeCandidate({ professionId: 'backend-dev', skills: ['Node.js', 'TypeScript'] }),
+        makeCandidate({ professionId: 'backend-dev', skillIds: ['nodejs', 'typescript'] }),
         jobWithTwoSkills,
       )
+      recRepo = new RecommendationRepository(makeMockDriver([]))
       const scoreZero = await recRepo.computeFitScore(
-        makeCandidate({ professionId: 'backend-dev', skills: [] }),
+        makeCandidate({ professionId: 'backend-dev', skillIds: [] }),
         jobWithTwoSkills,
       )
       expect(scoreHalf).toBeGreaterThan(scoreZero)
@@ -99,9 +132,10 @@ describe('RecommendationRepository — computeFitScore', () => {
     })
 
     it('no required skills → skills score 1.0 (full credit)', async () => {
-      const candidate = makeCandidate({ professionId: 'backend-dev', skills: [] })
-      const jobNoSkills = makeJob({ professionId: 'backend-dev', requiredSkills: [] })
-      const jobWithSkills = makeJob({ professionId: 'backend-dev', requiredSkills: ['Node.js'] })
+      recRepo = new RecommendationRepository(makeMockDriver([]))
+      const candidate = makeCandidate({ professionId: 'backend-dev', skillIds: [] })
+      const jobNoSkills = makeJob({ professionId: 'backend-dev', requiredSkillIds: [] })
+      const jobWithSkills = makeJob({ professionId: 'backend-dev', requiredSkillIds: ['nodejs'] })
       const scoreNoReq = await recRepo.computeFitScore(candidate, jobNoSkills)
       const scoreWithReq = await recRepo.computeFitScore(candidate, jobWithSkills)
       // No required skills = full credit (skillsScore=1.0) vs missing skill = 0
@@ -180,9 +214,15 @@ describe('RecommendationRepository — computeFitScore', () => {
 
   describe('composite fitScore', () => {
     it('all factors perfect match → fitScore = 100', async () => {
+      recRepo = new RecommendationRepository(
+        makeMockDriver([
+          { skill: 'nodejs', hops: 0 },
+          { skill: 'typescript', hops: 0 },
+        ])
+      )
       const candidate = makeCandidate({
         professionId: 'backend-dev',
-        skills: ['Node.js', 'TypeScript'],
+        skillIds: ['nodejs', 'typescript'],
         preferredModalities: ['REMOTE'],
         salaryExpectation: 5000,
         lat: -23.5505,
@@ -191,7 +231,7 @@ describe('RecommendationRepository — computeFitScore', () => {
       })
       const job = makeJob({
         professionId: 'backend-dev',
-        requiredSkills: ['Node.js', 'TypeScript'],
+        requiredSkillIds: ['nodejs', 'typescript'],
         modality: 'REMOTE',
         salaryMin: 4000,
         salaryMax: 8000,
@@ -203,9 +243,10 @@ describe('RecommendationRepository — computeFitScore', () => {
     })
 
     it('all factors zero match → fitScore = 0', async () => {
+      recRepo = new RecommendationRepository(makeMockDriver([]))
       const candidate = makeCandidate({
         professionId: 'backend-dev',
-        skills: [],
+        skillIds: [],
         preferredModalities: ['IN_PERSON'],
         salaryExpectation: 100000,
         lat: -3.1190,
@@ -214,7 +255,7 @@ describe('RecommendationRepository — computeFitScore', () => {
       })
       const job = makeJob({
         professionId: 'frontend-dev',
-        requiredSkills: ['React'],
+        requiredSkillIds: ['react'],
         modality: 'REMOTE',
         salaryMin: 1000,
         salaryMax: 2000,
@@ -223,6 +264,85 @@ describe('RecommendationRepository — computeFitScore', () => {
       })
       const score = await recRepo.computeFitScore(candidate, job)
       expect(score).toBe(0)
+    })
+  })
+
+  describe('adjacency scoring (GRAPH-01)', () => {
+    it('0-hop direct match → skillsScore = 1.0 for that skill', async () => {
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'postgresql', hops: 0 }])
+      )
+      const candidate = makeCandidate({ skillIds: ['postgresql'] })
+      const job = makeJob({ requiredSkillIds: ['postgresql'] })
+      const direct = await recRepo.computeFitScore(candidate, job)
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'postgresql', hops: 1 }])
+      )
+      const oneHop = await recRepo.computeFitScore(candidate, job)
+      expect(direct).toBeGreaterThan(oneHop)
+    })
+
+    it('1-hop adjacency → skillsScore = 0.8 for single required skill', async () => {
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'postgresql', hops: 1 }])
+      )
+      const candidate = makeCandidate({ skillIds: ['sql'] })
+      const job = makeJob({ requiredSkillIds: ['postgresql'] })
+      const score = await recRepo.computeFitScore(candidate, job)
+      // skillsScore = 0.8/1 = 0.8 → contribution = 0.8 * 0.35 = 0.28 → > 0
+      expect(score).toBeGreaterThan(0)
+    })
+
+    it('2-hop adjacency → skillsScore = 0.6 for single required skill', async () => {
+      recRepo = new RecommendationRepository(
+        makeMockDriver([{ skill: 'postgresql', hops: 2 }])
+      )
+      const candidate = makeCandidate({ skillIds: ['sql'] })
+      const job = makeJob({ requiredSkillIds: ['postgresql'] })
+      const score = await recRepo.computeFitScore(candidate, job)
+      // skillsScore = 0.6/1 = 0.6 → > 0 but less than 1-hop score
+      expect(score).toBeGreaterThan(0)
+    })
+
+    it('no adjacency → skillsScore = 0', async () => {
+      recRepo = new RecommendationRepository(makeMockDriver([]))
+      const candidate = makeCandidate({ skillIds: ['rust'] })
+      const job = makeJob({ requiredSkillIds: ['postgresql'] })
+      // With matching profession, modality, salary, location — but zero skills
+      const score = await recRepo.computeFitScore(candidate, job)
+      // skillsScore = 0 → 0 * 0.35 = 0 skill contribution
+      // Other factors still apply — score may be > 0 due to profession/location/modality/salary
+      const scoreNoSkillReq = await recRepo.computeFitScore(
+        candidate,
+        makeJob({ requiredSkillIds: [] })
+      )
+      // No-skill-req job gives higher score than skill-req job with no adjacency
+      expect(scoreNoSkillReq).toBeGreaterThan(score)
+    })
+
+    it('mixed hops (1 direct + 1 adjacent) → weighted average', async () => {
+      recRepo = new RecommendationRepository(
+        makeMockDriver([
+          { skill: 'postgresql', hops: 0 },
+          { skill: 'typescript', hops: 1 },
+        ])
+      )
+      const candidate = makeCandidate({ skillIds: ['postgresql', 'javascript'] })
+      const job = makeJob({ requiredSkillIds: ['postgresql', 'typescript'] })
+      const score = await recRepo.computeFitScore(candidate, job)
+      // skillsScore = (1.0 + 0.8) / 2 = 0.9 → > 0
+      expect(score).toBeGreaterThan(0)
+    })
+
+    it('no required skills → skillsScore = 1.0 (short-circuit)', async () => {
+      recRepo = new RecommendationRepository(makeMockDriver([]))
+      const candidate = makeCandidate({ skillIds: [] })
+      const job = makeJob({ requiredSkillIds: [] })
+      const scoreNoReq = await recRepo.computeFitScore(candidate, job)
+      const jobWithReq = makeJob({ requiredSkillIds: ['postgresql'] })
+      const scoreWithReq = await recRepo.computeFitScore(candidate, jobWithReq)
+      // No-req gives full skills credit; with-req + no adjacency gives 0 skills credit
+      expect(scoreNoReq).toBeGreaterThan(scoreWithReq)
     })
   })
 })
