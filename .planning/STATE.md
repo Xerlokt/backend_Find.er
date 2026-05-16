@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.0
-milestone_name: Clean Architecture Refactor COMPLETE
-status: complete
-stopped_at: Phase 13 Plan 03 COMPLETE — check-deps.ts created; 6 use-case unit tests added; npm run check:deps exits 0; npm run test:unit 38 tests pass; Phase 13 complete
-last_updated: "2026-05-15T22:30:00Z"
-last_activity: 2026-05-15 -- Plan 13-03 complete — madge installed; scripts/check-deps.ts created with 3 layer rules; 6 use-case unit tests written (register, upsert-candidate-profile, create-job, record-swipe, unlock-candidate, create-or-get-chat); all 38 unit tests pass; npm run build exits 0; Phase 13 complete — Clean Architecture refactor DONE
+milestone_name: Clean Architecture Refactor — ARCHIVED
+status: archived
+stopped_at: v2.0 milestone closed 2026-05-16 — all 13 phases complete, archived to .planning/milestones/v2.0-ROADMAP.md
+last_updated: "2026-05-16T00:00:00Z"
+last_activity: 2026-05-16 -- v2.0 milestone close — ROADMAP reorganized, REQUIREMENTS archived, PROJECT.md evolved, MILESTONES.md created, git tag v2.0 pending
 progress:
   total_phases: 13
   completed_phases: 13
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-03)
+See: .planning/PROJECT.md (updated 2026-05-16)
 
 **Core value:** Neo4j recommendation engine that calculates fit score between candidate and job — without it, the product does not exist
-**Current focus:** Phase 09 — Domain Layer Scaffold (v2.0 start)
+**Current focus:** Planning next milestone — run /gsd-new-milestone to start
 
 ## Current Position
 
@@ -173,8 +173,16 @@ None.
 
 ## Deferred Items
 
+Items acknowledged and deferred at milestone close on 2026-05-16:
+
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
+| uat_gap | phase-06 / 06-HUMAN-UAT.md (2 pending scenarios) | partial | 2026-05-16 |
+| uat_gap | phase-08 / 08-UAT.md (9 pending scenarios) | testing | 2026-05-16 |
+| verification | phase-06 / 06-VERIFICATION.md | human_needed | 2026-05-16 |
+| verification | phase-07 / 07-VERIFICATION.md | human_needed | 2026-05-16 |
+| verification | phase-09 / 09-VERIFICATION.md | human_needed | 2026-05-16 |
+| verification | phase-10 / 10-VERIFICATION.md | human_needed | 2026-05-16 |
 
 ## Session Continuity
 

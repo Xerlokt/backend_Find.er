@@ -4,20 +4,17 @@
 
 Backend completo de uma plataforma de match entre candidatos e vagas de emprego, no estilo swipe. Candidatos deslizam pelas vagas, recrutadores veem um ranking de fit dos candidatos com perfis censurados ou visíveis dependendo do swipe, e empresas podem desbloquear candidatos que deram "não" pagando créditos.
 
-## Current Milestone: v2.0 Clean Architecture Refactor — COMPLETE
+## Current State: v2.0 Shipped — Planning Next Milestone
 
-**Goal:** Migrar o codebase de `src/modules/` para Clean Architecture em 4 camadas, eliminando violações de dependência e tornando use cases 100% testáveis sem banco.
+**Last shipped:** v2.0 Clean Architecture Refactor (2026-05-15)
+**All 13 phases complete. 18 v2.0 plans + 27 v1.0 plans. 172 tests pass.**
 
-**Status:** Phase 13 complete (2026-05-15) — all 46 plans, 13 phases done. 172 tests pass.
-
-**Delivered:**
-- Camada Domain — entities TypeScript puras + interfaces de repositório (zero imports externos)
-- Camada Application — use cases por caso de uso + ports para bcrypt, JWT e Neo4j
-- Camada Adapters — controllers + implementações de repositório (Prisma) + adapters de serviço
-- Camada Infrastructure — rotas Fastify, plugins, singletons de banco, app.ts, server.ts
-- `scripts/check-deps.ts` — static layer rule enforcement via madge (ARCH-13)
-- 6 use-case unit tests — auth, candidate, job, swipe, credits, chat (TEST-02)
-- `src/modules/` e `src/shared/` deletados (MIGRATE-01, MIGRATE-02)
+**Architecture (as of v2.0):**
+- `src/domain/` — 11 entity interfaces + 10 repository interfaces + 3 ports (IHashPort, ITokenPort, IGraphPort)
+- `src/application/` — use cases by module + DomainError
+- `src/adapters/` — controllers + Prisma repositories + BcryptAdapter, JwtAdapter, Neo4jAdapter
+- `src/infrastructure/` — Fastify routes, plugins, DB singletons, app.ts, server.ts
+- `scripts/check-deps.ts` — mechanical 4-layer dependency rule enforcement (madge)
 
 ---
 
@@ -53,11 +50,11 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 
 ## Context
 
-- Stack definida: Node.js 20, TypeScript 5, Fastify 4, Prisma ORM, PostgreSQL 16, Neo4j 5, Jest 29, Supertest, Docker Compose
-- Arquitetura: monolito modular com Fastify; módulos de recomendação (Neo4j) e chat (WebSocket) isolados para futura extração
-- Plano de implementação detalhado em: `docs/superpowers/plans/2026-04-09-backend-api.md`
-- Design spec em: `docs/superpowers/specs/2026-04-09-job-tinder-design.md`
-- TDD obrigatório: testes unitários por service + testes de integração por módulo contra DB real
+- Stack: Node.js 20, TypeScript 5, Fastify 4, Prisma ORM, PostgreSQL 16, Neo4j 5, Jest 29, Supertest, Docker Compose
+- Architecture: Clean Architecture 4-layer (domain → application → adapters → infrastructure); layer rule mechanically enforced via `scripts/check-deps.ts`
+- ~3,249 LOC TypeScript across 106 files; 172 tests (41 integration against real Docker DB + 131 unit)
+- TDD: unit tests via mocked interfaces (no DB); integration tests via real Docker DB (no mocks)
+- Design spec: `docs/superpowers/specs/2026-04-09-job-tinder-design.md`
 
 ## Constraints
 
@@ -72,11 +69,14 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Neo4j para recomendação | Score de fit requer travessia de grafo de profissões/habilidades | Validated Phase 6 — 5-factor fit score live |
-| PostgreSQL via Prisma para dados relacionais | Dados estruturados (usuários, vagas, swipes, créditos) | Validated — atomic $transaction for credits/swipes |
-| Fastify em vez de Express | Performance superior, TypeScript nativo, schema validation built-in | Validated — all 7 phases built on Fastify 4 |
-| Chat via WebSocket (@fastify/websocket) | Real-time sem overhead de polling | Validated Phase 8 — WS gateway + REST history + auto-create on match/unlock live |
-| Créditos apenas para empresas | Candidatos não devem ter barreira financeira para buscar emprego | Validated Phase 7 — unlock economy live |
+| Neo4j para recomendação | Score de fit requer travessia de grafo de profissões/habilidades | ✓ Validated Phase 6 — 5-factor fit score live |
+| PostgreSQL via Prisma para dados relacionais | Dados estruturados (usuários, vagas, swipes, créditos) | ✓ Validated — atomic $transaction for credits/swipes |
+| Fastify em vez de Express | Performance superior, TypeScript nativo, schema validation built-in | ✓ Validated — all phases built on Fastify 4 |
+| Chat via WebSocket (@fastify/websocket) | Real-time sem overhead de polling | ✓ Validated Phase 8 — WS gateway + REST history + auto-create on match/unlock |
+| Créditos apenas para empresas | Candidatos não devem ter barreira financeira para buscar emprego | ✓ Validated Phase 7 — unlock economy live |
+| Migração módulo-a-módulo (v2.0) | Manter 41 testes de integração verdes em cada fase — rollback seguro | ✓ Validated — zero regressões durante 5 fases de migração |
+| Padrão aditivo — não deletar módulos antigos até Phase 13 | Safe coexistence during migration; deletar tudo de uma vez é arriscado | ✓ Validated — tsc clean + testes verdes em todo momento |
+| scripts/check-deps.ts (madge) para enforce layer rule | Dependências incorretas detectadas mecanicamente, não via code review | ✓ Validated Phase 13 — npm run check:deps passa no CI |
 
 ## Evolution
 
@@ -96,4 +96,4 @@ Este documento evolui a cada transição de fase e marco de milestone.
 4. Atualizar Context com estado atual
 
 ---
-*Last updated: 2026-05-03 after Phase 08 completion — v1.0 milestone complete*
+*Last updated: 2026-05-16 after v2.0 milestone close — Clean Architecture Refactor complete*
