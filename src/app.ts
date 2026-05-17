@@ -22,6 +22,8 @@ import { ChatService } from './adapters/services/chat.service'
 import { chatRoutes } from './infrastructure/http/routes/chat.routes'
 import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
 import { getNeo4jDriver } from './infrastructure/database/neo4j'
+import { RedisAdapter } from './adapters/services/redis.adapter'
+import { getRedisClient } from './infrastructure/database/redis'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -52,17 +54,20 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   // Composition root: Neo4jAdapter — injected into swipe routes for fit score computation
   const neo4jAdapter = new Neo4jAdapter(getNeo4jDriver())
 
+  // Composition root: RedisAdapter — injected into swipe routes (feed/ranking) and candidate routes (profile update invalidation)
+  const redisAdapter = new RedisAdapter(getRedisClient())
+
   // Routes
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/auth' })
-  await app.register(candidateRoutes, { prefix: '/candidates' })
+  await app.register(candidateRoutes, { prefix: '/candidates', cache: redisAdapter })
   await app.register(companyRoutes, { prefix: '/companies' })
   await app.register(recruiterRoutes, { prefix: '/recruiters' })
   await app.register(jobRoutes, { prefix: '/jobs' })
 
-  // Swipe routes — IChatService and Neo4jAdapter injected via opts (D-01, ARCH-04)
-  await app.register(swipeRoutes, { prefix: '/swipes', chat: chatService, neo4j: neo4jAdapter })
-  await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService, neo4j: neo4jAdapter })
+  // Swipe routes — IChatService, Neo4jAdapter, and RedisAdapter injected via opts (D-01, ARCH-04, SCALE-01, SCALE-02)
+  await app.register(swipeRoutes, { prefix: '/swipes', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter })
+  await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter })
 
   // Credits routes — IChatService injected via opts (D-01, ARCH-04)
   await app.register(creditsJobRoutes, { prefix: '/jobs', chat: chatService })

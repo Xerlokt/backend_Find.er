@@ -2,11 +2,13 @@ import { ISwipeRepository } from '../../../domain/interfaces/swipe.repository.in
 import { IRecommendationRepository, FitScoreInput, FitScoreJobInput } from '../../../domain/interfaces/recommendation.repository.interface'
 import { DomainError } from '../../errors/domain.error'
 import { haversineKm } from '../../utils/haversine'
+import { ICachePort } from '../../ports/cache.port'
 
 export class GetRankingUseCase {
   constructor(
     private readonly repo: ISwipeRepository,
     private readonly rec: IRecommendationRepository,
+    private readonly cache: ICachePort,
   ) {}
 
   async execute(userId: string, jobId: string) {
@@ -21,6 +23,12 @@ export class GetRankingUseCase {
     // Step 3: Verify the recruiter owns the job (T-12-03-02 — elevation of privilege guard)
     if (job.recruiterId !== recruiterProfile.id)
       throw new DomainError('Forbidden', 'FORBIDDEN', 403)
+
+    // SCALE-02: cache read before expensive Neo4j traversal
+    const cacheKey = `ranking:${jobId}`
+    let cached: string | null = null
+    try { cached = await this.cache.get(cacheKey) } catch { /* Redis down — fall through */ }
+    if (cached) return JSON.parse(cached)
 
     // Step 4: Fetch all swipes for this job
     const swipes = await this.repo.findSwipesByJobId(jobId)
@@ -90,8 +98,12 @@ export class GetRankingUseCase {
     )
 
     // Step 9: Sort by fitScore DESC, add rank
-    return items
+    const result = items
       .sort((a, b) => b.fitScore - a.fitScore)
       .map((item, index) => ({ ...item, rank: index + 1 }))
+
+    // SCALE-02: cache write after compute — TTL 30s
+    try { await this.cache.set(cacheKey, JSON.stringify(result), 30) } catch { /* Redis down — ok */ }
+    return result
   }
 }
