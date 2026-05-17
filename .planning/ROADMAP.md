@@ -94,7 +94,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — Wave 1: TDD RED — stub exports + failing unit tests for censorProfile, buildFitReasons, all 3 candidate states
+- [x] 16-01-PLAN.md — Wave 1: TDD RED — stub exports + failing unit tests for censorProfile, buildFitReasons, all 3 candidate states
 - [ ] 16-02-PLAN.md — Wave 2: GREEN — implement censorProfile + buildFitReasons, replace inline ternary, update RankingItem type
 
 ### Phase 17: DISC Personality Assessment
@@ -152,11 +152,11 @@ Plans:
 | 13. Cleanup + Unit Test Layer | v2.0 | 3/3 | Complete | 2026-05-15 |
 | 14. Graph Recommendation | v3.0 | 3/3 | Complete | 2026-05-16 |
 | 15. Redis Caching | v3.0 | 0/? | Not started | — |
-| 16. Recruiter Skill Preview | v3.0 | 0/? | Not started | — |
+| 16. Recruiter Skill Preview | v3.0 | 1/2 | In progress | — |
 | 17. DISC Personality Assessment | v3.0 | 0/? | Not started | — |
 | 18. Learning System | v3.0 | 0/? | Not started | — |
 | 19. Admin Dashboard API + Load Testing | v3.0 | 0/? | Not started | — |
 
 ---
 
-*Last updated: 2026-05-16 — v3.0 roadmap created (Phases 14–19)*
+*Last updated: 2026-05-17 — Phase 16 Plan 01 complete (TDD RED stubs for censorProfile/buildFitReasons)*
