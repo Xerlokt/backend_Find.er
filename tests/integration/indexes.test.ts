@@ -2,6 +2,10 @@ import '../helpers/setup'
 import { prisma } from '../../src/infrastructure/database/prisma'
 
 describe('SCALE-04: PostgreSQL index scans', () => {
+  // disable_seqscan forces the planner to use indexes regardless of table size (needed on empty test DB)
+  beforeEach(async () => { await prisma.$executeRawUnsafe('SET enable_seqscan = off') })
+  afterEach(async () => { await prisma.$executeRawUnsafe('SET enable_seqscan = on') })
+
   it('Swipe.candidateId uses index scan', async () => {
     const result = await prisma.$queryRaw<Array<{ 'QUERY PLAN': string }>>`
       EXPLAIN SELECT * FROM "Swipe" WHERE "candidateId" = '00000000-0000-0000-0000-000000000001'
