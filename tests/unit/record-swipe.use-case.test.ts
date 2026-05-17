@@ -1,6 +1,7 @@
 import { RecordSwipeUseCase } from '../../src/application/use-cases/swipe/record-swipe.use-case'
 import type { ISwipeRepository } from '../../src/domain/interfaces/swipe.repository.interface'
 import type { IChatPort } from '../../src/application/ports/chat.port'
+import type { ICachePort } from '../../src/application/ports/cache.port'
 
 const makeSwipeRepo = (): jest.Mocked<ISwipeRepository> => ({
   findCandidateProfileByUserId: jest.fn(),
@@ -16,6 +17,13 @@ const makeChatPort = (): jest.Mocked<IChatPort> => ({
   createOrGetChat: jest.fn().mockResolvedValue({ chatId: 'chat-1' }),
 } as jest.Mocked<IChatPort>)
 
+const makeCache = (): jest.Mocked<ICachePort> => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue(undefined),
+  del: jest.fn().mockResolvedValue(undefined),
+  invalidatePattern: jest.fn().mockResolvedValue(undefined),
+})
+
 const activeJob = { id: 'job-1', companyId: 'comp-1', isActive: true, expiresAt: new Date(Date.now() + 86400000) }
 
 describe('RecordSwipeUseCase', () => {
@@ -24,7 +32,7 @@ describe('RecordSwipeUseCase', () => {
   it('throws NOT_FOUND (404) when candidate profile does not exist', async () => {
     const repo = makeSwipeRepo()
     repo.findCandidateProfileByUserId.mockResolvedValue(null)
-    const uc = new RecordSwipeUseCase(repo, makeChatPort())
+    const uc = new RecordSwipeUseCase(repo, makeChatPort(), makeCache())
     await expect(uc.execute('user-1', 'job-1', 'LIKE')).rejects.toMatchObject({ code: 'NOT_FOUND', statusCode: 404 })
   })
 
@@ -32,7 +40,7 @@ describe('RecordSwipeUseCase', () => {
     const repo = makeSwipeRepo()
     repo.findCandidateProfileByUserId.mockResolvedValue({ id: 'cand-1' } as any)
     repo.findJobById.mockResolvedValue(null)
-    const uc = new RecordSwipeUseCase(repo, makeChatPort())
+    const uc = new RecordSwipeUseCase(repo, makeChatPort(), makeCache())
     await expect(uc.execute('user-1', 'job-1', 'LIKE')).rejects.toMatchObject({ code: 'NOT_FOUND', statusCode: 404 })
   })
 
@@ -42,7 +50,7 @@ describe('RecordSwipeUseCase', () => {
     repo.findJobById.mockResolvedValue(activeJob as any)
     repo.createSwipe.mockResolvedValue({ candidateId: 'cand-1', jobId: 'job-1', direction: 'LIKE' } as any)
     const chat = makeChatPort()
-    const uc = new RecordSwipeUseCase(repo, chat)
+    const uc = new RecordSwipeUseCase(repo, chat, makeCache())
     const result = await uc.execute('user-1', 'job-1', 'LIKE')
     expect(chat.createOrGetChat).toHaveBeenCalledWith('cand-1', 'comp-1', 'job-1', 'MATCH')
     expect(result.chatId).toBe('chat-1')
@@ -54,8 +62,30 @@ describe('RecordSwipeUseCase', () => {
     repo.findJobById.mockResolvedValue(activeJob as any)
     repo.createSwipe.mockResolvedValue({ candidateId: 'cand-1', jobId: 'job-1', direction: 'DISLIKE' } as any)
     const chat = makeChatPort()
-    const uc = new RecordSwipeUseCase(repo, chat)
+    const uc = new RecordSwipeUseCase(repo, chat, makeCache())
     await uc.execute('user-1', 'job-1', 'DISLIKE')
     expect(chat.createOrGetChat).not.toHaveBeenCalled()
+  })
+
+  it('calls cache.del with feed key after successful LIKE swipe', async () => {
+    const repo = makeSwipeRepo()
+    repo.findCandidateProfileByUserId.mockResolvedValue({ id: 'cand-1' } as any)
+    repo.findJobById.mockResolvedValue(activeJob as any)
+    repo.createSwipe.mockResolvedValue({ candidateId: 'cand-1', jobId: 'job-1', direction: 'LIKE' } as any)
+    const cache = makeCache()
+    const uc = new RecordSwipeUseCase(repo, makeChatPort(), cache)
+    await uc.execute('user-1', 'job-1', 'LIKE')
+    expect(cache.del).toHaveBeenCalledWith('feed:cand-1')
+  })
+
+  it('calls cache.del with feed key after successful DISLIKE swipe', async () => {
+    const repo = makeSwipeRepo()
+    repo.findCandidateProfileByUserId.mockResolvedValue({ id: 'cand-1' } as any)
+    repo.findJobById.mockResolvedValue(activeJob as any)
+    repo.createSwipe.mockResolvedValue({ candidateId: 'cand-1', jobId: 'job-1', direction: 'DISLIKE' } as any)
+    const cache = makeCache()
+    const uc = new RecordSwipeUseCase(repo, makeChatPort(), cache)
+    await uc.execute('user-1', 'job-1', 'DISLIKE')
+    expect(cache.del).toHaveBeenCalledWith('feed:cand-1')
   })
 })
