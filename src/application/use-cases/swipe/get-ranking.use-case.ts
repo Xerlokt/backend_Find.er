@@ -4,6 +4,58 @@ import { DomainError } from '../../errors/domain.error'
 import { haversineKm } from '../../utils/haversine'
 import { ICachePort } from '../../ports/cache.port'
 
+// ─── Phase 16: Recruiter Skill Preview — types and pure functions ────────────
+
+export interface FullProfile {
+  name: string
+  avatarUrl: string | null
+  bio: string | null
+  skills: string[]
+  professionId: string
+  preferredModalities: string[]
+  salaryExpectation: number | null
+}
+
+export interface CensoredProfile {
+  // Identity fields — always null for DISLIKE-locked candidates (REC-03)
+  name: null
+  avatarUrl: null
+  bio: null
+  // Non-identity preview (REC-01, REC-02)
+  matchingSkills: string[]
+  fitReasons: string[]
+}
+
+export type RankingProfile = FullProfile | CensoredProfile
+
+/**
+ * Generates human-readable fit reason strings for a censored candidate card.
+ * Pure function — no side effects, no DB access (REC-02).
+ * RED stub: throws until 16-02 implements the body.
+ */
+export function buildFitReasons(
+  candidate: { salaryExpectation: number | null; professionId: string },
+  job: { requiredSkills: string[]; salaryMin: number | null; salaryMax: number | null; professionId: string },
+  matchingSkills: string[],
+): string[] {
+  throw new Error('buildFitReasons not implemented — RED stub for Phase 16 TDD')
+}
+
+/**
+ * Single code path for all reveal/conceal decisions (REC-03, Success Criterion 4).
+ * Returns FullProfile when candidate is revealed (LIKE or unlocked DISLIKE).
+ * Returns CensoredProfile when candidate is locked (DISLIKE + not unlocked).
+ * Pure function — no side effects, no DB access.
+ * RED stub: throws until 16-02 implements the body.
+ */
+export function censorProfile(
+  swipe: { direction: string; candidate: { name: string; avatarUrl: string | null; bio: string | null; skills: string[]; professionId: string; preferredModalities: string[]; salaryExpectation: number | null } },
+  job: { requiredSkills: string[]; salaryMin: number | null; salaryMax: number | null; professionId: string },
+  isUnlocked: boolean,
+): FullProfile | CensoredProfile {
+  throw new Error('censorProfile not implemented — RED stub for Phase 16 TDD')
+}
+
 export class GetRankingUseCase {
   constructor(
     private readonly repo: ISwipeRepository,
