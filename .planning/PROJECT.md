@@ -56,7 +56,7 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 
 - [ ] Graph recommendation via Neo4j traversal (skills adjacentes) — v3.0 target (REC, GRAPH)
 - [ ] Learning system de pesos por candidato baseado em likes — v3.0 target (LEARN)
-- [ ] Recruiter skill preview para candidatos não-liked — v3.0 target (REC)
+- [x] Recruiter skill preview para candidatos não-liked — Validated in Phase 16: Recruiter Skill Preview (REC-01, REC-02, REC-03)
 - [ ] DISC personality test para candidatos; perfil DISC em vagas — v3.0 target (DISC)
 - [ ] Admin dashboard API (usuários, requests, receita, engajamento) — v3.0 target (ADMIN)
 - [ ] Redis caching + query optimization + load testing — v3.0 target (SCALE)
@@ -96,6 +96,9 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 | Migração módulo-a-módulo (v2.0) | Manter 41 testes de integração verdes em cada fase — rollback seguro | ✓ Validated — zero regressões durante 5 fases de migração |
 | Padrão aditivo — não deletar módulos antigos até Phase 13 | Safe coexistence during migration; deletar tudo de uma vez é arriscado | ✓ Validated — tsc clean + testes verdes em todo momento |
 | scripts/check-deps.ts (madge) para enforce layer rule | Dependências incorretas detectadas mecanicamente, não via code review | ✓ Validated Phase 13 — npm run check:deps passa no CI |
+| censorProfile() como único code path de reveal/conceal (Phase 16) | Eliminar lógica inline duplicada no map callback; testabilidade pura sem DB | ✓ Validated Phase 16 — inline ternary removido; CensoredProfile retorna matchingSkills+fitReasons |
+| matchingSkills computado candidate-first (Phase 16) | Semântica correta: habilidades que o candidato TEM que aparecem nos requisitos da vaga | ✓ Validated Phase 16 — candidate.skills.filter(s => job.requiredSkills.includes(s)) |
+| RankingItem.profile nunca null (Phase 16) | Null-safety: DISLIKE-locked retorna CensoredProfile em vez de null; nenhum caller precisa guard null | ✓ Validated Phase 16 — CensoredProfile substitui null para candidatos censurados |
 
 ## Evolution
 
