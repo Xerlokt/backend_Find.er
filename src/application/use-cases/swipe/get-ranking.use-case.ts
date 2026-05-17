@@ -26,9 +26,10 @@ export class GetRankingUseCase {
 
     // SCALE-02: cache read before expensive Neo4j traversal
     const cacheKey = `ranking:${jobId}`
-    let cached: string | null = null
-    try { cached = await this.cache.get(cacheKey) } catch { /* Redis down — fall through */ }
-    if (cached) return JSON.parse(cached)
+    try {
+      const cached = await this.cache.get(cacheKey)
+      if (cached) return JSON.parse(cached)
+    } catch { /* Redis down or corrupt cache entry — fall through */ }
 
     // Step 4: Fetch all swipes for this job
     const swipes = await this.repo.findSwipesByJobId(jobId)

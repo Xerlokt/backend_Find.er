@@ -23,7 +23,7 @@ import { chatRoutes } from './infrastructure/http/routes/chat.routes'
 import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
 import { getNeo4jDriver } from './infrastructure/database/neo4j'
 import { RedisAdapter } from './adapters/services/redis.adapter'
-import { getRedisClient } from './infrastructure/database/redis'
+import { getRedisClient, closeRedis } from './infrastructure/database/redis'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -56,6 +56,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
 
   // Composition root: RedisAdapter — injected into swipe routes (feed/ranking) and candidate routes (profile update invalidation)
   const redisAdapter = new RedisAdapter(getRedisClient())
+  app.addHook('onClose', async () => { await closeRedis() })
 
   // Routes
   await app.register(healthRoutes)

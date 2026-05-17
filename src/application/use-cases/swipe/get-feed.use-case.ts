@@ -17,9 +17,10 @@ export class GetFeedUseCase {
     // Only cache first page (no cursor) — paginated requests uncached (RESEARCH Pitfall 3)
     const cacheKey = `feed:${candidate.id}`
     if (!cursor) {
-      let cached: string | null = null
-      try { cached = await this.cache.get(cacheKey) } catch { /* Redis down — fall through to source */ }
-      if (cached) return JSON.parse(cached)
+      try {
+        const cached = await this.cache.get(cacheKey)
+        if (cached) return JSON.parse(cached)
+      } catch { /* Redis down or corrupt cache entry — fall through to source */ }
     }
 
     const jobs = await this.repo.findFeedJobs(candidate.id, cursor, limit)
