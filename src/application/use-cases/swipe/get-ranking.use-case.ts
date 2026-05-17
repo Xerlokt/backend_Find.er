@@ -41,7 +41,12 @@ export function buildFitReasons(
   const reasons: string[] = []
 
   // Skill reason — canonical format: "N/M skills match" (ROADMAP Phase 16 success criteria)
-  reasons.push(`${matchingSkills.length}/${job.requiredSkills.length} skills match`)
+  // Guard: omit "0/0 skills match" when job has no required skills — emit informative fallback instead
+  if (job.requiredSkills.length > 0) {
+    reasons.push(`${matchingSkills.length}/${job.requiredSkills.length} skills match`)
+  } else {
+    reasons.push('no required skills listed')
+  }
 
   // Salary reason — only emitted when candidate and job both have salary data
   if (candidate.salaryExpectation !== null && (job.salaryMin !== null || job.salaryMax !== null)) {
