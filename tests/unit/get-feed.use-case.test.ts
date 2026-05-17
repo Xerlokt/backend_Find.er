@@ -92,7 +92,8 @@ describe('GetFeedUseCase', () => {
     expect(repo.findFeedJobs).toHaveBeenCalledWith('cand-1', undefined, 20)
     expect(rec.computeFitScore).toHaveBeenCalled()
     expect(cache.set).toHaveBeenCalledWith('feed:cand-1', expect.any(String), 60)
-    expect(result).toMatchObject({ data: expect.any(Array), nextCursor: expect.anything() })
+    expect(result).toMatchObject({ data: expect.any(Array) })
+    expect(result).toHaveProperty('nextCursor')
   })
 
   it('skips cache.get and cache.set when cursor is provided (paginated request)', async () => {

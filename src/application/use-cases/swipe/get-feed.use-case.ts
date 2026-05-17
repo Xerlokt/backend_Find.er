@@ -1,16 +1,26 @@
 import { ISwipeRepository } from '../../../domain/interfaces/swipe.repository.interface'
 import { IRecommendationRepository, FitScoreInput, FitScoreJobInput } from '../../../domain/interfaces/recommendation.repository.interface'
 import { DomainError } from '../../errors/domain.error'
+import { ICachePort } from '../../ports/cache.port'
 
 export class GetFeedUseCase {
   constructor(
     private readonly repo: ISwipeRepository,
     private readonly rec: IRecommendationRepository,
+    private readonly cache: ICachePort,
   ) {}
 
   async execute(userId: string, cursor: string | undefined, limit: number) {
     const candidate = await this.repo.findCandidateProfileByUserId(userId)
     if (!candidate) throw new DomainError('Candidate profile not found', 'NOT_FOUND', 404)
+
+    // Only cache first page (no cursor) — paginated requests uncached (RESEARCH Pitfall 3)
+    const cacheKey = `feed:${candidate.id}`
+    if (!cursor) {
+      let cached: string | null = null
+      try { cached = await this.cache.get(cacheKey) } catch { /* Redis down — fall through to source */ }
+      if (cached) return JSON.parse(cached)
+    }
 
     const jobs = await this.repo.findFeedJobs(candidate.id, cursor, limit)
     const hasNext = jobs.length > limit
@@ -45,6 +55,11 @@ export class GetFeedUseCase {
         ),
       })),
     )
-    return { data: scoredData, nextCursor }
+    const result = { data: scoredData, nextCursor }
+
+    if (!cursor) {
+      try { await this.cache.set(cacheKey, JSON.stringify(result), 60) } catch { /* Redis down — ok */ }
+    }
+    return result
   }
 }
