@@ -78,6 +78,8 @@ model CandidateProfile {
   swipes  Swipe[]
   chats   Chat[]
   unlocks Unlock[]
+
+  @@index([professionId])  // SCALE-04: profession-based recommendation filter
 }
 
 model RecruiterProfile {
@@ -129,6 +131,8 @@ model Job {
   swipes  Swipe[]
   chats   Chat[]
   unlocks Unlock[]
+
+  @@index([isActive, expiresAt])  // SCALE-04: active job feed query (WHERE isActive=true AND expiresAt > now())
 }
 
 model Swipe {
@@ -141,6 +145,8 @@ model Swipe {
   swipedAt    DateTime         @default(now())
 
   @@unique([candidateId, jobId])
+  @@index([candidateId])  // SCALE-04: swipe-by-candidate query pattern
+  @@index([jobId])        // SCALE-04: swipe-by-job query pattern (findSwipesByJobId)
 }
 
 model Chat {

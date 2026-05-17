@@ -7,9 +7,14 @@ const RULES: Array<{ from: RegExp; forbids: RegExp[]; label: string }> = [
     forbids: [/^application\//, /^adapters\//, /^infrastructure\//],
   },
   {
-    label: 'application must not import adapters or infrastructure',
+    label: 'application must not import adapters',
     from: /^application\//,
-    forbids: [/^adapters\//, /^infrastructure\//],
+    forbids: [/^adapters\//],
+  },
+  {
+    label: 'application must not import infrastructure (including infrastructure/database)',
+    from: /^application\//,
+    forbids: [/^infrastructure\//],
   },
   {
     // Adapters may import infrastructure/database (Prisma/Neo4j clients) but
