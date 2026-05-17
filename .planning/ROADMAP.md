@@ -75,7 +75,12 @@ Plans:
 3. After a candidate profile is updated, the ranking response reflects the new fit score on the next request (cached entry invalidated).
 4. `npm run check:deps` fails if any file inside `src/application/` imports any `src/infrastructure/` subdirectory including `infrastructure/cache/`.
 5. PostgreSQL query plans for swipe-by-candidate, swipe-by-job, active-job, and candidate-by-profession lookups use index seeks (four new `@@index` entries live in the Prisma schema).
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 15-01-PLAN.md — Wave 0: ICachePort interface + RED unit tests + check-deps tightening + Prisma indexes + Docker Redis services
+- [ ] 15-02-PLAN.md — Wave 1: RedisAdapter + redis singleton + use case cache injection + wiring + Prisma migration (GREEN)
+- [ ] 15-03-PLAN.md — Wave 2: Redis test isolation + integration cache/invalidation tests + EXPLAIN index verification
 
 ### Phase 16: Recruiter Skill Preview
 **Goal:** Recruiters see which skills a DISLIKE or not-yet-unlocked candidate shares with the job, plus labeled fit reasons, without any identity information being exposed.
