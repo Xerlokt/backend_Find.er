@@ -25,7 +25,7 @@ export class GetFeedUseCase {
           {
             id: candidate.id,
             professionId: candidate.professionId,
-            skillIds: candidate.skills,
+            skillIds: candidate.skills, // CandidateProfile.skills stores Neo4j skill IDs (e.g. 'nodejs') — Phase 14 convention
             preferredModalities: candidate.preferredModalities,
             salaryExpectation: candidate.salaryExpectation ?? null,
             lat: candidate.lat ?? null,

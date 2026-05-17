@@ -38,7 +38,7 @@ export class GetRankingUseCase {
           {
             id: swipe.candidate.id,
             professionId: swipe.candidate.professionId,
-            skillIds: swipe.candidate.skills,
+            skillIds: swipe.candidate.skills, // CandidateProfile.skills stores Neo4j skill IDs (e.g. 'nodejs') — Phase 14 convention
             preferredModalities: swipe.candidate.preferredModalities,
             salaryExpectation: swipe.candidate.salaryExpectation ?? null,
             lat: swipe.candidate.lat ?? null,
