@@ -37,7 +37,7 @@
 
 ### v3.0 Intelligence, Growth & Scale (Phases 14–19)
 
-- [ ] **Phase 14: Graph Recommendation** — Neo4j traversal with skill adjacency decay replaces exact-match fit score
+- [x] **Phase 14: Graph Recommendation** — Neo4j traversal with skill adjacency decay replaces exact-match fit score — completed 2026-05-16
 - [ ] **Phase 15: Redis Caching** — Feed and ranking cached with invalidation; architectural layer rule extended to block all infrastructure imports from application
 - [ ] **Phase 16: Recruiter Skill Preview** — Censored candidate cards expose matching skills and fit reasons without any identity data
 - [ ] **Phase 17: DISC Personality Assessment** — Candidates complete DISC survey; result stored and additively factors into fit score for jobs that opt in
@@ -61,9 +61,9 @@
 **Plans:** 3 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — Wave 0: TDD test setup (unit + integration, RED state — factories, mock driver, adjacency cases)
-- [ ] 14-02-PLAN.md — Wave 1: Interface rename + callers update (tsc clean, tests still RED at runtime)
-- [ ] 14-03-PLAN.md — Wave 2: Neo4j traversal engine + expanded seed + constraints (all tests GREEN)
+- [x] 14-01-PLAN.md — Wave 0: TDD test setup (unit + integration, RED state — factories, mock driver, adjacency cases)
+- [x] 14-02-PLAN.md — Wave 1: Interface rename + callers update (tsc clean, tests still RED at runtime)
+- [x] 14-03-PLAN.md — Wave 2: Neo4j traversal engine + expanded seed + constraints (all tests GREEN)
 
 ### Phase 15: Redis Caching
 **Goal:** Feed and ranking responses are served from Redis on warm cache hits with correct invalidation on swipe and profile update; the architectural layer rule is extended to block all `infrastructure/` imports from `application/` before any cache code is written.
@@ -141,7 +141,7 @@ Plans:
 | 11. Core Modules Migration | v2.0 | 4/4 | Complete | 2026-05-08 |
 | 12. Swipe, Credits, Recommendation, Chat Migration | v2.0 | 4/4 | Complete | 2026-05-09 |
 | 13. Cleanup + Unit Test Layer | v2.0 | 3/3 | Complete | 2026-05-15 |
-| 14. Graph Recommendation | v3.0 | 0/? | Not started | — |
+| 14. Graph Recommendation | v3.0 | 3/3 | Complete | 2026-05-16 |
 | 15. Redis Caching | v3.0 | 0/? | Not started | — |
 | 16. Recruiter Skill Preview | v3.0 | 0/? | Not started | — |
 | 17. DISC Personality Assessment | v3.0 | 0/? | Not started | — |
