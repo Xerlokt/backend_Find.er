@@ -99,6 +99,9 @@ O sistema de recomendação via Neo4j que calcula o score de fit entre candidato
 | censorProfile() como único code path de reveal/conceal (Phase 16) | Eliminar lógica inline duplicada no map callback; testabilidade pura sem DB | ✓ Validated Phase 16 — inline ternary removido; CensoredProfile retorna matchingSkills+fitReasons |
 | matchingSkills computado candidate-first (Phase 16) | Semântica correta: habilidades que o candidato TEM que aparecem nos requisitos da vaga | ✓ Validated Phase 16 — candidate.skills.filter(s => job.requiredSkills.includes(s)) |
 | RankingItem.profile nunca null (Phase 16) | Null-safety: DISLIKE-locked retorna CensoredProfile em vez de null; nenhum caller precisa guard null | ✓ Validated Phase 16 — CensoredProfile substitui null para candidatos censurados |
+| candidateId omitido de RankingItem para candidatos censurados (Phase 16 CR-01) | Privacy: UUID exposição permite cross-referência para de-anonimizar candidatos DISLIKE-locked | ✓ Validated Phase 16 — isRevealed guard; candidateId presente apenas para LIKE ou desbloqueado |
+| Runtime guard descarta cache entries com profile: null (Phase 16 WR-01) | Stale cache de pré-Phase 16 pode retornar null mesmo com tipo RankingProfile não-nullable | ✓ Validated Phase 16 — parsed.every(item => item.profile != null) antes de retornar cache hit |
+| ZodError capturado no controller para getRanking (Phase 16 WR-03) | Raw ZodError expõe estrutura interna de schema ao cliente — violação da regra de segurança | ✓ Validated Phase 16 — try/catch converte ZodError em 400 VALIDATION_ERROR limpo |
 
 ## Evolution
 
@@ -118,4 +121,4 @@ Este documento evolui a cada transição de fase e marco de milestone.
 4. Atualizar Context com estado atual
 
 ---
-*Last updated: 2026-05-16 — v3.0 milestone started — Intelligence, Growth & Scale*
+*Last updated: 2026-05-17 — Phase 16 code review fixes applied (CR-01 privacy, WR-01 cache guard, WR-03 Zod error handling); UAT 5/5 passed*

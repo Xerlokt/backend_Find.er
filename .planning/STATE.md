@@ -207,6 +207,6 @@ Items acknowledged and deferred at milestone close on 2026-05-16:
 
 ## Session Continuity
 
-Last session: 2026-05-17T19:30:42.615Z
-Stopped at: context exhaustion at 90% (2026-05-17)
+Last session: 2026-05-17
+Stopped at: Phase 16 UAT complete (5/5 passed) — code review fixes committed, integration tests updated for Phase 16 contract; ready to plan Phase 17
 Resume file: None
