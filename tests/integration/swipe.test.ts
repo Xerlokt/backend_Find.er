@@ -248,29 +248,37 @@ describe('GET /jobs/feed', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe('GET /jobs/:jobId/ranking', () => {
-  it('200 retorna RankingItem[] com perfil completo para LIKE e null para DISLIKE', async () => {
+  it('200 retorna FullProfile para LIKE e CensoredProfile (sem candidateId) para DISLIKE não desbloqueado', async () => {
     const app = await buildApp({ testing: true })
     await app.ready()
     const company = await createCompany()
     const { token: recToken, profile: recruiterProfile } = await createRecruiterWithProfile(app, company.id, 'rank-200-rec')
     const job = await createJob(company.id, recruiterProfile.id)
     const { profile: candProfile1 } = await createCandidateWithProfile(app, 'rank-like-cand')
-    const { profile: candProfile2 } = await createCandidateWithProfile(app, 'rank-dislike-cand')
+    await createCandidateWithProfile(app, 'rank-dislike-cand')
     await createSwipe(candProfile1.id, job.id, { direction: 'LIKE' })
+    // DISLIKE+locked items have no candidateId in response (CR-01 privacy fix) — seed via candProfile2 id not needed for lookup
+    const { profile: candProfile2 } = await createCandidateWithProfile(app, 'rank-dislike-cand2')
     await createSwipe(candProfile2.id, job.id, { direction: 'DISLIKE' })
     const response = await supertest(app.server)
       .get(`/jobs/${job.id}/ranking`)
       .set('Authorization', `Bearer ${recToken}`)
     expect(response.status).toBe(200)
     expect(Array.isArray(response.body)).toBe(true)
+    // LIKE candidate: candidateId present, FullProfile (all identity fields non-null)
     const likeItem = response.body.find((item: any) => item.candidateId === candProfile1.id)
-    const dislikeItem = response.body.find((item: any) => item.candidateId === candProfile2.id)
     expect(likeItem).toBeDefined()
     expect(likeItem.profile).not.toBeNull()
     expect(likeItem.profile).toHaveProperty('name')
     expect(likeItem.profile).toHaveProperty('skills')
+    // DISLIKE+locked candidate: no candidateId field (CR-01), CensoredProfile (name null, matchingSkills + fitReasons present)
+    const dislikeItem = response.body.find((item: any) => !item.candidateId)
     expect(dislikeItem).toBeDefined()
-    expect(dislikeItem.profile).toBeNull()
+    expect(dislikeItem).not.toHaveProperty('candidateId')
+    expect(dislikeItem.profile).not.toBeNull()
+    expect(dislikeItem.profile.name).toBeNull()
+    expect(Array.isArray(dislikeItem.profile.matchingSkills)).toBe(true)
+    expect(Array.isArray(dislikeItem.profile.fitReasons)).toBe(true)
     await app.close()
   })
 
@@ -289,10 +297,9 @@ describe('GET /jobs/:jobId/ranking', () => {
     for (const item of response.body) {
       expect(item.lat).toBeUndefined()
       expect(item.lng).toBeUndefined()
-      if (item.profile !== null) {
-        expect(item.profile.lat).toBeUndefined()
-        expect(item.profile.lng).toBeUndefined()
-      }
+      // profile is always non-null after Phase 16 (FullProfile | CensoredProfile — neither includes lat/lng)
+      expect(item.profile.lat).toBeUndefined()
+      expect(item.profile.lng).toBeUndefined()
     }
     await app.close()
   })
@@ -396,7 +403,7 @@ describe('GET /jobs/:jobId/ranking', () => {
     await app.close()
   })
 
-  it('ainda censura DISLIKE candidato que NÃO foi desbloqueado', async () => {
+  it('ainda censura DISLIKE candidato que NÃO foi desbloqueado — CensoredProfile, sem candidateId', async () => {
     const app = await buildApp({ testing: true })
     await app.ready()
     const company = await createCompany({ credits: 10 })
@@ -414,10 +421,31 @@ describe('GET /jobs/:jobId/ranking', () => {
       .set('Authorization', `Bearer ${recToken}`)
 
     expect(res.status).toBe(200)
-    const dislikeItem = res.body.find((item: any) => item.candidateId === candProfile.id)
-    expect(dislikeItem).toBeDefined()
-    expect(dislikeItem.profile).toBeNull()
+    expect(Array.isArray(res.body)).toBe(true)
+    expect(res.body.length).toBe(1)
+    // DISLIKE+locked: no candidateId field (CR-01 privacy fix) — find by index
+    const dislikeItem = res.body[0]
+    expect(dislikeItem).not.toHaveProperty('candidateId')
+    // Phase 16: CensoredProfile, never null — identity hidden, skill preview present
+    expect(dislikeItem.profile).not.toBeNull()
+    expect(dislikeItem.profile.name).toBeNull()
+    expect(Array.isArray(dislikeItem.profile.matchingSkills)).toBe(true)
+    expect(Array.isArray(dislikeItem.profile.fitReasons)).toBe(true)
 
+    await app.close()
+  })
+
+  it('400 com VALIDATION_ERROR para jobId inválido (não-UUID)', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const company = await createCompany()
+    const { token: recToken } = await createRecruiterWithProfile(app, company.id, 'rank-400-rec')
+    const res = await supertest(app.server)
+      .get('/jobs/not-a-valid-uuid/ranking')
+      .set('Authorization', `Bearer ${recToken}`)
+    expect(res.status).toBe(400)
+    expect(res.body.code).toBe('VALIDATION_ERROR')
+    expect(res.body.error).toBe('Invalid job ID format')
     await app.close()
   })
 })
