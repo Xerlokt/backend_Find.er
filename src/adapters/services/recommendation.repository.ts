@@ -127,9 +127,10 @@ export class RecommendationRepository implements IRecommendationRepository {
           { id: 'data-scientist', name: 'Data Scientist' },
           { id: 'mobile-dev', name: 'Mobile Developer' },
         ]
-        for (const p of professions) {
-          await tx.run('MERGE (p:Profession {id: $id}) SET p.name = $name', p)
-        }
+        await tx.run(
+          'UNWIND $professions AS p MERGE (n:Profession {id: p.id}) SET n.name = p.name',
+          { professions }
+        )
 
         // Skills — 36 nodes total (10 original + 26 new), idempotent MERGE
         const skills = [
@@ -175,9 +176,10 @@ export class RecommendationRepository implements IRecommendationRepository {
           { id: 'flutter', name: 'Flutter' },
           { id: 'dart', name: 'Dart' },
         ]
-        for (const s of skills) {
-          await tx.run('MERGE (s:Skill {id: $id}) SET s.name = $name', s)
-        }
+        await tx.run(
+          'UNWIND $skills AS s MERGE (n:Skill {id: s.id}) SET n.name = s.name',
+          { skills }
+        )
 
         // REQUIRES relationships: Profession → Skill (unchanged from original)
         const requires = [
@@ -190,15 +192,15 @@ export class RecommendationRepository implements IRecommendationRepository {
           { profId: 'devops', skillId: 'docker' },
           { profId: 'data-scientist', skillId: 'python' },
         ]
-        for (const r of requires) {
-          await tx.run(
-            'MATCH (p:Profession {id: $profId}), (s:Skill {id: $skillId}) MERGE (p)-[:REQUIRES]->(s)',
-            r,
-          )
-        }
+        await tx.run(
+          `UNWIND $requires AS r
+           MATCH (p:Profession {id: r.profId}), (s:Skill {id: r.skillId})
+           MERGE (p)-[:REQUIRES]->(s)`,
+          { requires }
+        )
 
         // RELATED_TO relationships: bidirectional, weight 0.8
-        // 26 pairs = 52 directed edges (GRAPH-02 requires >= 50)
+        // 26 pairs × 2 directions = 52 directed edges (GRAPH-02 requires >= 50)
         const related = [
           // Original 3 pairs
           { aId: 'typescript', bId: 'javascript' },
@@ -229,18 +231,18 @@ export class RecommendationRepository implements IRecommendationRepository {
           { aId: 'flutter', bId: 'dart' },
           // Cross-domain pair (1)
           { aId: 'react-native', bId: 'javascript' },
-          // Extra pair to reach 26 total (3+5+5+5+4+1=23 above; add 3 more)
+          // Extra pairs to reach 26 total (3+5+5+5+4+1=23 above; add 3 more)
           { aId: 'nodejs', bId: 'typescript' },
           { aId: 'go', bId: 'rust' },
           { aId: 'android', bId: 'kotlin' },
         ]
-        // Total: 26 pairs × 2 directions = 52 directed edges (>= 50)
-        for (const r of related) {
-          await tx.run(
-            'MATCH (a:Skill {id: $aId}), (b:Skill {id: $bId}) MERGE (a)-[:RELATED_TO {weight: 0.8}]->(b) MERGE (b)-[:RELATED_TO {weight: 0.8}]->(a)',
-            r,
-          )
-        }
+        await tx.run(
+          `UNWIND $related AS r
+           MATCH (a:Skill {id: r.aId}), (b:Skill {id: r.bId})
+           MERGE (a)-[:RELATED_TO {weight: 0.8}]->(b)
+           MERGE (b)-[:RELATED_TO {weight: 0.8}]->(a)`,
+          { related }
+        )
       })
     } finally {
       await session.close()
