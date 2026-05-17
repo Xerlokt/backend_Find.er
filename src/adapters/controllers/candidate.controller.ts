@@ -4,6 +4,7 @@ import { CandidateRepository } from '../repositories/candidate.repository'
 import { UpsertCandidateProfileUseCase } from '../../application/use-cases/candidate/upsert-candidate-profile.use-case'
 import { GetCandidateProfileUseCase } from '../../application/use-cases/candidate/get-candidate-profile.use-case'
 import { DomainError } from '../../application/errors/domain.error'
+import { ICachePort } from '../../application/ports/cache.port'
 
 const CandidateProfileSchema = z.object({
   name: z.string().min(1).max(100),
@@ -18,9 +19,11 @@ const CandidateProfileSchema = z.object({
 })
 
 export class CandidateController {
+  constructor(private readonly opts: { cache: ICachePort }) {}
+
   async upsertProfile(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const body = CandidateProfileSchema.parse(request.body)
-    const useCase = new UpsertCandidateProfileUseCase(new CandidateRepository())
+    const useCase = new UpsertCandidateProfileUseCase(new CandidateRepository(), this.opts.cache)
     try {
       const profile = await useCase.execute(request.user.id, body)
       reply.status(200).send(profile)
