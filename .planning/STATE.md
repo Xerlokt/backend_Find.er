@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Intelligence, Growth & Scale
 status: executing
-stopped_at: context exhaustion at 90% (2026-05-17)
-last_updated: "2026-05-17T20:26:41.000Z"
-last_activity: 2026-05-17 — Phase 16 Plan 01 complete (TDD RED stubs for censorProfile/buildFitReasons)
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-05-17T20:31:29.000Z"
+last_activity: 2026-05-17 — Phase 16 Plan 02 complete (GREEN phase — censorProfile/buildFitReasons implemented, 17 tests green)
 progress:
   total_phases: 6
   completed_phases: 2
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-16)
 ## Current Position
 
 Phase: 16 — Recruiter Skill Preview
-Plan: 01 complete — 02 next
+Plan: 02 complete — phase complete
 Status: In progress
-Last activity: 2026-05-17 — Phase 16 Plan 01 complete (TDD RED stubs for censorProfile/buildFitReasons)
+Last activity: 2026-05-17 — Phase 16 Plan 02 complete (GREEN phase — censorProfile/buildFitReasons implemented, 17 tests green)
 
 Progress: [░░░░░░░░░░] 0% v3.0 (0/6 phases)
 
@@ -149,6 +149,9 @@ Recent decisions affecting current work:
 - 13-03: Layer rule refined — adapters may import infrastructure/database (Prisma/Neo4j clients) because repositories ARE the adapters to the DB; forbidden boundary is adapters importing infrastructure/http
 - 13-03: ts-node --transpile-only used for check-deps.ts to bypass tsconfig rootDir restriction (scripts/ is outside src/)
 - 13-03: INSUFFICIENT_CREDITS tested via repo.executeUnlock mock rejection — use case delegates credit sufficiency check to repository/Prisma transaction layer; use case itself does not check credits directly
+- 16-02: censorProfile() is the single code path for reveal/conceal in GetRankingUseCase — inline ternary removed; DISLIKE-locked returns CensoredProfile (matchingSkills+fitReasons), never null
+- 16-02: matchingSkills computed as candidate.skills.filter(s => job.requiredSkills.includes(s)) — candidate-first direction prevents info leak of all job skills (T-16-02-02)
+- 16-02: RankingItem type in swipe.routes.ts uses inline import() for RankingProfile to avoid circular import risk at top level
 
 ### v3.0 Architecture Context
 

@@ -39,7 +39,7 @@
 
 - [x] **Phase 14: Graph Recommendation** — Neo4j traversal with skill adjacency decay replaces exact-match fit score — completed 2026-05-16
 - [ ] **Phase 15: Redis Caching** — Feed and ranking cached with invalidation; architectural layer rule extended to block all infrastructure imports from application
-- [ ] **Phase 16: Recruiter Skill Preview** — Censored candidate cards expose matching skills and fit reasons without any identity data
+- [x] **Phase 16: Recruiter Skill Preview** — Censored candidate cards expose matching skills and fit reasons without any identity data — completed 2026-05-17
 - [ ] **Phase 17: DISC Personality Assessment** — Candidates complete DISC survey; result stored and additively factors into fit score for jobs that opt in
 - [ ] **Phase 18: Learning System** — Per-candidate fit weights drift with each LIKE; feed personalizes after cold-start threshold
 - [ ] **Phase 19: Admin Dashboard API + Load Testing** — Aggregated platform metrics behind admin guard; k6 baseline committed to repo
@@ -95,7 +95,7 @@ Plans:
 
 Plans:
 - [x] 16-01-PLAN.md — Wave 1: TDD RED — stub exports + failing unit tests for censorProfile, buildFitReasons, all 3 candidate states
-- [ ] 16-02-PLAN.md — Wave 2: GREEN — implement censorProfile + buildFitReasons, replace inline ternary, update RankingItem type
+- [x] 16-02-PLAN.md — Wave 2: GREEN — implement censorProfile + buildFitReasons, replace inline ternary, update RankingItem type
 
 ### Phase 17: DISC Personality Assessment
 **Goal:** Candidates can complete a simplified DISC assessment whose result is stored on their profile and optionally adds up to 10% to fit score for jobs that declare a desired DISC profile.
@@ -152,11 +152,11 @@ Plans:
 | 13. Cleanup + Unit Test Layer | v2.0 | 3/3 | Complete | 2026-05-15 |
 | 14. Graph Recommendation | v3.0 | 3/3 | Complete | 2026-05-16 |
 | 15. Redis Caching | v3.0 | 0/? | Not started | — |
-| 16. Recruiter Skill Preview | v3.0 | 1/2 | In progress | — |
+| 16. Recruiter Skill Preview | v3.0 | 2/2 | Complete | 2026-05-17 |
 | 17. DISC Personality Assessment | v3.0 | 0/? | Not started | — |
 | 18. Learning System | v3.0 | 0/? | Not started | — |
 | 19. Admin Dashboard API + Load Testing | v3.0 | 0/? | Not started | — |
 
 ---
 
-*Last updated: 2026-05-17 — Phase 16 Plan 01 complete (TDD RED stubs for censorProfile/buildFitReasons)*
+*Last updated: 2026-05-17 — Phase 16 complete (2/2 plans — censorProfile/buildFitReasons GREEN, 17 unit tests pass)*
