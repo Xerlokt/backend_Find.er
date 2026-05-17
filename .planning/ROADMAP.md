@@ -91,7 +91,11 @@ Plans:
 2. The ranking response includes a `fitReasons[]` array for censored candidates (e.g., "4/6 skills match", "salary outside range") describing fit without identifying the candidate.
 3. Name, email, photo, and location fields are `null` for any candidate who has not liked the job and has not been unlocked — no partial leakage through the preview fields.
 4. A single `censorProfile()` pure function is the only code path that determines what is revealed for any given candidate state (LIKE / DISLIKE-unlocked / DISLIKE-locked), fully covered by unit tests.
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — Wave 1: TDD RED — stub exports + failing unit tests for censorProfile, buildFitReasons, all 3 candidate states
+- [ ] 16-02-PLAN.md — Wave 2: GREEN — implement censorProfile + buildFitReasons, replace inline ternary, update RankingItem type
 
 ### Phase 17: DISC Personality Assessment
 **Goal:** Candidates can complete a simplified DISC assessment whose result is stored on their profile and optionally adds up to 10% to fit score for jobs that declare a desired DISC profile.
