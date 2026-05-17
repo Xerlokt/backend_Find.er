@@ -12,7 +12,7 @@ type SwipeRouteOpts = { chat: IChatPort; neo4j: IRecommendationRepository; cache
 // Updated in Phase 16: profile is FullProfile | CensoredProfile — never null for any swipe state.
 // Accepted trade-off: cached entries from before Phase 16 may return profile: null for up to 30s (TTL).
 export type RankingItem = {
-  candidateId: string
+  candidateId?: string  // present only for FullProfile (revealed) candidates — omitted for DISLIKE-locked (REC-03)
   fitScore: number
   distanceKm: number | null
   rank: number

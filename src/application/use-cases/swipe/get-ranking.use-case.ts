@@ -172,8 +172,10 @@ export class GetRankingUseCase {
           job.lng,
         )
 
+        // REC-03 privacy: omit candidateId for DISLIKE-locked candidates — revealed only for LIKE or unlocked
+        const isRevealed = swipe.direction === 'LIKE' || unlockedCandidateIds.has(swipe.candidateId)
         return {
-          candidateId: swipe.candidateId,
+          ...(isRevealed ? { candidateId: swipe.candidateId } : {}),
           fitScore,
           distanceKm,
           profile,
