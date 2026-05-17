@@ -63,7 +63,16 @@ export class SwipeController {
   }
 
   async getRanking(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { jobId } = JobIdParamsSchema.parse(request.params)
+    let jobId: string
+    try {
+      ;({ jobId } = JobIdParamsSchema.parse(request.params))
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        reply.status(400).send({ error: 'Invalid job ID format', code: 'VALIDATION_ERROR' })
+        return
+      }
+      throw err
+    }
     const useCase = new GetRankingUseCase(new SwipeRepository(), this.opts.neo4j, this.opts.cache)
     try {
       const result = await useCase.execute(request.user.id, jobId)
