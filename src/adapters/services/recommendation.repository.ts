@@ -20,7 +20,8 @@ export class RecommendationRepository implements IRecommendationRepository {
         ? 1.0
         : 0.0
 
-    // Factor 2: Skills overlap (35%) — Neo4j RELATED_TO*0..2 traversal with hop decay (Phase 14, D-01)
+    // Factor 2: Skills overlap (35%) — Neo4j RELATED_TO*1..2 traversal with hop decay (Phase 14, D-01)
+    // 0-hop (direct match) handled via CASE WHEN clause; *1..2 handles adjacency only (D-01 / SC-4)
     const WEIGHT: Record<number, number> = { 0: 1.0, 1: 0.8, 2: 0.6 }
     let skillsScore: number
     if (job.requiredSkillIds.length === 0) {
@@ -31,10 +32,17 @@ export class RecommendationRepository implements IRecommendationRepository {
       try {
         const result = await session.run(
           `UNWIND $requiredSkillIds AS reqId
-           MATCH (req:Skill {id: reqId})
-           OPTIONAL MATCH path = (cand:Skill)-[:RELATED_TO*0..2]->(req)
+           OPTIONAL MATCH path = (cand:Skill)-[:RELATED_TO*1..2]->(adj:Skill {id: reqId})
              WHERE cand.id IN $candidateSkillIds
-           WITH reqId, min(length(path)) AS hops
+           WITH reqId,
+                reqId IN $candidateSkillIds AS isDirect,
+                min(toInteger(length(path))) AS minPathLen
+           WITH reqId,
+                CASE
+                  WHEN isDirect THEN 0
+                  WHEN minPathLen IS NOT NULL THEN minPathLen
+                  ELSE null
+                END AS hops
            WHERE hops IS NOT NULL
            RETURN reqId AS skill, hops`,
           {
