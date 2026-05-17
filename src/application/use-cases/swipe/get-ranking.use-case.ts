@@ -38,7 +38,23 @@ export function buildFitReasons(
   job: { requiredSkills: string[]; salaryMin: number | null; salaryMax: number | null; professionId: string },
   matchingSkills: string[],
 ): string[] {
-  throw new Error('buildFitReasons not implemented — RED stub for Phase 16 TDD')
+  const reasons: string[] = []
+
+  // Skill reason — canonical format: "N/M skills match" (ROADMAP Phase 16 success criteria)
+  reasons.push(`${matchingSkills.length}/${job.requiredSkills.length} skills match`)
+
+  // Salary reason — only emitted when candidate and job both have salary data
+  if (candidate.salaryExpectation !== null && (job.salaryMin !== null || job.salaryMax !== null)) {
+    const inRange =
+      (job.salaryMin === null || candidate.salaryExpectation >= job.salaryMin) &&
+      (job.salaryMax === null || candidate.salaryExpectation <= job.salaryMax)
+    reasons.push(inRange ? 'salary in range' : 'salary outside range')
+  }
+
+  // Profession reason
+  reasons.push(candidate.professionId === job.professionId ? 'profession match' : 'different profession')
+
+  return reasons
 }
 
 /**
@@ -53,7 +69,33 @@ export function censorProfile(
   job: { requiredSkills: string[]; salaryMin: number | null; salaryMax: number | null; professionId: string },
   isUnlocked: boolean,
 ): FullProfile | CensoredProfile {
-  throw new Error('censorProfile not implemented — RED stub for Phase 16 TDD')
+  const isRevealed = swipe.direction === 'LIKE' || isUnlocked
+
+  if (isRevealed) {
+    return {
+      name: swipe.candidate.name,
+      avatarUrl: swipe.candidate.avatarUrl,
+      bio: swipe.candidate.bio,
+      skills: swipe.candidate.skills,
+      professionId: swipe.candidate.professionId,
+      preferredModalities: swipe.candidate.preferredModalities,
+      salaryExpectation: swipe.candidate.salaryExpectation,
+      // lat/lng intentionally excluded — location privacy (unchanged from previous implementation)
+    }
+  }
+
+  // DISLIKE + locked: preview only — no identity (REC-01, REC-02, REC-03)
+  // matchingSkills = candidate perspective: which of their skills appear in job requirements
+  const matchingSkills = swipe.candidate.skills.filter(s => job.requiredSkills.includes(s))
+  const fitReasons = buildFitReasons(swipe.candidate, job, matchingSkills)
+
+  return {
+    name: null,
+    avatarUrl: null,
+    bio: null,
+    matchingSkills,
+    fitReasons,
+  }
 }
 
 export class GetRankingUseCase {
@@ -118,20 +160,9 @@ export class GetRankingUseCase {
           } satisfies FitScoreJobInput,
         )
 
-        // Step 7: DISLIKE censoring — profile null unless LIKE or unlocked (T-12-03-03)
-        const profile =
-          swipe.direction === 'LIKE' || unlockedCandidateIds.has(swipe.candidateId)
-            ? {
-                name: swipe.candidate.name,
-                avatarUrl: swipe.candidate.avatarUrl,
-                bio: swipe.candidate.bio,
-                skills: swipe.candidate.skills,
-                professionId: swipe.candidate.professionId,
-                preferredModalities: swipe.candidate.preferredModalities,
-                salaryExpectation: swipe.candidate.salaryExpectation,
-                // lat/lng intentionally excluded — location privacy
-              }
-            : null // DISLIKE not unlocked — identity fully censored
+        // Step 7: censorProfile() is the single code path for all reveal/conceal decisions
+        // LIKE or unlocked → FullProfile; DISLIKE + locked → CensoredProfile (Phase 16, REC-01/02/03)
+        const profile = censorProfile(swipe, job, unlockedCandidateIds.has(swipe.candidateId))
 
         // Step 8: Compute distance — returns number | null when any coordinate is null (WR-04)
         const distanceKm: number | null = haversineKm(
