@@ -122,7 +122,14 @@ export class GetRankingUseCase {
     const cacheKey = `ranking:${jobId}`
     try {
       const cached = await this.cache.get(cacheKey)
-      if (cached) return JSON.parse(cached)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        // Guard against pre-Phase-16 cache entries where profile was null — discard stale entry and recompute
+        if (parsed.every((item: any) => item.profile != null)) {
+          return parsed
+        }
+        // Stale cache — fall through to recompute
+      }
     } catch { /* Redis down or corrupt cache entry — fall through */ }
 
     // Step 4: Fetch all swipes for this job

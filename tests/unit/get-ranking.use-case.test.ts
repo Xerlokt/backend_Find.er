@@ -72,7 +72,8 @@ describe('GetRankingUseCase', () => {
     const cache = makeCache()
     repo.findRecruiterProfileByUserId.mockResolvedValue(recruiterProfile as any)
     repo.findJobById.mockResolvedValue(jobItem as any)
-    const cachedRanking = [{ candidateId: 'cand-1', fitScore: 0.9, rank: 1, profile: null, distanceKm: null }]
+    const validProfile = { name: 'Alice', avatarUrl: null, bio: null, skills: ['nodejs'], professionId: 'backend-dev', preferredModalities: ['REMOTE'], salaryExpectation: null }
+    const cachedRanking = [{ candidateId: 'cand-1', fitScore: 0.9, rank: 1, profile: validProfile, distanceKm: null }]
     cache.get.mockResolvedValue(JSON.stringify(cachedRanking))
 
     const uc = new GetRankingUseCase(repo, rec, cache)
@@ -82,6 +83,35 @@ describe('GetRankingUseCase', () => {
     expect(repo.findSwipesByJobId).not.toHaveBeenCalled()
     expect(rec.computeFitScore).not.toHaveBeenCalled()
     expect(cache.get).toHaveBeenCalledWith('ranking:job-1')
+  })
+
+  it('stale cache with profile: null is discarded — falls through to repo (WR-01 guard)', async () => {
+    const repo = makeSwipeRepo()
+    const rec = makeRecRepo()
+    const cache = makeCache()
+    repo.findRecruiterProfileByUserId.mockResolvedValue(recruiterProfile as any)
+    repo.findJobById.mockResolvedValue(jobItem as any)
+    // Pre-Phase-16 stale entry with profile: null
+    const staleRanking = [{ candidateId: 'cand-1', fitScore: 0.9, rank: 1, profile: null, distanceKm: null }]
+    cache.get.mockResolvedValue(JSON.stringify(staleRanking))
+    repo.findSwipesByJobId.mockResolvedValue([
+      {
+        id: 'swipe-1',
+        candidateId: 'cand-1',
+        jobId: 'job-1',
+        direction: 'LIKE',
+        swipedAt: new Date(),
+        candidate: candidateProfile,
+      },
+    ] as any)
+    repo.findUnlocksByJobAndCompany.mockResolvedValue(new Set<string>())
+    rec.computeFitScore.mockResolvedValue(0.9)
+
+    const uc = new GetRankingUseCase(repo, rec, cache)
+    await uc.execute('user-1', 'job-1')
+
+    // Guard discarded the stale entry — repo must have been called to recompute
+    expect(repo.findSwipesByJobId).toHaveBeenCalled()
   })
 
   it('fetches from repo on cache MISS and calls cache.set with key ranking:jobId and TTL 30', async () => {
