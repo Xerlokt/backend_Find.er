@@ -421,3 +421,126 @@ describe('GET /jobs/:jobId/ranking', () => {
     await app.close()
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCALE-01 + SCALE-02 cache integration tests
+// Require: postgres_test (port 5433) + redis_test (port 6380) running via docker compose
+// Run: npx jest tests/integration/swipe.test.ts -t "cache" --runInBand --no-coverage
+// ─────────────────────────────────────────────────────────────────────────────
+describe('cache', () => {
+  it('SCALE-01: second feed request (no cursor) returns identical JSON to first request', async () => {
+    // Tests that cache-aside pattern works: second GET /jobs/feed returns cached response
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const company = await createCompany()
+    const { token } = await createCandidateWithProfile(app, 'cache-hit')
+    const { profile: recruiterProfile } = await createRecruiterWithProfile(app, company.id, 'cache-hit-rec')
+    await createJob(company.id, recruiterProfile.id, { isActive: true })
+
+    // First request — cache miss, fetches from Neo4j/Postgres, stores in Redis
+    const res1 = await supertest(app.server)
+      .get('/jobs/feed')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res1.status).toBe(200)
+
+    // Second request — should be a cache hit: identical JSON returned
+    const res2 = await supertest(app.server)
+      .get('/jobs/feed')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res2.status).toBe(200)
+
+    // Cache hit: both responses must be structurally identical
+    expect(res2.body).toEqual(res1.body)
+
+    await app.close()
+  })
+
+  it('SCALE-01: invalidate feed — after swipe, next feed request reflects updated state', async () => {
+    // Tests that cache invalidation works: POST /swipes triggers cache.del(feed:{candidateId})
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const company = await createCompany()
+    const { token, profile: candProfile } = await createCandidateWithProfile(app, 'cache-invalidate')
+    const { profile: recruiterProfile } = await createRecruiterWithProfile(app, company.id, 'cache-invalidate-rec')
+    const job = await createJob(company.id, recruiterProfile.id, { isActive: true })
+
+    // First request — populates cache with feed containing the job
+    const res1 = await supertest(app.server)
+      .get('/jobs/feed')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res1.status).toBe(200)
+    const ids1 = res1.body.data.map((j: { id: string }) => j.id)
+    expect(ids1).toContain(job.id)
+
+    // Swipe triggers cache.del('feed:{candidateId}') — cache entry removed
+    const swipeRes = await supertest(app.server)
+      .post('/swipes')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ jobId: job.id, direction: 'LIKE' })
+    expect(swipeRes.status).toBe(201)
+
+    // Second request — cache miss (was invalidated); Neo4j/Postgres re-queried
+    // Swiped job must no longer appear in the feed (already swiped by candidate)
+    const res2 = await supertest(app.server)
+      .get('/jobs/feed')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res2.status).toBe(200)
+
+    // Verify invalidation worked: swiped job excluded from refreshed feed
+    const ids2 = res2.body.data.map((j: { id: string }) => j.id)
+    expect(ids2).not.toContain(job.id)
+
+    await app.close()
+  })
+
+  it('SCALE-02: invalidate ranking — after profile update, ranking returns fresh response', async () => {
+    // Tests that UpsertCandidateProfileUseCase.invalidatePattern('ranking:*') works end-to-end
+    const app = await buildApp({ testing: true })
+    await app.ready()
+
+    const company = await createCompany()
+    const { token: recToken, profile: recruiterProfile } = await createRecruiterWithProfile(app, company.id, 'cache-rank-rec')
+    const job = await createJob(company.id, recruiterProfile.id, { isActive: true })
+    const { token: candToken, profile: candProfile } = await createCandidateWithProfile(app, 'cache-rank-cand')
+
+    // Seed a LIKE swipe so the candidate appears in the ranking
+    await createSwipe(candProfile.id, job.id, { direction: 'LIKE' })
+
+    // First GET /jobs/:jobId/ranking — cache miss, populates ranking cache
+    const res1 = await supertest(app.server)
+      .get(`/jobs/${job.id}/ranking`)
+      .set('Authorization', `Bearer ${recToken}`)
+    expect(res1.status).toBe(200)
+    expect(Array.isArray(res1.body)).toBe(true)
+
+    // PUT /candidates/me — triggers cache.invalidatePattern('ranking:*') — clears ranking cache
+    const updateRes = await supertest(app.server)
+      .put('/candidates/me')
+      .set('Authorization', `Bearer ${candToken}`)
+      .send({
+        name: 'Updated Candidate',
+        professionId: 'backend-dev',
+        skills: ['nodejs', 'typescript', 'redis'],
+        preferredModalities: ['REMOTE'],
+        searchRadiusKm: 50,
+      })
+    expect(updateRes.status).toBe(200)
+
+    // Second GET /jobs/:jobId/ranking — cache miss (was invalidated); fresh response
+    const res2 = await supertest(app.server)
+      .get(`/jobs/${job.id}/ranking`)
+      .set('Authorization', `Bearer ${recToken}`)
+    expect(res2.status).toBe(200)
+    expect(Array.isArray(res2.body)).toBe(true)
+
+    // Verify the candidate still appears in the ranking with the correct profile
+    const item = res2.body.find((r: any) => r.candidateId === candProfile.id)
+    expect(item).toBeDefined()
+    expect(item.profile).not.toBeNull()
+    expect(item.profile.name).toBe('Updated Candidate')
+
+    await app.close()
+  })
+})
