@@ -107,7 +107,12 @@ Plans:
 3. A job posting can set an optional `discProfile` field; jobs without the field have DISC weight defaulted to 0 in fit score calculation.
 4. When a job defines a `discProfile` and a candidate's dominant profile matches, the fit score receives a positive additive bonus capped at 10%; a mismatch produces no penalty.
 5. The DISC factor is never used as a hard filter or exclusion condition anywhere in the codebase — only as an additive score component.
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Wave 0: Prisma schema (DiscResult + Job.discProfile) + db push + domain layer + TDD RED test stubs
+- [ ] 17-02-PLAN.md — Wave 1: SubmitDiscUseCase + GetDiscUseCase + DiscRepository + computeFitScore + censorProfile + adapter extensions (all unit tests GREEN)
+- [ ] 17-03-PLAN.md — Wave 2: DiscController + disc.routes.ts + app.ts registration + integration tests GREEN (full suite passing)
 
 ### Phase 18: Learning System
 **Goal:** Each candidate's fit score weights drift toward their revealed preferences as they accumulate LIKEs, personalizing the recommendation feed after a cold-start threshold of 5 likes.
@@ -153,10 +158,10 @@ Plans:
 | 14. Graph Recommendation | v3.0 | 3/3 | Complete | 2026-05-16 |
 | 15. Redis Caching | v3.0 | 0/? | Not started | — |
 | 16. Recruiter Skill Preview | v3.0 | 2/2 | Complete | 2026-05-17 |
-| 17. DISC Personality Assessment | v3.0 | 0/? | Not started | — |
+| 17. DISC Personality Assessment | v3.0 | 0/3 | Not started | — |
 | 18. Learning System | v3.0 | 0/? | Not started | — |
 | 19. Admin Dashboard API + Load Testing | v3.0 | 0/? | Not started | — |
 
 ---
 
-*Last updated: 2026-05-17 — Phase 16 complete (2/2 plans — censorProfile/buildFitReasons GREEN, 17 unit tests pass)*
+*Last updated: 2026-05-29 — Phase 17 planned (3 plans: Wave 0 schema+domain+RED, Wave 1 use cases+adapters GREEN, Wave 2 HTTP layer+integration GREEN)*
