@@ -73,7 +73,10 @@ export class SwipeRepository implements ISwipeRepository {
       where: { jobId },
       include: {
         candidate: {
-          include: { user: { select: { avatarUrl: true } } },
+          include: {
+            user: { select: { avatarUrl: true } },
+            discResult: { select: { dominant: true } },  // DISC-02/04: include DISC result
+          },
         },
       },
     })
@@ -86,6 +89,7 @@ export class SwipeRepository implements ISwipeRepository {
       candidate: {
         ...this.toCandidateDomain(row.candidate),
         avatarUrl: row.candidate.user.avatarUrl, // flatten nested user relation (Pitfall 5)
+        discDominant: row.candidate.discResult?.dominant ?? null, // DISC-02/04: flatten nested relation (Pitfall 10)
       },
     }))
   }
@@ -130,6 +134,7 @@ export class SwipeRepository implements ISwipeRepository {
       expiresAt: row.expiresAt,
       isActive: row.isActive,
       createdAt: row.createdAt,
+      discProfile: row.discProfile ?? null,  // DISC-03: optional desired DISC profile
     }
   }
 

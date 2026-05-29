@@ -7,6 +7,7 @@ export interface FitScoreInput {
   preferredModalities: string[]
   salaryExpectation: number | null
   searchRadiusKm: number
+  discDominant?: string | null  // DISC-04: candidate's dominant DISC profile, if completed
 }
 
 export interface FitScoreJobInput {
@@ -18,6 +19,7 @@ export interface FitScoreJobInput {
   modality: string
   salaryMin: number | null
   salaryMax: number | null
+  discProfile?: string | null   // DISC-03: job's desired DISC profile, if any
 }
 
 export interface IRecommendationRepository {
