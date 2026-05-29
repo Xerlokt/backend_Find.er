@@ -4,8 +4,8 @@ milestone: v3.0
 milestone_name: Intelligence, Growth & Scale
 status: In progress
 stopped_at: ~
-last_updated: "2026-05-17T00:00:00.000Z"
-last_activity: 2026-05-17 — Phase 16 complete (2/2 plans — censorProfile/buildFitReasons GREEN, 17 unit tests pass, verification passed)
+last_updated: "2026-05-29T00:00:00.000Z"
+last_activity: 2026-05-29 — Phase 17 context gathered (17-CONTEXT.md, 4 areas discussed: question bank, scoring, fit score math, retake policy)
 progress:
   total_phases: 6
   completed_phases: 2
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-16)
 
 Phase: 17 — DISC Personality Assessment
 Plan: —
-Status: Ready to plan
-Last activity: 2026-05-17 — Phase 16 complete; verification passed; advancing to Phase 17
+Status: Context captured — ready to plan
+Last activity: 2026-05-29 — Phase 17 context captured (17-CONTEXT.md); decisions locked on DISC format, scoring, fit score integration, retake policy
 
 Progress: [██░░░░░░░░] 33% v3.0 (2/6 phases)
 
