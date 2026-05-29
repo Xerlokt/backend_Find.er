@@ -78,6 +78,7 @@ model CandidateProfile {
   swipes  Swipe[]
   chats   Chat[]
   unlocks Unlock[]
+  discResult   DiscResult?
 
   @@index([professionId])  // SCALE-04: profession-based recommendation filter
 }
@@ -127,6 +128,7 @@ model Job {
   expiresAt      DateTime
   isActive       Boolean   @default(true)
   createdAt      DateTime  @default(now())
+  discProfile    String?   // DISC-03: optional desired DISC profile (D/I/S/C)
 
   swipes  Swipe[]
   chats   Chat[]
@@ -199,4 +201,17 @@ model Unlock {
   creditsCost Int
 
   @@unique([companyId, candidateId, jobId])
+}
+
+model DiscResult {
+  id          String           @id @default(uuid())
+  candidateId String           @unique
+  candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  scoreD      Int
+  scoreI      Int
+  scoreS      Int
+  scoreC      Int
+  dominant    String           // 'D' | 'I' | 'S' | 'C'
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }

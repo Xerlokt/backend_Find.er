@@ -16,4 +16,5 @@ export interface Job {
   expiresAt: Date
   isActive: boolean
   createdAt: Date
+  discProfile?: string | null   // DISC-03: optional desired DISC profile (D/I/S/C)
 }

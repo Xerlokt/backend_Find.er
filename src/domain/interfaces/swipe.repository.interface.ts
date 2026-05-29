@@ -9,7 +9,7 @@ export interface SwipeWithCandidateInfo {
   jobId: string
   direction: SwipeDirection
   swipedAt: Date
-  candidate: CandidateProfile & { avatarUrl: string | null }
+  candidate: CandidateProfile & { avatarUrl: string | null; discDominant: string | null }
 }
 
 export interface ISwipeRepository {
