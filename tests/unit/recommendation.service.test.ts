@@ -267,6 +267,80 @@ describe('RecommendationRepository — computeFitScore', () => {
     })
   })
 
+  describe('DISC weight redistribution (D-05)', () => {
+    // Helper: build perfect-score inputs
+    const perfectCandidate = (discDominant?: string | null): FitScoreInput => makeCandidate({
+      professionId: 'backend-dev',
+      skillIds: ['nodejs', 'typescript'],
+      preferredModalities: ['REMOTE'],
+      salaryExpectation: 5000,
+      lat: -23.5505,
+      lng: -46.6333,
+      searchRadiusKm: 50,
+      discDominant: discDominant ?? null,
+    })
+    const perfectJob = (discProfile?: string | null): FitScoreJobInput => makeJob({
+      professionId: 'backend-dev',
+      requiredSkillIds: ['nodejs', 'typescript'],
+      modality: 'REMOTE',
+      salaryMin: 4000,
+      salaryMax: 8000,
+      lat: -23.5505,
+      lng: -46.6333,
+      discProfile: discProfile ?? null,
+    })
+
+    it('all factors 1.0 + discProfile + DISC match → score = 100', async () => {
+      // DISC match: candidate.discDominant === job.discProfile → discScore = 1.0 → contributes 10 points
+      // Original weights scale to 0.9x: 27+31.5+18+9+4.5 + 10 = 100
+      recRepo = new RecommendationRepository(
+        makeMockDriver([
+          { skill: 'nodejs', hops: 0 },
+          { skill: 'typescript', hops: 0 },
+        ])
+      )
+      const score = await recRepo.computeFitScore(perfectCandidate('D'), perfectJob('D'))
+      expect(score).toBe(100)
+    })
+
+    it('all factors 1.0 + discProfile + DISC mismatch → score = 90', async () => {
+      // DISC mismatch: D candidate, I job requirement → discScore = 0.0
+      // Original weights scale to 0.9x: 27+31.5+18+9+4.5 + 0 = 90
+      recRepo = new RecommendationRepository(
+        makeMockDriver([
+          { skill: 'nodejs', hops: 0 },
+          { skill: 'typescript', hops: 0 },
+        ])
+      )
+      const score = await recRepo.computeFitScore(perfectCandidate('I'), perfectJob('D'))
+      expect(score).toBe(90)
+    })
+
+    it('all factors 1.0 + discProfile + no DISC data → score = 90', async () => {
+      // No DISC: discDominant null → discScore = 0.0 → same as mismatch (no penalty beyond ceiling)
+      recRepo = new RecommendationRepository(
+        makeMockDriver([
+          { skill: 'nodejs', hops: 0 },
+          { skill: 'typescript', hops: 0 },
+        ])
+      )
+      const score = await recRepo.computeFitScore(perfectCandidate(null), perfectJob('D'))
+      expect(score).toBe(90)
+    })
+
+    it('no discProfile on job → score = 100 (no regression)', async () => {
+      // Original behavior preserved when job has no discProfile: weights = 30/35/20/10/5, discWeight = 0
+      recRepo = new RecommendationRepository(
+        makeMockDriver([
+          { skill: 'nodejs', hops: 0 },
+          { skill: 'typescript', hops: 0 },
+        ])
+      )
+      const score = await recRepo.computeFitScore(perfectCandidate(null), perfectJob(null))
+      expect(score).toBe(100)
+    })
+  })
+
   describe('adjacency scoring (GRAPH-01)', () => {
     it('0-hop direct match → skillsScore = 1.0 for that skill', async () => {
       recRepo = new RecommendationRepository(

@@ -306,6 +306,36 @@ describe('censorProfile() pure function', () => {
     ) as CensoredProfile
     expect(result.fitReasons).toContain('1/2 skills match')
   })
+
+  describe('censorProfile DISC extension (D-06)', () => {
+    it('includes discProfile in CensoredProfile when candidate has discDominant', () => {
+      // DISLIKE + locked candidate with discDominant set → CensoredProfile includes discProfile
+      const swipeWithDisc = {
+        ...makeSwipe({ direction: 'DISLIKE' }),
+        candidate: {
+          ...candidateProfile,
+          skills: candidateProfile.skills,
+          discDominant: 'D',
+        },
+      }
+      const result = censorProfile(swipeWithDisc as any, job as any, false) as CensoredProfile
+      expect((result as any).discProfile).toBe('D')
+    })
+
+    it('omits discProfile field entirely when candidate has no discDominant (null)', () => {
+      // DISLIKE + locked candidate with discDominant null → discProfile field must not exist in result
+      const swipeNoDisc = {
+        ...makeSwipe({ direction: 'DISLIKE' }),
+        candidate: {
+          ...candidateProfile,
+          skills: candidateProfile.skills,
+          discDominant: null,
+        },
+      }
+      const result = censorProfile(swipeNoDisc as any, job as any, false) as CensoredProfile
+      expect('discProfile' in result).toBe(false)
+    })
+  })
 })
 
 describe('buildFitReasons() pure function', () => {
