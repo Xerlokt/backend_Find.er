@@ -36,6 +36,7 @@ afterEach(async () => {
   await prisma.job.deleteMany()
   await prisma.recruiterProfile.deleteMany()
   await prisma.company.deleteMany()
+  await prisma.candidateWeights.deleteMany()  // FK: candidateWeights → candidateProfile (before candidateProfile) [Phase 18]
   await prisma.discResult.deleteMany()     // FK: discResult → candidateProfile (must delete first)
   await prisma.candidateProfile.deleteMany()
   await prisma.user.deleteMany()
