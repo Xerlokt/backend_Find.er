@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Intelligence, Growth & Scale
 status: In progress
-stopped_at: ~
-last_updated: "2026-05-29T00:00:00.000Z"
-last_activity: 2026-05-29 — Phase 17 complete (DISC personality assessment — schema, use cases, HTTP routes, 94 tests GREEN)
+stopped_at: "Phase 18 context gathered"
+last_updated: "2026-05-30T00:00:00.000Z"
+last_activity: 2026-05-30 — Phase 18 context gathered (learning system — EMA weights, CandidateWeights model, 5-LIKE cold-start threshold)
 progress:
   total_phases: 6
   completed_phases: 2
@@ -207,6 +207,6 @@ Items acknowledged and deferred at milestone close on 2026-05-16:
 
 ## Session Continuity
 
-Last session: 2026-05-17
-Stopped at: Phase 16 UAT complete (5/5 passed) — code review fixes committed, integration tests updated for Phase 16 contract; ready to plan Phase 17
-Resume file: None
+Last session: 2026-05-30
+Stopped at: Phase 18 context gathered — learning system EMA weights design, CandidateWeights model design, cold-start threshold decided; ready to plan Phase 18
+Resume file: .planning/phases/18-learning-system/18-CONTEXT.md
