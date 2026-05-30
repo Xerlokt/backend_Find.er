@@ -78,7 +78,8 @@ model CandidateProfile {
   swipes  Swipe[]
   chats   Chat[]
   unlocks Unlock[]
-  discResult   DiscResult?
+  discResult       DiscResult?
+  candidateWeights CandidateWeights?   // LEARN-01: per-candidate EMA weights
 
   @@index([professionId])  // SCALE-04: profession-based recommendation filter
 }
@@ -214,4 +215,18 @@ model DiscResult {
   dominant    String           // 'D' | 'I' | 'S' | 'C'
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+}
+
+model CandidateWeights {
+  id               String           @id @default(uuid())
+  candidateId      String           @unique
+  candidate        CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  professionWeight Float            @default(0.30)
+  skillsWeight     Float            @default(0.35)
+  locationWeight   Float            @default(0.20)
+  modalityWeight   Float            @default(0.10)
+  salaryWeight     Float            @default(0.05)
+  likeCount        Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
