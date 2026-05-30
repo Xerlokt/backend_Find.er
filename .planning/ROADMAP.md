@@ -85,7 +85,7 @@ Plans:
 ### Phase 16: Recruiter Skill Preview
 **Goal:** Recruiters see which skills a DISLIKE or not-yet-unlocked candidate shares with the job, plus labeled fit reasons, without any identity information being exposed.
 **Requirements:** REC-01, REC-02, REC-03
-**Depends on:** Phase 15
+**Depends on:** Phase 14
 **Success criteria:**
 1. The ranking endpoint returns a `matchingSkills[]` list for censored candidates containing only skills that appear in both the candidate profile and the job requirements.
 2. The ranking response includes a `fitReasons[]` array for censored candidates (e.g., "4/6 skills match", "salary outside range") describing fit without identifying the candidate.
@@ -110,9 +110,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Wave 0: Prisma schema (DiscResult + Job.discProfile) + db push + domain layer + TDD RED test stubs
-- [ ] 17-02-PLAN.md — Wave 1: SubmitDiscUseCase + GetDiscUseCase + DiscRepository + computeFitScore + censorProfile + adapter extensions (all unit tests GREEN)
-- [ ] 17-03-PLAN.md — Wave 2: DiscController + disc.routes.ts + app.ts registration + integration tests GREEN (full suite passing)
+- [x] 17-01-PLAN.md — Wave 0: Prisma schema (DiscResult + Job.discProfile) + db push + domain layer + TDD RED test stubs
+- [x] 17-02-PLAN.md — Wave 1: SubmitDiscUseCase + GetDiscUseCase + DiscRepository + computeFitScore + censorProfile + adapter extensions (all unit tests GREEN)
+- [x] 17-03-PLAN.md — Wave 2: DiscController + disc.routes.ts + app.ts registration + integration tests GREEN (full suite passing)
 
 ### Phase 18: Learning System
 **Goal:** Each candidate's fit score weights drift toward their revealed preferences as they accumulate LIKEs, personalizing the recommendation feed after a cold-start threshold of 5 likes.
@@ -122,7 +122,13 @@ Plans:
 1. Every LIKE action immediately writes an updated `CandidateWeights` record — the weights reflect the new preference before the next feed request is served.
 2. A candidate with fewer than 5 LIKEs receives feed ordering identical to global-default weights; a candidate with 5+ LIKEs receives ordering influenced by their personal weights.
 3. The fit score calculation for a candidate with personal weights uses those weights instead of global defaults, producing measurably different score distributions for candidates with divergent like histories.
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — Wave 1: Domain layer (entity + interface + constants) + Prisma schema (CandidateWeights model) + TDD RED stubs in all unit tests
+- [ ] 18-02-PLAN.md — Wave 2: TDD GREEN — WeightsRepository adapter + RecordSwipeUseCase EMA update (LEARN-01)
+- [ ] 18-03-PLAN.md — Wave 2: TDD GREEN — computeFitScore optional weights param + GetFeedUseCase personal weights injection (LEARN-02/03)
+- [ ] 18-04-PLAN.md — Wave 3: Wiring (routes/controller) + [BLOCKING] prisma db push + setup.ts cleanup + integration tests GREEN
 
 ### Phase 19: Admin Dashboard API + Load Testing
 **Goal:** Admin users can query aggregated platform metrics (users, revenue, engagement, health) via authenticated REST endpoints, and k6 load scripts committed to the repo establish a repeatable performance baseline.
@@ -158,10 +164,10 @@ Plans:
 | 14. Graph Recommendation | v3.0 | 3/3 | Complete | 2026-05-16 |
 | 15. Redis Caching | v3.0 | 0/? | Not started | — |
 | 16. Recruiter Skill Preview | v3.0 | 2/2 | Complete | 2026-05-17 |
-| 17. DISC Personality Assessment | v3.0 | 0/3 | Not started | — |
-| 18. Learning System | v3.0 | 0/? | Not started | — |
+| 17. DISC Personality Assessment | v3.0 | 3/3 | Complete | 2026-05-29 |
+| 18. Learning System | v3.0 | 0/4 | Not started | — |
 | 19. Admin Dashboard API + Load Testing | v3.0 | 0/? | Not started | — |
 
 ---
 
-*Last updated: 2026-05-29 — Phase 17 planned (3 plans: Wave 0 schema+domain+RED, Wave 1 use cases+adapters GREEN, Wave 2 HTTP layer+integration GREEN)*
+*Last updated: 2026-05-30 — Phase 18 planned (4 plans, 3 waves). Phase 17 complete (3/3 plans, 94 tests GREEN).*
