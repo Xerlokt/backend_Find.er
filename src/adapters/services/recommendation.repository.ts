@@ -12,7 +12,6 @@ import { haversineKm } from '../../application/utils/haversine'
 export class RecommendationRepository implements IRecommendationRepository {
   constructor(private readonly driver: Driver) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async computeFitScore(candidate: FitScoreInput, job: FitScoreJobInput, weights?: WeightSet): Promise<number> {
     // Factor 1: Profession match (30%)
     const professionScore =
@@ -103,19 +102,24 @@ export class RecommendationRepository implements IRecommendationRepository {
         : 0.0
 
     // Weight redistribution: when job has discProfile, original 5 factors scale to 90% to free 10% for DISC (D-05)
+    // D-14: DISC ceiling applies over personal weights the same way as global weights — w multiplies each factor
     // Verified math: all factors=1.0, match → (0.27+0.315+0.18+0.09+0.045+0.10)*100 = 100
     // Verified math: all factors=1.0, mismatch → (0.27+0.315+0.18+0.09+0.045+0.0)*100 = 90
     // Verified math: no discProfile → (0.30+0.35+0.20+0.10+0.05)*100 = 100 (original)
+    const baseWeights = weights ?? { profession: 0.30, skills: 0.35, location: 0.20, modality: 0.10, salary: 0.05 }
     const w = hasDiscRequirement ? 0.9 : 1.0
 
-    return Math.round(
-      (professionScore * 0.30 * w +
-        skillsScore * 0.35 * w +
-        locationScore * 0.20 * w +
-        modalityScore * 0.10 * w +
-        salaryScore * 0.05 * w +
-        discScore * 0.10) *
-        100,
+    return Math.min(
+      Math.round(
+        (professionScore * baseWeights.profession * w +
+          skillsScore     * baseWeights.skills     * w +
+          locationScore   * baseWeights.location   * w +
+          modalityScore   * baseWeights.modality   * w +
+          salaryScore     * baseWeights.salary      * w +
+          discScore * 0.10) *
+          100,
+      ),
+      100,  // defensive guard: float imprecision with personal weights + DISC ceiling (Pitfall 7)
     )
   }
 
