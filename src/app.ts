@@ -25,8 +25,7 @@ import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
 import { getNeo4jDriver } from './infrastructure/database/neo4j'
 import { RedisAdapter } from './adapters/services/redis.adapter'
 import { getRedisClient, closeRedis } from './infrastructure/database/redis'
-// LEARN-01/02: WeightsRepository wired here (Plan 02 will provide the concrete adapter)
-import { IWeightsRepository } from './domain/interfaces/weights.repository.interface'
+import { WeightsRepository } from './adapters/repositories/weights.repository'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -61,12 +60,8 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   const redisAdapter = new RedisAdapter(getRedisClient())
   app.addHook('onClose', async () => { await closeRedis() })
 
-  // Composition root: WeightsRepository — no-op stub until Plan 02 creates the concrete adapter
-  // LEARN-01/02: Replace with new WeightsRepository() once Plan 02 creates src/adapters/repositories/weights.repository.ts
-  const weightsRepository: IWeightsRepository = {
-    upsertWeights: async () => { throw new Error('WeightsRepository not yet implemented — Plan 02') },
-    findByCandidateId: async () => null,
-  }
+  // Composition root: WeightsRepository — EMA weight learning (LEARN-01/02/03, Phase 18 Plan 04)
+  const weightsRepository = new WeightsRepository()
 
   // Routes
   await app.register(healthRoutes)

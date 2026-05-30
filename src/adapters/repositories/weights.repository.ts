@@ -14,9 +14,7 @@ export class WeightsRepository implements IWeightsRepository {
       likeCount: number
     },
   ): Promise<CandidateWeights> {
-    // NOTE: prisma.candidateWeights type not yet generated until Plan 04 runs `prisma db push`.
-    // Using (prisma as any) to allow compilation until schema migration is applied.
-    const row = await (prisma as any).candidateWeights.upsert({
+    const row = await prisma.candidateWeights.upsert({
       where: { candidateId },
       create: { candidateId, ...data },
       update: { ...data },
@@ -25,7 +23,7 @@ export class WeightsRepository implements IWeightsRepository {
   }
 
   async findByCandidateId(candidateId: string): Promise<CandidateWeights | null> {
-    const row = await (prisma as any).candidateWeights.findUnique({ where: { candidateId } })
+    const row = await prisma.candidateWeights.findUnique({ where: { candidateId } })
     return row ? this.toDomain(row) : null
   }
 
