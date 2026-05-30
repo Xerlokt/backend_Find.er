@@ -24,6 +24,7 @@ export interface CensoredProfile {
   // Non-identity preview (REC-01, REC-02)
   matchingSkills: string[]
   fitReasons: string[]
+  discProfile?: string   // DISC-02 — added in 17-01; present only when candidate has completed assessment (D-06)
 }
 
 export type RankingProfile = FullProfile | CensoredProfile
@@ -70,7 +71,7 @@ export function buildFitReasons(
  * RED stub: throws until 16-02 implements the body.
  */
 export function censorProfile(
-  swipe: { direction: string; candidate: { name: string; avatarUrl: string | null; bio: string | null; skills: string[]; professionId: string; preferredModalities: string[]; salaryExpectation: number | null } },
+  swipe: { direction: string; candidate: { name: string; avatarUrl: string | null; bio: string | null; skills: string[]; professionId: string; preferredModalities: string[]; salaryExpectation: number | null; discDominant?: string | null } },
   job: { requiredSkills: string[]; salaryMin: number | null; salaryMax: number | null; professionId: string },
   isUnlocked: boolean,
 ): FullProfile | CensoredProfile {
@@ -94,13 +95,21 @@ export function censorProfile(
   const matchingSkills = swipe.candidate.skills.filter(s => job.requiredSkills.includes(s))
   const fitReasons = buildFitReasons(swipe.candidate, job, matchingSkills)
 
-  return {
+  const censored: CensoredProfile = {
     name: null,
     avatarUrl: null,
     bio: null,
     matchingSkills,
     fitReasons,
   }
+
+  // D-06: omit discProfile field entirely when candidate has not completed assessment
+  // NEVER use: censored.discProfile = swipe.candidate.discDominant ?? null (Pitfall 1)
+  if (swipe.candidate.discDominant != null) {
+    censored.discProfile = swipe.candidate.discDominant
+  }
+
+  return censored
 }
 
 export class GetRankingUseCase {
@@ -159,6 +168,7 @@ export class GetRankingUseCase {
             lat: swipe.candidate.lat ?? null,
             lng: swipe.candidate.lng ?? null,
             searchRadiusKm: swipe.candidate.searchRadiusKm ?? 50,
+            discDominant: swipe.candidate.discDominant ?? null,  // DISC-04
           } satisfies FitScoreInput,
           {
             id: job.id,
@@ -169,6 +179,7 @@ export class GetRankingUseCase {
             salaryMax: job.salaryMax ?? null,
             lat: job.lat ?? null,
             lng: job.lng ?? null,
+            discProfile: job.discProfile ?? null,   // DISC-03
           } satisfies FitScoreJobInput,
         )
 

@@ -76,6 +76,7 @@ export class JobRepository implements IJobRepository {
       expiresAt: row.expiresAt,
       isActive: row.isActive,
       createdAt: row.createdAt,
+      discProfile: row.discProfile ?? null,  // DISC-03: optional desired DISC profile
     }
   }
 }

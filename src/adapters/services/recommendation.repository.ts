@@ -89,12 +89,30 @@ export class RecommendationRepository implements IRecommendationRepository {
       salaryScore = aboveMin && belowMax ? 1.0 : 0.0
     }
 
+    // Factor 6: DISC personality match (DISC-04)
+    // Active ONLY when job declares a discProfile — otherwise discWeight = 0 and original weights apply
+    // D-05: No cache invalidation on DISC submit — 30s staleness acceptable for infrequent action
+    const hasDiscRequirement = job.discProfile != null
+    const discScore =
+      hasDiscRequirement &&
+      candidate.discDominant != null &&
+      candidate.discDominant === job.discProfile
+        ? 1.0
+        : 0.0
+
+    // Weight redistribution: when job has discProfile, original 5 factors scale to 90% to free 10% for DISC (D-05)
+    // Verified math: all factors=1.0, match → (0.27+0.315+0.18+0.09+0.045+0.10)*100 = 100
+    // Verified math: all factors=1.0, mismatch → (0.27+0.315+0.18+0.09+0.045+0.0)*100 = 90
+    // Verified math: no discProfile → (0.30+0.35+0.20+0.10+0.05)*100 = 100 (original)
+    const w = hasDiscRequirement ? 0.9 : 1.0
+
     return Math.round(
-      (professionScore * 0.30 +
-        skillsScore * 0.35 +
-        locationScore * 0.20 +
-        modalityScore * 0.10 +
-        salaryScore * 0.05) *
+      (professionScore * 0.30 * w +
+        skillsScore * 0.35 * w +
+        locationScore * 0.20 * w +
+        modalityScore * 0.10 * w +
+        salaryScore * 0.05 * w +
+        discScore * 0.10) *
         100,
     )
   }

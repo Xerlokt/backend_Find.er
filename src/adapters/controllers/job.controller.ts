@@ -26,6 +26,7 @@ const CreateJobSchema = z.object({
   modality: z.enum(['REMOTE', 'HYBRID', 'IN_PERSON']),
   requiredSkills: z.array(z.string()).min(1),
   expiresAt: z.string().datetime(),
+  discProfile: z.enum(['D', 'I', 'S', 'C']).optional().nullable(),
 })
 
 const JobParamsSchema = z.object({ id: z.string().uuid() })
@@ -41,6 +42,7 @@ const UpdateJobSchema = z.object({
   modality: z.enum(['REMOTE', 'HYBRID', 'IN_PERSON']).optional(),
   requiredSkills: z.array(z.string()).min(1).optional(),
   expiresAt: z.string().datetime().optional(),
+  discProfile: z.enum(['D', 'I', 'S', 'C']).optional().nullable(),
 })
 
 export class JobController {
