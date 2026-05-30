@@ -1,6 +1,6 @@
 import { ISwipeRepository } from '../../../domain/interfaces/swipe.repository.interface'
 import { IRecommendationRepository, FitScoreInput, FitScoreJobInput } from '../../../domain/interfaces/recommendation.repository.interface'
-import { IWeightsRepository } from '../../../domain/interfaces/weights.repository.interface'
+import { IWeightsRepository, WeightSet } from '../../../domain/interfaces/weights.repository.interface'
 import { DomainError } from '../../errors/domain.error'
 import { ICachePort } from '../../ports/cache.port'
 
@@ -24,6 +24,20 @@ export class GetFeedUseCase {
         if (cached) return JSON.parse(cached)
       } catch { /* Redis down or corrupt cache entry — fall through to source */ }
     }
+
+    // Fetch personal weights AFTER cache check — skipped on warm cache hit (D-12, LEARN-02)
+    // undefined when cold-start (< 5 LIKEs) or no CandidateWeights record exists (D-05, D-06)
+    const candidateWeightsRecord = await this.weights.findByCandidateId(candidate.id)
+    const personalWeights: WeightSet | undefined =
+      candidateWeightsRecord && candidateWeightsRecord.likeCount >= 5
+        ? {
+            profession: candidateWeightsRecord.professionWeight,
+            skills:     candidateWeightsRecord.skillsWeight,
+            location:   candidateWeightsRecord.locationWeight,
+            modality:   candidateWeightsRecord.modalityWeight,
+            salary:     candidateWeightsRecord.salaryWeight,
+          }
+        : undefined
 
     const jobs = await this.repo.findFeedJobs(candidate.id, cursor, limit)
     const hasNext = jobs.length > limit
@@ -55,6 +69,7 @@ export class GetFeedUseCase {
             lat: job.lat ?? null,
             lng: job.lng ?? null,
           } satisfies FitScoreJobInput,
+          personalWeights,  // D-13: undefined when cold-start (< 5 LIKEs), WeightSet when personalized
         ),
       })),
     )
