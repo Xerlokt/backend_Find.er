@@ -2,7 +2,7 @@
 
 Backend completo de uma plataforma de match entre candidatos e vagas de emprego, no estilo swipe. Candidatos deslizam pelas vagas, recrutadores veem ranking de fit com perfis censurados ou visíveis dependendo do swipe, empresas desbloqueiam candidatos com créditos, e candidato + recrutador trocam mensagens em tempo real após o match.
 
-**Core value:** Sistema de recomendação via Neo4j que calcula score de fit entre candidato e vaga.
+**Core value:** Sistema de recomendação via Neo4j que calcula fit score entre candidato e vaga usando graph traversal com adjacência de skills.
 
 ---
 
@@ -11,11 +11,12 @@ Backend completo de uma plataforma de match entre candidatos e vagas de emprego,
 | Camada | Tecnologia |
 |--------|-----------|
 | Runtime | Node.js 20 + TypeScript 5 |
-| Framework | Fastify 4 |
+| Framework | Fastify 5 |
 | ORM | Prisma 7 → PostgreSQL 16 |
-| Grafo | Neo4j 5 (fit-score de recomendação) |
+| Grafo | Neo4j 5 (fit-score por traversal de grafo) |
+| Cache | Redis 7 (feed/ranking) |
 | WebSocket | @fastify/websocket |
-| Testes | Jest 29 + Supertest |
+| Testes | Jest 30 + Supertest |
 | Infra | Docker Compose |
 
 ---
@@ -24,12 +25,12 @@ Backend completo de uma plataforma de match entre candidatos e vagas de emprego,
 
 ```bash
 cp .env.example .env          # configurar DATABASE_URL, NEO4J_URI, JWT_SECRET, etc.
-docker compose up -d          # PostgreSQL (5432) + Neo4j (7474/7687)
-npx prisma migrate dev        # aplicar migrations
+docker compose up -d          # PostgreSQL (5432) + Neo4j (7474/7687) + Redis (6379)
+npm run db:migrate            # aplicar migrations
 npm run dev                   # servidor em http://localhost:3000
 ```
 
-### Seed Neo4j (profissões e habilidades)
+### Seed Neo4j (taxonomia de profissões e habilidades)
 
 ```bash
 npx ts-node --skip-project \
@@ -37,32 +38,31 @@ npx ts-node --skip-project \
   scripts/seed-neo4j.ts
 ```
 
+Popula nós `Profession`, `Skill` e relacionamentos `RELATED_TO` usados pelo motor de fit score via traversal de grafo. Obrigatório para que recomendações funcionem.
+
 ---
 
 ## Rodar testes
 
 ```bash
-# Todos os testes (unit + integration)
-npx jest --no-coverage
-
-# Apenas unitários (sem Docker)
-npx jest tests/unit/ --no-coverage
-
-# Apenas integração (requer Docker rodando)
-npx jest tests/integration/ --runInBand --no-coverage
+npm test                      # Todos os testes (unit + integration)
+npm run test:unit             # Apenas unitários (sem Docker)
+npm run test:integration      # Apenas integração (requer Docker rodando)
 ```
+
+> **Estado atual:** 94 testes (53 unit + 41 integration) — todos verdes.
 
 ---
 
-## Endpoints principais
+## Endpoints
 
 ### Autenticação
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `POST` | `/auth/register` | Cadastro com email/senha |
-| `POST` | `/auth/login` | Login, retorna access + refresh token |
-| `POST` | `/auth/refresh` | Troca refresh por novo access token |
+| `POST` | `/auth/login` | Login — retorna access + refresh token |
+| `POST` | `/auth/refresh` | Troca refresh token por novo access token |
 | `POST` | `/auth/logout` | Invalida o refresh token |
 | `POST` | `/auth/google` | Login via Google OAuth2 |
 
@@ -72,6 +72,13 @@ npx jest tests/integration/ --runInBand --no-coverage
 |--------|------|-----------|
 | `PUT` | `/candidates/me` | Criar/atualizar perfil |
 | `GET` | `/candidates/me` | Ver próprio perfil |
+
+### DISC — Avaliação de Personalidade
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `POST` | `/candidates/:id/disc` | Submeter 4 respostas DISC |
+| `GET` | `/candidates/:id/disc` | Ver resultado e perfil dominante (D/I/S/C) |
 
 ### Recrutadores
 
@@ -84,7 +91,7 @@ npx jest tests/integration/ --runInBand --no-coverage
 
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| `POST` | `/companies` | Criar empresa (admin) |
+| `POST` | `/companies` | Criar empresa |
 | `GET` | `/companies/:id` | Ver empresa |
 
 ### Vagas
@@ -96,8 +103,8 @@ npx jest tests/integration/ --runInBand --no-coverage
 | `DELETE` | `/jobs/:id/deactivate` | Desativar vaga |
 | `GET` | `/jobs/mine` | Vagas do recrutador autenticado |
 | `GET` | `/jobs/:id` | Detalhe da vaga |
-| `GET` | `/jobs/:id/ranking` | Ranking de candidatos por fit score |
-| `GET` | `/jobs/feed` | Feed de vagas para candidato (com fitScore) |
+| `GET` | `/jobs/:id/ranking` | Ranking de candidatos por fit score (com `matchingSkills` e `fitReasons`) |
+| `GET` | `/jobs/feed` | Feed de vagas para candidato (com `fitScore`) |
 
 ### Swipe
 
@@ -128,54 +135,136 @@ npx jest tests/integration/ --runInBand --no-coverage
 | `GET` | `/admin/users` | Listar todos os usuários |
 | `GET` | `/admin/users/:id` | Ver usuário específico |
 
+### Health
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `GET` | `/health` | Status do servidor |
+
 ---
 
 ## Arquitetura
 
+Clean Architecture em 4 camadas, com regra de dependência verificada automaticamente pelo script `check-deps.ts`.
+
 ```
 src/
-├── app.ts                         # Composition root — wiring de todos os módulos
-├── server.ts                      # Entry point
-├── shared/
-│   ├── db/prisma.ts               # Singleton do Prisma client
-│   ├── db/neo4j.ts                # Singleton do Neo4j driver
-│   ├── errors/AppError.ts         # Erros de domínio tipados
-│   ├── hooks/                     # authenticate, requireRole
-│   ├── interfaces/                # IChatService, IRecommendationService (ARCH-04)
-│   └── utils/haversine.ts         # Distância geográfica compartilhada
-└── modules/
-    ├── auth/                      # JWT, refresh tokens, Google OAuth2
-    ├── candidate/                 # Perfil do candidato
-    ├── recruiter/                 # Perfil do recrutador
-    ├── company/                   # Conta da empresa
-    ├── job/                       # CRUD de vagas + scheduler de expiração
-    ├── swipe/                     # Like/Dislike + ranking + feed
-    ├── recommendation/            # Neo4j: seed taxonomy + fit score
-    ├── credits/                   # Unlock economy + transações atômicas
-    ├── chat/                      # WebSocket real-time + histórico REST
-    └── admin/                     # Gestão de usuários e créditos
+├── app.ts                         # Composition root — wiring de dependências
+├── server.ts                      # Entry point — inicia o servidor HTTP
+├── domain/
+│   ├── entities/                  # 12 entidades puras (User, Candidate, Job, Swipe, Chat, DiscResult...)
+│   └── interfaces/                # 11 interfaces de repositório (IUserRepository, IJobRepository...)
+├── application/
+│   ├── use-cases/                 # Casos de uso por módulo (auth, candidate, job, swipe, disc, admin...)
+│   ├── ports/                     # IHashPort, ITokenPort, IGraphPort, IChatPort, ICachePort
+│   ├── errors/                    # DomainError
+│   └── utils/                     # haversine.ts (distância geográfica)
+├── adapters/
+│   ├── controllers/               # 10 controladores — validação Zod + use case + mapeamento de erros
+│   ├── repositories/              # 11 repositórios Prisma — implementam interfaces de domain/
+│   └── services/                  # BcryptAdapter, JwtAdapter, Neo4jAdapter, RedisAdapter, CreditService, ChatService
+└── infrastructure/
+    ├── database/                  # prisma.ts, neo4j.ts, redis.ts (singletons)
+    ├── http/
+    │   ├── app.ts                 # buildApp — plugins e rotas Fastify
+    │   ├── routes/                # 12 arquivos de rota (um por módulo)
+    │   ├── plugins/               # authenticate, cors, helmet, jwt, rate-limit, scheduler
+    │   └── errors/                # AppError (mapeamento HTTP)
+    └── scheduler/                 # job-expiry.scheduler.ts (cron de expiração de vagas)
 ```
 
-**Regras arquiteturais:**
+**Regra de dependência:**
 
-- `routes → service → repository` — sem pular camadas
-- Módulos se comunicam via interfaces em `src/shared/interfaces/` — nunca importam implementações de outros módulos diretamente (ARCH-04)
-- `app.ts` é o único composition root — instancia e injeta dependências
-- Testes de integração usam DB real via Docker — sem mocks de banco
+| Camada | Pode importar |
+|--------|--------------|
+| `domain/` | nada do projeto |
+| `application/` | apenas `domain/` |
+| `adapters/` | `application/` e `domain/` |
+| `infrastructure/` | todas as camadas |
+
+```bash
+npm run check:deps   # falha se algum arquivo violar a regra de dependência
+```
+
+---
+
+## Fit Score
+
+O fit score (0–100) combina 5 fatores calculados via Neo4j + TypeScript puro, com bônus DISC opcional:
+
+| Fator | Peso | Regra |
+|-------|------|-------|
+| Profissão | 30% | Match direto de `professionId` |
+| Skills | 35% | Match direto (1.0×) + adjacência de grafo `RELATED_TO*1..2` com decay 0.8× |
+| Localização | 20% | Haversine: `max(0, 1 - km / searchRadiusKm)` |
+| Modalidade | 10% | Candidato prefere a modalidade da vaga |
+| Salário | 5% | Expectativa salarial dentro da faixa |
+| DISC | +0–10% | Bônus aditivo se perfil dominante bate com `discProfile` da vaga |
+
+O bônus DISC é sempre aditivo — nunca penaliza, nunca filtra.
+
+---
+
+## Variáveis de ambiente
+
+Copie `.env.example` e preencha:
+
+```
+DATABASE_URL           # PostgreSQL (ex: postgresql://user:pass@localhost:5432/jobera)
+DATABASE_URL_TEST      # PostgreSQL para testes (porta 5433 no Docker)
+NEO4J_URI              # bolt://localhost:7687
+NEO4J_USER             # neo4j
+NEO4J_PASSWORD
+JWT_SECRET             # access token signing key
+JWT_REFRESH_SECRET     # refresh token signing key
+GOOGLE_CLIENT_ID       # OAuth2
+GOOGLE_CLIENT_SECRET
+GOOGLE_CALLBACK_URL
+PORT                   # default 3000
+ALLOWED_ORIGINS        # CORS whitelist
+```
+
+---
+
+## Scripts
+
+```bash
+npm run dev                  # servidor de desenvolvimento (ts-node)
+npm run build                # compilar para dist/
+npm start                    # rodar build compilado
+npm test                     # todos os testes
+npm run test:unit            # unitários (53 testes, sem Docker)
+npm run test:integration     # integração (41 testes, requer Docker)
+npm run db:migrate           # prisma migrate dev
+npm run db:generate          # prisma generate
+npm run db:studio            # Prisma Studio (GUI)
+npm run check:deps           # validar regras de dependência entre camadas
+```
 
 ---
 
 ## Documentação por fase
 
-Documentação detalhada de cada fase em [`docs/`](docs/README.md):
+Documentação técnica detalhada em [`docs/`](docs/README.md):
 
-| Fase | Doc |
-|------|-----|
-| 01 — Fundação | [fase-01-fundacao](docs/fase-01-fundacao.md) |
-| 02 — Autenticação | [fase-02-autenticacao](docs/fase-02-autenticacao.md) |
-| 03 — Perfis & Empresas | [fase-03-perfis-empresas](docs/fase-03-perfis-empresas.md) |
-| 04 — Vagas | [fase-04-vagas](docs/fase-04-vagas.md) |
-| 05 — Swipe | [fase-05-swipe](docs/fase-05-swipe.md) |
-| 06 — Recomendação Neo4j | [fase-06-recommendation](docs/fase-06-recommendation.md) |
-| 07 — Créditos | [fase-07-creditos](docs/fase-07-creditos.md) |
-| 08 — Chat | [fase-08-chat](docs/fase-08-chat.md) |
+| Fase | Milestone | Status | Doc |
+|------|-----------|--------|-----|
+| 01 — Fundação | v1.0 | ✅ | [fase-01](docs/fase-01-fundacao.md) |
+| 02 — Autenticação | v1.0 | ✅ | [fase-02](docs/fase-02-autenticacao.md) |
+| 03 — Perfis & Empresas | v1.0 | ✅ | [fase-03](docs/fase-03-perfis-empresas.md) |
+| 04 — Vagas | v1.0 | ✅ | [fase-04](docs/fase-04-vagas.md) |
+| 05 — Swipe | v1.0 | ✅ | [fase-05](docs/fase-05-swipe.md) |
+| 06 — Recomendação Neo4j | v1.0 | ✅ | [fase-06](docs/fase-06-recommendation.md) |
+| 07 — Créditos | v1.0 | ✅ | [fase-07](docs/fase-07-creditos.md) |
+| 08 — Chat | v1.0 | ✅ | [fase-08](docs/fase-08-chat.md) |
+| 09 — Domain Layer Scaffold | v2.0 | ✅ | [fase-09](docs/fase-09-clean-architecture-scaffold.md) |
+| 10 — Infrastructure + Auth | v2.0 | ✅ | [fase-10](docs/fase-10-infrastructure-auth-migration.md) |
+| 11 — Core Modules Migration | v2.0 | ✅ | [fase-11](docs/fase-11-core-modules-migration.md) |
+| 12 — Swipe, Credits, Chat | v2.0 | ✅ | [fase-12](docs/fase-12-swipe-credits-recommendation-chat-migration.md) |
+| 13 — Cleanup + Unit Tests | v2.0 | ✅ | [fase-13](docs/fase-13-cleanup-unit-tests.md) |
+| 14 — Graph Recommendation | v3.0 | ✅ | [fase-14](docs/fase-14-graph-recommendation.md) |
+| 15 — Redis Caching | v3.0 | 🔄 planejado | — |
+| 16 — Recruiter Skill Preview | v3.0 | ✅ | [fase-16](docs/fase-16-recruiter-skill-preview.md) |
+| 17 — DISC Assessment | v3.0 | ✅ | [fase-17](docs/fase-17-disc-personality-assessment.md) |
+| 18 — Learning System | v3.0 | ⏳ | — |
+| 19 — Admin Dashboard + Load Test | v3.0 | ⏳ | — |

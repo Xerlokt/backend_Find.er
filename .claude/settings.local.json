@@ -26,7 +26,11 @@
       "Bash(python3 *)",
       "Bash(git rm *)",
       "Bash(del \".planning\\\\research\\\\write_summary.py\")",
-      "Skill(gsd-review)"
+      "Skill(gsd-review)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Gian Coelho\\\\Documents\\\\Projetos\\\\Backend_Find.er\" -Force)",
+      "Bash(Select-Object Name, Mode)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Gian Coelho\\\\Documents\\\\Projetos\\\\Backend_Find.er\\\\src\" -Recurse -Name | ForEach-Object { $_ })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Gian Coelho\\\\Documents\\\\Projetos\\\\Backend_Find.er\\\\tests\" -Recurse -Name -ErrorAction SilentlyContinue | ForEach-Object { $_ })"
     ]
   }
 }
