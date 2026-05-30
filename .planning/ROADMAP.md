@@ -41,7 +41,7 @@
 - [ ] **Phase 15: Redis Caching** — Feed and ranking cached with invalidation; architectural layer rule extended to block all infrastructure imports from application
 - [x] **Phase 16: Recruiter Skill Preview** — Censored candidate cards expose matching skills and fit reasons without any identity data — completed 2026-05-17
 - [x] **Phase 17: DISC Personality Assessment** — Candidates complete DISC survey; result stored and additively factors into fit score for jobs that opt in — completed 2026-05-29
-- [ ] **Phase 18: Learning System** — Per-candidate fit weights drift with each LIKE; feed personalizes after cold-start threshold
+- [x] **Phase 18: Learning System** — Per-candidate fit weights drift with each LIKE; feed personalizes after cold-start threshold — completed 2026-05-30
 - [ ] **Phase 19: Admin Dashboard API + Load Testing** — Aggregated platform metrics behind admin guard; k6 baseline committed to repo
 
 ---
@@ -165,9 +165,9 @@ Plans:
 | 15. Redis Caching | v3.0 | 0/? | Not started | — |
 | 16. Recruiter Skill Preview | v3.0 | 2/2 | Complete | 2026-05-17 |
 | 17. DISC Personality Assessment | v3.0 | 3/3 | Complete | 2026-05-29 |
-| 18. Learning System | v3.0 | 0/4 | Not started | — |
+| 18. Learning System | v3.0 | 4/4 | Complete | 2026-05-30 |
 | 19. Admin Dashboard API + Load Testing | v3.0 | 0/? | Not started | — |
 
 ---
 
-*Last updated: 2026-05-30 — Phase 18 planned (4 plans, 3 waves). Phase 17 complete (3/3 plans, 94 tests GREEN).*
+*Last updated: 2026-05-30 — Phase 18 complete (4/4 plans, 94 unit tests GREEN, 3 integration tests GREEN, EMA weights live).*
