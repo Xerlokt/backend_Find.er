@@ -25,6 +25,7 @@ const makeCandidate = (overrides: Partial<FitScoreInput> = {}): FitScoreInput =>
   lat: overrides.lat !== undefined ? overrides.lat : -23.5505,
   lng: overrides.lng !== undefined ? overrides.lng : -46.6333,
   searchRadiusKm: overrides.searchRadiusKm ?? 50,
+  discDominant: overrides.discDominant !== undefined ? overrides.discDominant : null,  // DISC-04 — pass through override (Rule 1: factory was missing this field)
 })
 
 const makeJob = (overrides: Partial<FitScoreJobInput> = {}): FitScoreJobInput => ({
@@ -36,6 +37,7 @@ const makeJob = (overrides: Partial<FitScoreJobInput> = {}): FitScoreJobInput =>
   salaryMax: overrides.salaryMax !== undefined ? overrides.salaryMax : 8000,
   lat: overrides.lat !== undefined ? overrides.lat : -23.5505,
   lng: overrides.lng !== undefined ? overrides.lng : -46.6333,
+  discProfile: overrides.discProfile !== undefined ? overrides.discProfile : null,  // DISC-03 — pass through override (Rule 1: factory was missing this field)
 })
 
 describe('RecommendationRepository — computeFitScore', () => {
