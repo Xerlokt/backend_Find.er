@@ -40,7 +40,7 @@
 - [x] **Phase 14: Graph Recommendation** — Neo4j traversal with skill adjacency decay replaces exact-match fit score — completed 2026-05-16
 - [ ] **Phase 15: Redis Caching** — Feed and ranking cached with invalidation; architectural layer rule extended to block all infrastructure imports from application
 - [x] **Phase 16: Recruiter Skill Preview** — Censored candidate cards expose matching skills and fit reasons without any identity data — completed 2026-05-17
-- [ ] **Phase 17: DISC Personality Assessment** — Candidates complete DISC survey; result stored and additively factors into fit score for jobs that opt in
+- [x] **Phase 17: DISC Personality Assessment** — Candidates complete DISC survey; result stored and additively factors into fit score for jobs that opt in — completed 2026-05-29
 - [ ] **Phase 18: Learning System** — Per-candidate fit weights drift with each LIKE; feed personalizes after cold-start threshold
 - [ ] **Phase 19: Admin Dashboard API + Load Testing** — Aggregated platform metrics behind admin guard; k6 baseline committed to repo
 
