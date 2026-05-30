@@ -1,6 +1,7 @@
 import { ISwipeRepository } from '../../../domain/interfaces/swipe.repository.interface'
 import { IChatPort } from '../../ports/chat.port'
 import { ICachePort } from '../../ports/cache.port'
+import { IWeightsRepository } from '../../../domain/interfaces/weights.repository.interface'
 import { Swipe, SwipeDirection } from '../../../domain/entities/swipe.entity'
 import { DomainError } from '../../errors/domain.error'
 
@@ -10,6 +11,7 @@ export class RecordSwipeUseCase {
     private readonly repo: ISwipeRepository,
     private readonly chat: IChatPort,
     private readonly cache: ICachePort,
+    private readonly weights: IWeightsRepository,  // LEARN-01: EMA weight update on LIKE (implemented in Plan 02)
   ) {}
 
   async execute(

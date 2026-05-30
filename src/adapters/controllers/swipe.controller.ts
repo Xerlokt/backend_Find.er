@@ -8,6 +8,7 @@ import { DomainError } from '../../application/errors/domain.error'
 import { IChatPort } from '../../application/ports/chat.port'
 import { ICachePort } from '../../application/ports/cache.port'
 import { IRecommendationRepository } from '../../domain/interfaces/recommendation.repository.interface'
+import { IWeightsRepository } from '../../domain/interfaces/weights.repository.interface'
 
 const SwipeBodySchema = z.object({
   jobId: z.string().uuid(),
@@ -29,12 +30,13 @@ export class SwipeController {
       neo4j: IRecommendationRepository
       chat: IChatPort
       cache: ICachePort
+      weights: IWeightsRepository  // LEARN-01/02: EMA weights injected (wired in swipe.routes.ts)
     },
   ) {}
 
   async recordSwipe(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const { jobId, direction } = SwipeBodySchema.parse(request.body)
-    const useCase = new RecordSwipeUseCase(new SwipeRepository(), this.opts.chat, this.opts.cache)
+    const useCase = new RecordSwipeUseCase(new SwipeRepository(), this.opts.chat, this.opts.cache, this.opts.weights)
     try {
       const result = await useCase.execute(request.user.id, jobId, direction)
       reply.status(201).send(result)
@@ -49,7 +51,7 @@ export class SwipeController {
 
   async getFeed(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const { cursor, limit } = FeedQuerySchema.parse(request.query)
-    const useCase = new GetFeedUseCase(new SwipeRepository(), this.opts.neo4j, this.opts.cache)
+    const useCase = new GetFeedUseCase(new SwipeRepository(), this.opts.neo4j, this.opts.cache, this.opts.weights)
     try {
       const result = await useCase.execute(request.user.id, cursor, limit)
       reply.status(200).send(result)

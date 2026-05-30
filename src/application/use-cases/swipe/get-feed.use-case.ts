@@ -1,5 +1,6 @@
 import { ISwipeRepository } from '../../../domain/interfaces/swipe.repository.interface'
 import { IRecommendationRepository, FitScoreInput, FitScoreJobInput } from '../../../domain/interfaces/recommendation.repository.interface'
+import { IWeightsRepository } from '../../../domain/interfaces/weights.repository.interface'
 import { DomainError } from '../../errors/domain.error'
 import { ICachePort } from '../../ports/cache.port'
 
@@ -8,6 +9,7 @@ export class GetFeedUseCase {
     private readonly repo: ISwipeRepository,
     private readonly rec: IRecommendationRepository,
     private readonly cache: ICachePort,
+    private readonly weights: IWeightsRepository,  // LEARN-02: personal weights for feed (implemented in Plan 02)
   ) {}
 
   async execute(userId: string, cursor: string | undefined, limit: number) {

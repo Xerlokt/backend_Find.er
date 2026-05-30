@@ -22,7 +22,9 @@ export interface FitScoreJobInput {
   discProfile?: string | null   // DISC-03: job's desired DISC profile, if any
 }
 
+import { WeightSet } from './weights.repository.interface'
+
 export interface IRecommendationRepository {
-  computeFitScore(candidate: FitScoreInput, job: FitScoreJobInput): Promise<number>
+  computeFitScore(candidate: FitScoreInput, job: FitScoreJobInput, weights?: WeightSet): Promise<number>
   seedTaxonomy(): Promise<void>
 }
