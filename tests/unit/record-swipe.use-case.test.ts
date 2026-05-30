@@ -144,18 +144,33 @@ describe('RecordSwipeUseCase', () => {
       )
     })
 
-    it('applies EMA: new profession weight = 0.1 * 1.0 + 0.9 * 0.30 ≈ 0.37 for profession match', async () => {
+    it('applies EMA: professionWeight drifts when profession matches (profession-only match scenario)', async () => {
+      // Use a job where ONLY profession matches; other factors score 0 or 0.5
+      // This ensures profession's share in the renormalized sum actually increases
+      const professionOnlyJob = {
+        ...activeJob,
+        professionId: 'backend-dev',          // matches → professionScore=1.0
+        requiredSkills: ['java', 'spring'],    // candidate has ['nodejs'] → skillsScore=0.0
+        modality: 'ONSITE',                    // candidate prefers ['REMOTE'] → modalityScore=0.0
+        salaryMin: null,
+        salaryMax: null,
+        lat: null,
+        lng: null,
+        companyId: 'comp-1',
+      }
+      // observed = { profession:1.0, skills:0.0, location:1.0, modality:0.0, salary:1.0 }
+      // raw (from GLOBAL_DEFAULTS): { profession:0.37, skills:0.315, location:0.28, modality:0.09, salary:0.095 }
+      // sum = 1.15; normalized profession = 0.37/1.15 ≈ 0.322 > 0.30 ✓
       const repo = makeSwipeRepo()
       repo.findCandidateProfileByUserId.mockResolvedValue(candidateWithProfession as any)
-      repo.findJobById.mockResolvedValue(matchingJob as any)
+      repo.findJobById.mockResolvedValue(professionOnlyJob as any)
       repo.createSwipe.mockResolvedValue({ candidateId: 'cand-1', jobId: 'job-1', direction: 'LIKE' } as any)
       const weightsRepo = makeWeightsRepo()
       weightsRepo.findByCandidateId.mockResolvedValue(null)  // use GLOBAL_DEFAULTS as baseline
       const uc = new RecordSwipeUseCase(repo, makeChatPort(), makeCache(), weightsRepo)
       await uc.execute('user-1', 'job-1', 'LIKE')
       const callArgs = weightsRepo.upsertWeights.mock.calls[0][1]
-      // After EMA with professionScore=1.0, old=0.30: raw = 0.1*1.0 + 0.9*0.30 = 0.37
-      // After renormalization the value may differ slightly but must be > 0.30 (drift toward 1.0)
+      // After EMA + renormalization, profession weight increases when profession matches but modality/skills don't
       expect(callArgs.professionWeight).toBeGreaterThan(0.30)
     })
 
