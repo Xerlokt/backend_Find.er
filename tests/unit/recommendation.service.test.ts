@@ -421,4 +421,35 @@ describe('RecommendationRepository — computeFitScore', () => {
       expect(scoreNoReq).toBeGreaterThan(scoreWithReq)
     })
   })
+
+  describe('personal weights parameter (D-13, LEARN-03)', () => {
+    it('uses provided WeightSet: skills=1.0 weight makes skills-heavy job score higher than profession-only job', async () => {
+      // Create a candidate/job where skills match perfectly
+      const driver = makeMockDriver([{ skill: 'nodejs', hops: 0 }])
+      const repo = new RecommendationRepository(driver)
+      const candidate = makeCandidate({ professionId: 'other', skillIds: ['nodejs'] })
+      const job = makeJob({ professionId: 'backend-dev', requiredSkillIds: ['nodejs'] })
+
+      // With global defaults: professionScore=0 → heavy penalty; even skills=1.0 gives ~35
+      const globalScore = await repo.computeFitScore(candidate, job, undefined)
+
+      // With skills-heavy weights: skills should dominate
+      const personalWeights = { profession: 0.01, skills: 0.97, location: 0.01, modality: 0.005, salary: 0.005 }
+      const personalScore = await repo.computeFitScore(candidate, job, personalWeights)
+
+      expect(personalScore).toBeGreaterThan(globalScore)
+    })
+
+    it('falls back to global defaults when weights=undefined (backward compat — score unchanged)', async () => {
+      const driver = makeMockDriver([{ skill: 'nodejs', hops: 0 }, { skill: 'typescript', hops: 0 }])
+      const repo = new RecommendationRepository(driver)
+      const candidate = makeCandidate()
+      const job = makeJob()
+
+      const scoreWithUndefined = await repo.computeFitScore(candidate, job, undefined)
+      const scoreWithNoParam = await repo.computeFitScore(candidate, job)
+
+      expect(scoreWithUndefined).toBe(scoreWithNoParam)
+    })
+  })
 })

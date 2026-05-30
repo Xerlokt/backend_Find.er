@@ -5,8 +5,9 @@ import { requireRole } from '../plugins/require-role.hook'
 import { IChatPort } from '../../../application/ports/chat.port'
 import { ICachePort } from '../../../application/ports/cache.port'
 import { IRecommendationRepository } from '../../../domain/interfaces/recommendation.repository.interface'
+import { IWeightsRepository } from '../../../domain/interfaces/weights.repository.interface'
 
-type SwipeRouteOpts = { chat: IChatPort; neo4j: IRecommendationRepository; cache: ICachePort }
+type SwipeRouteOpts = { chat: IChatPort; neo4j: IRecommendationRepository; cache: ICachePort; weights: IWeightsRepository }
 
 // RankingItem — response shape for GET /jobs/:jobId/ranking (Decision 04-04)
 // Updated in Phase 16: profile is FullProfile | CensoredProfile — never null for any swipe state.

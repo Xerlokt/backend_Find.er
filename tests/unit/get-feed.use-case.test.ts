@@ -2,6 +2,7 @@ import { GetFeedUseCase } from '../../src/application/use-cases/swipe/get-feed.u
 import type { ISwipeRepository } from '../../src/domain/interfaces/swipe.repository.interface'
 import type { IRecommendationRepository } from '../../src/domain/interfaces/recommendation.repository.interface'
 import type { ICachePort } from '../../src/application/ports/cache.port'
+import type { IWeightsRepository } from '../../src/domain/interfaces/weights.repository.interface'
 
 const makeSwipeRepo = (): jest.Mocked<ISwipeRepository> => ({
   findCandidateProfileByUserId: jest.fn(),
@@ -23,6 +24,22 @@ const makeCache = (): jest.Mocked<ICachePort> => ({
   set: jest.fn().mockResolvedValue(undefined),
   del: jest.fn().mockResolvedValue(undefined),
   invalidatePattern: jest.fn().mockResolvedValue(undefined),
+})
+
+const makeWeightsRepo = (): jest.Mocked<IWeightsRepository> => ({
+  upsertWeights: jest.fn().mockResolvedValue({
+    id: 'w-1',
+    candidateId: 'cand-1',
+    professionWeight: 0.30,
+    skillsWeight: 0.35,
+    locationWeight: 0.20,
+    modalityWeight: 0.10,
+    salaryWeight: 0.05,
+    likeCount: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }),
+  findByCandidateId: jest.fn().mockResolvedValue(null),
 })
 
 const candidateProfile = {
@@ -68,7 +85,7 @@ describe('GetFeedUseCase', () => {
     const cachedResult = { data: [{ id: 'job-1', fitScore: 0.9 }], nextCursor: null }
     cache.get.mockResolvedValue(JSON.stringify(cachedResult))
 
-    const uc = new GetFeedUseCase(repo, rec, cache)
+    const uc = new GetFeedUseCase(repo, rec, cache, makeWeightsRepo())
     const result = await uc.execute('user-1', undefined, 20)
 
     expect(result).toEqual(cachedResult)
@@ -86,7 +103,7 @@ describe('GetFeedUseCase', () => {
     rec.computeFitScore.mockResolvedValue(0.85)
     // cache.get returns null by default (cache MISS)
 
-    const uc = new GetFeedUseCase(repo, rec, cache)
+    const uc = new GetFeedUseCase(repo, rec, cache, makeWeightsRepo())
     const result = await uc.execute('user-1', undefined, 20)
 
     expect(repo.findFeedJobs).toHaveBeenCalledWith('cand-1', undefined, 20)
@@ -104,7 +121,7 @@ describe('GetFeedUseCase', () => {
     repo.findFeedJobs.mockResolvedValue([jobItem] as any)
     rec.computeFitScore.mockResolvedValue(0.85)
 
-    const uc = new GetFeedUseCase(repo, rec, cache)
+    const uc = new GetFeedUseCase(repo, rec, cache, makeWeightsRepo())
     await uc.execute('user-1', 'some-cursor-uuid', 20)
 
     expect(cache.get).not.toHaveBeenCalled()
@@ -121,11 +138,93 @@ describe('GetFeedUseCase', () => {
     rec.computeFitScore.mockResolvedValue(0.75)
     cache.get.mockRejectedValue(new Error('Redis connection refused'))
 
-    const uc = new GetFeedUseCase(repo, rec, cache)
+    const uc = new GetFeedUseCase(repo, rec, cache, makeWeightsRepo())
     // Should NOT throw — falls through to repo
     const result = await uc.execute('user-1', undefined, 20)
 
     expect(repo.findFeedJobs).toHaveBeenCalled()
     expect(result).toMatchObject({ data: expect.any(Array) })
+  })
+
+  describe('personal weights cold-start (LEARN-02)', () => {
+    it('passes undefined to computeFitScore when CandidateWeights record does not exist (findByCandidateId returns null)', async () => {
+      const repo = makeSwipeRepo()
+      const rec = makeRecRepo()
+      const cache = makeCache()
+      const weights = makeWeightsRepo()
+      repo.findCandidateProfileByUserId.mockResolvedValue(candidateProfile as any)
+      repo.findFeedJobs.mockResolvedValue([jobItem] as any)
+      rec.computeFitScore.mockResolvedValue(80)
+      weights.findByCandidateId.mockResolvedValue(null)  // no weights record
+
+      const uc = new GetFeedUseCase(repo, rec, cache, weights)
+      await uc.execute('user-1', undefined, 20)
+
+      // computeFitScore must be called with undefined as 3rd arg (global defaults)
+      expect(rec.computeFitScore).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        undefined,
+      )
+    })
+
+    it('passes undefined to computeFitScore when likeCount is 4 (cold-start threshold not reached)', async () => {
+      const repo = makeSwipeRepo()
+      const rec = makeRecRepo()
+      const cache = makeCache()
+      const weights = makeWeightsRepo()
+      repo.findCandidateProfileByUserId.mockResolvedValue(candidateProfile as any)
+      repo.findFeedJobs.mockResolvedValue([jobItem] as any)
+      rec.computeFitScore.mockResolvedValue(80)
+      weights.findByCandidateId.mockResolvedValue({
+        id: 'w-1', candidateId: 'cand-1',
+        professionWeight: 0.32, skillsWeight: 0.34, locationWeight: 0.19,
+        modalityWeight: 0.10, salaryWeight: 0.05,
+        likeCount: 4,  // below threshold of 5
+        createdAt: new Date(), updatedAt: new Date(),
+      })
+
+      const uc = new GetFeedUseCase(repo, rec, cache, weights)
+      await uc.execute('user-1', undefined, 20)
+
+      expect(rec.computeFitScore).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        undefined,  // NOT personal weights — cold-start
+      )
+    })
+
+    it('passes personal WeightSet to computeFitScore when likeCount is 5 (threshold reached)', async () => {
+      const repo = makeSwipeRepo()
+      const rec = makeRecRepo()
+      const cache = makeCache()
+      const weights = makeWeightsRepo()
+      repo.findCandidateProfileByUserId.mockResolvedValue(candidateProfile as any)
+      repo.findFeedJobs.mockResolvedValue([jobItem] as any)
+      rec.computeFitScore.mockResolvedValue(80)
+      const personalWeightsRecord = {
+        id: 'w-1', candidateId: 'cand-1',
+        professionWeight: 0.40, skillsWeight: 0.30, locationWeight: 0.15,
+        modalityWeight: 0.10, salaryWeight: 0.05,
+        likeCount: 5,  // exactly at threshold
+        createdAt: new Date(), updatedAt: new Date(),
+      }
+      weights.findByCandidateId.mockResolvedValue(personalWeightsRecord)
+
+      const uc = new GetFeedUseCase(repo, rec, cache, weights)
+      await uc.execute('user-1', undefined, 20)
+
+      expect(rec.computeFitScore).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        {
+          profession: 0.40,
+          skills: 0.30,
+          location: 0.15,
+          modality: 0.10,
+          salary: 0.05,
+        },
+      )
+    })
   })
 })

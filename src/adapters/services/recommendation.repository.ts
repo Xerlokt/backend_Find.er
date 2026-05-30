@@ -6,12 +6,14 @@ import type {
   FitScoreInput,
   FitScoreJobInput,
 } from '../../domain/interfaces/recommendation.repository.interface'
+import type { WeightSet } from '../../domain/interfaces/weights.repository.interface'
 import { haversineKm } from '../../application/utils/haversine'
 
 export class RecommendationRepository implements IRecommendationRepository {
   constructor(private readonly driver: Driver) {}
 
-  async computeFitScore(candidate: FitScoreInput, job: FitScoreJobInput): Promise<number> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async computeFitScore(candidate: FitScoreInput, job: FitScoreJobInput, weights?: WeightSet): Promise<number> {
     // Factor 1: Profession match (30%)
     const professionScore =
       candidate.professionId != null &&

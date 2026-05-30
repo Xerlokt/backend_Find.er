@@ -25,6 +25,8 @@ import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
 import { getNeo4jDriver } from './infrastructure/database/neo4j'
 import { RedisAdapter } from './adapters/services/redis.adapter'
 import { getRedisClient, closeRedis } from './infrastructure/database/redis'
+// LEARN-01/02: WeightsRepository wired here (Plan 02 will provide the concrete adapter)
+import { IWeightsRepository } from './domain/interfaces/weights.repository.interface'
 
 export interface BuildAppOptions {
   testing?: boolean
@@ -59,6 +61,13 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   const redisAdapter = new RedisAdapter(getRedisClient())
   app.addHook('onClose', async () => { await closeRedis() })
 
+  // Composition root: WeightsRepository — no-op stub until Plan 02 creates the concrete adapter
+  // LEARN-01/02: Replace with new WeightsRepository() once Plan 02 creates src/adapters/repositories/weights.repository.ts
+  const weightsRepository: IWeightsRepository = {
+    upsertWeights: async () => { throw new Error('WeightsRepository not yet implemented — Plan 02') },
+    findByCandidateId: async () => null,
+  }
+
   // Routes
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/auth' })
@@ -68,9 +77,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(recruiterRoutes, { prefix: '/recruiters' })
   await app.register(jobRoutes, { prefix: '/jobs' })
 
-  // Swipe routes — IChatService, Neo4jAdapter, and RedisAdapter injected via opts (D-01, ARCH-04, SCALE-01, SCALE-02)
-  await app.register(swipeRoutes, { prefix: '/swipes', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter })
-  await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter })
+  // Swipe routes — IChatService, Neo4jAdapter, RedisAdapter, and WeightsRepository injected via opts (D-01, ARCH-04, SCALE-01, SCALE-02, LEARN-01)
+  await app.register(swipeRoutes, { prefix: '/swipes', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter, weights: weightsRepository })
+  await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter, weights: weightsRepository })
 
   // Credits routes — IChatService injected via opts (D-01, ARCH-04)
   await app.register(creditsJobRoutes, { prefix: '/jobs', chat: chatService })
