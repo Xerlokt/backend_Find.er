@@ -126,8 +126,8 @@ Plans:
 
 Plans:
 - [x] 18-01-PLAN.md — Wave 1: Domain layer (entity + interface + constants) + Prisma schema (CandidateWeights model) + TDD RED stubs in all unit tests
-- [ ] 18-02-PLAN.md — Wave 2: TDD GREEN — WeightsRepository adapter + RecordSwipeUseCase EMA update (LEARN-01)
-- [ ] 18-03-PLAN.md — Wave 2: TDD GREEN — computeFitScore optional weights param + GetFeedUseCase personal weights injection (LEARN-02/03)
+- [x] 18-02-PLAN.md — Wave 2: TDD GREEN — WeightsRepository adapter + RecordSwipeUseCase EMA update (LEARN-01)
+- [x] 18-03-PLAN.md — Wave 2: TDD GREEN — computeFitScore optional weights param + GetFeedUseCase personal weights injection (LEARN-02/03)
 - [ ] 18-04-PLAN.md — Wave 3: Wiring (routes/controller) + [BLOCKING] prisma db push + setup.ts cleanup + integration tests GREEN
 
 ### Phase 19: Admin Dashboard API + Load Testing
