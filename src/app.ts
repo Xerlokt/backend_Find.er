@@ -20,6 +20,7 @@ import { creditsJobRoutes } from './infrastructure/http/routes/credits.routes'
 import { ChatRepository } from './adapters/repositories/chat.repository'
 import { ChatService } from './adapters/services/chat.service'
 import { chatRoutes } from './infrastructure/http/routes/chat.routes'
+import { discRoutes } from './infrastructure/http/routes/disc.routes'
 import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
 import { getNeo4jDriver } from './infrastructure/database/neo4j'
 import { RedisAdapter } from './adapters/services/redis.adapter'
@@ -62,6 +63,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(healthRoutes)
   await app.register(authRoutes, { prefix: '/auth' })
   await app.register(candidateRoutes, { prefix: '/candidates', cache: redisAdapter })
+  await app.register(discRoutes, { prefix: '/candidates' })
   await app.register(companyRoutes, { prefix: '/companies' })
   await app.register(recruiterRoutes, { prefix: '/recruiters' })
   await app.register(jobRoutes, { prefix: '/jobs' })
