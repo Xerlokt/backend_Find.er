@@ -2,9 +2,13 @@ import { DomainError } from '../../application/errors/domain.error'
 import { ChatInitiator } from '../../domain/entities/chat.entity'
 import type { IChatPort } from '../../application/ports/chat.port'
 import type { IChatRepository } from '../../domain/interfaces/chat.repository.interface'
+import type { INotifyNewMessage } from '../../application/use-cases/push/notify-new-message.use-case'
 
 export class ChatService implements IChatPort {
-  constructor(private readonly repo: IChatRepository) {}
+  constructor(
+    private readonly repo: IChatRepository,
+    private readonly notifier?: INotifyNewMessage,
+  ) {}
 
   async createOrGetChat(
     candidateId: string,
@@ -44,7 +48,16 @@ export class ChatService implements IChatPort {
       throw new DomainError('Recruiter must send first message', 'RECRUITER_MUST_INITIATE', 403)
     }
 
-    return this.repo.createMessage(chatId, senderId, content)
+    const message = await this.repo.createMessage(chatId, senderId, content)
+
+    // Só o recrutador dispara aviso: ainda não existe app de recrutador. Best-effort, nunca atrasa nem derruba o envio.
+    if (this.notifier && senderId === recruiterUserId) {
+      void this.notifier
+        .execute({ recipientUserId: candidateUserId, chatId, title: participants.companyName, content })
+        .catch(() => {})
+    }
+
+    return message
   }
 
   async verifyParticipant(chatId: string, userId: string): Promise<boolean> {

@@ -1,5 +1,6 @@
 import { prisma } from '../../infrastructure/database/prisma'
 import { ICompanyRepository } from '../../domain/interfaces/company.repository.interface'
+import { User } from '../../domain/entities/user.entity'
 import { Company } from '../../domain/entities/company.entity'
 import { CreditTransaction } from '../../domain/entities/credit-transaction.entity'
 import { DomainError } from '../../application/errors/domain.error'
@@ -13,6 +14,33 @@ export class CompanyRepository implements ICompanyRepository {
   async findById(id: string): Promise<Company | null> {
     const row = await prisma.company.findUnique({ where: { id } })
     return row ? this.toDomain(row) : null
+  }
+
+  async findByCnpj(cnpj: string): Promise<Company | null> {
+    const row = await prisma.company.findUnique({ where: { cnpj } })
+    return row ? this.toDomain(row) : null
+  }
+
+  async createWithRecruiter(data: Parameters<ICompanyRepository['createWithRecruiter']>[0]) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: { email: data.email, passwordHash: data.passwordHash, role: 'RECRUITER' },
+        })
+        const company = await tx.company.create({ data: data.company })
+        await tx.recruiterProfile.create({ data: { userId: user.id, companyId: company.id } })
+        return {
+          user: { ...user, role: user.role as User['role'] },
+          company: this.toDomain(company),
+        }
+      })
+    } catch (e: any) {
+      // corrida entre dois cadastros com o mesmo email/CNPJ (unique)
+      if (e?.code === 'P2002') {
+        throw new DomainError('Email ou CNPJ já cadastrado', 'CONFLICT', 409)
+      }
+      throw e
+    }
   }
 
   async adjustCredits(companyId: string, delta: number, reason: string = 'admin_grant'): Promise<Company> {
@@ -46,6 +74,11 @@ export class CompanyRepository implements ICompanyRepository {
     return {
       id: row.id,
       name: row.name,
+      cnpj: row.cnpj,
+      legalName: row.legalName,
+      tradeName: row.tradeName,
+      city: row.city,
+      state: row.state,
       logoUrl: row.logoUrl,
       description: row.description,
       rating: row.rating,

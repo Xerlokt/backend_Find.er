@@ -27,6 +27,7 @@ afterEach(async () => {
   await redis.flushdb()
 
   // Delete in FK-safe order: children before parents
+  await prisma.pushToken.deleteMany()      // PushToken before User (FK)
   await prisma.refreshToken.deleteMany()   // RefreshToken before User (FK)
   await prisma.message.deleteMany()
   await prisma.chat.deleteMany()

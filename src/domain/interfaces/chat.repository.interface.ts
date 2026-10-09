@@ -4,6 +4,7 @@ import { Message } from '../entities/message.entity'
 export interface ChatParticipants {
   candidateUserId: string
   recruiterUserId: string
+  companyName: string
 }
 
 export interface ChatListItem {

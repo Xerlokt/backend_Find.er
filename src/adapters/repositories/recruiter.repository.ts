@@ -36,6 +36,11 @@ export class RecruiterRepository implements IRecruiterRepository {
     return {
       id: row.id,
       name: row.name,
+      cnpj: row.cnpj,
+      legalName: row.legalName,
+      tradeName: row.tradeName,
+      city: row.city,
+      state: row.state,
       logoUrl: row.logoUrl,
       description: row.description,
       rating: row.rating,

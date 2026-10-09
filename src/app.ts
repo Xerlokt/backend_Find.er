@@ -7,6 +7,7 @@ import rateLimitPlugin from './infrastructure/http/plugins/rate-limit.plugin'
 import { schedulerPlugin } from './infrastructure/http/plugins/scheduler.plugin'
 import { errorHandler } from './infrastructure/http/plugins/error-handler'
 import { healthRoutes } from './infrastructure/http/routes/health.routes'
+import { ICnpjLookupPort } from './application/ports/cnpj-lookup.port'
 import { authRoutes } from './infrastructure/http/routes/auth.routes'
 import { candidateRoutes } from './infrastructure/http/routes/candidate.routes'
 import { companyRoutes } from './infrastructure/http/routes/company.routes'
@@ -20,6 +21,10 @@ import { creditsJobRoutes } from './infrastructure/http/routes/credits.routes'
 import { ChatRepository } from './adapters/repositories/chat.repository'
 import { ChatService } from './adapters/services/chat.service'
 import { chatRoutes } from './infrastructure/http/routes/chat.routes'
+import { PushTokenRepository } from './adapters/repositories/push-token.repository'
+import { ExpoPushAdapter } from './adapters/services/expo-push.adapter'
+import { NotifyNewMessageUseCase } from './application/use-cases/push/notify-new-message.use-case'
+import { pushRoutes } from './infrastructure/http/routes/push.routes'
 import { discRoutes } from './infrastructure/http/routes/disc.routes'
 import { Neo4jAdapter } from './adapters/services/neo4j.adapter'
 import { getNeo4jDriver } from './infrastructure/database/neo4j'
@@ -29,6 +34,8 @@ import { WeightsRepository } from './adapters/repositories/weights.repository'
 
 export interface BuildAppOptions {
   testing?: boolean
+  /** injeção da consulta de CNPJ (testes); padrão: BrasilAPI */
+  cnpjLookup?: ICnpjLookupPort
 }
 
 export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -51,7 +58,10 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
 
   // Composition root: chat module (created before swipe/credits that depend on IChatService)
   const chatRepo = new ChatRepository()
-  const chatService = new ChatService(chatRepo)
+  const pushTokenRepo = new PushTokenRepository()
+  // em teste não bate no Expo de verdade
+  const notifier = opts.testing ? undefined : new NotifyNewMessageUseCase(pushTokenRepo, new ExpoPushAdapter())
+  const chatService = new ChatService(chatRepo, notifier)
 
   // Composition root: Neo4jAdapter — injected into swipe routes for fit score computation
   const neo4jAdapter = new Neo4jAdapter(getNeo4jDriver())
@@ -65,7 +75,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
 
   // Routes
   await app.register(healthRoutes)
-  await app.register(authRoutes, { prefix: '/auth' })
+  await app.register(authRoutes, { prefix: '/auth', cnpjLookup: opts.cnpjLookup })
   await app.register(candidateRoutes, { prefix: '/candidates', cache: redisAdapter })
   await app.register(discRoutes, { prefix: '/candidates' })
   await app.register(companyRoutes, { prefix: '/companies' })
@@ -86,6 +96,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
 
   // Chat routes under /chats prefix — chatService and chatRepo injected (WR-03: DI fix)
   await app.register(chatRoutes, { prefix: '/chats', service: chatService, repo: chatRepo })
+  await app.register(pushRoutes, { prefix: '/push-tokens', repo: pushTokenRepo })
 
   if (!opts.testing) {
     await app.register(schedulerPlugin)

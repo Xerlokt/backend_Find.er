@@ -5,6 +5,11 @@ import { LoginUseCase } from '../../application/use-cases/auth/login.use-case'
 import { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case'
 import { LogoutUseCase } from '../../application/use-cases/auth/logout.use-case'
 import { LoginWithGoogleUseCase } from '../../application/use-cases/auth/login-with-google.use-case'
+import { RegisterCompanyUseCase } from '../../application/use-cases/auth/register-company.use-case'
+import { CompanyRepository } from '../repositories/company.repository'
+import { BrasilApiCnpjAdapter } from '../services/brasilapi-cnpj.adapter'
+import { ICnpjLookupPort } from '../../application/ports/cnpj-lookup.port'
+import { isValidCnpj, normalizeCnpj } from '../../domain/cnpj'
 import { UserRepository } from '../repositories/user.repository'
 import { RefreshTokenRepository } from '../repositories/refresh-token.repository'
 import { BcryptAdapter } from '../services/bcrypt.adapter'
@@ -18,6 +23,14 @@ const RegisterBodySchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   role: z.enum(['CANDIDATE', 'RECRUITER']),
+})
+
+const RegisterCompanyBodySchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  cnpj: z.string().min(1),
+  description: z.string().max(1000).optional(),
+  logoUrl: z.string().url().optional(),
 })
 
 const LoginBodySchema = z.object({
@@ -43,11 +56,15 @@ export class AuthController {
   private readonly refreshTokenRepo: IRefreshTokenRepository
   private readonly hash: IHashPort
 
+  private readonly cnpjLookup: ICnpjLookupPort
+
   constructor(
     userRepo?: IUserRepository,
     refreshTokenRepo?: IRefreshTokenRepository,
     hash?: IHashPort,
+    cnpjLookup?: ICnpjLookupPort,
   ) {
+    this.cnpjLookup = cnpjLookup ?? new BrasilApiCnpjAdapter()
     this.userRepo = userRepo ?? new UserRepository()
     this.refreshTokenRepo = refreshTokenRepo ?? new RefreshTokenRepository()
     this.hash = hash ?? new BcryptAdapter()
@@ -64,6 +81,53 @@ export class AuthController {
     try {
       const tokens = await useCase.execute(body)
       reply.status(201).send(tokens)
+    } catch (err) {
+      if (err instanceof DomainError) {
+        reply.status(err.statusCode).send({ error: err.message, code: err.code })
+        return
+      }
+      throw err
+    }
+  }
+
+  /** Cadastro da conta da empresa (CNPJ validado na Receita). */
+  async registerCompany(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const body = RegisterCompanyBodySchema.parse(request.body)
+    const useCase = new RegisterCompanyUseCase(
+      this.userRepo,
+      new CompanyRepository(),
+      this.refreshTokenRepo,
+      this.hash,
+      new JwtAdapter(request.server),
+      this.cnpjLookup,
+    )
+    try {
+      reply.status(201).send(await useCase.execute(body))
+    } catch (err) {
+      if (err instanceof DomainError) {
+        reply.status(err.statusCode).send({ error: err.message, code: err.code })
+        return
+      }
+      throw err
+    }
+  }
+
+  /** Pré-visualização pública do CNPJ (pré-preenche o cadastro). */
+  async previewCnpj(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const { cnpj: raw } = z.object({ cnpj: z.string().min(1) }).parse(request.params)
+    const cnpj = normalizeCnpj(raw)
+    if (!isValidCnpj(cnpj)) {
+      reply.status(422).send({ error: 'CNPJ inválido', code: 'INVALID_CNPJ' })
+      return
+    }
+    try {
+      const info = await this.cnpjLookup.lookup(cnpj)
+      if (!info) {
+        reply.status(422).send({ error: 'CNPJ não encontrado na Receita Federal', code: 'CNPJ_NOT_FOUND' })
+        return
+      }
+      const taken = await new CompanyRepository().findByCnpj(cnpj)
+      reply.status(200).send({ ...info, active: info.status === 'ATIVA', alreadyRegistered: !!taken })
     } catch (err) {
       if (err instanceof DomainError) {
         reply.status(err.statusCode).send({ error: err.message, code: err.code })

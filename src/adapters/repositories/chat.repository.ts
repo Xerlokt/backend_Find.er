@@ -72,6 +72,7 @@ export class ChatRepository implements IChatRepository {
         job: {
           include: {
             recruiter: { select: { userId: true } },
+            company: { select: { name: true } },
           },
         },
       },
@@ -80,6 +81,7 @@ export class ChatRepository implements IChatRepository {
     return {
       candidateUserId: row.candidate.userId,
       recruiterUserId: row.job.recruiter.userId,
+      companyName: row.job.company.name,
     }
   }
 
