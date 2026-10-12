@@ -6,6 +6,7 @@ import { IHashPort } from '../../ports/hash.port'
 import { ITokenPort } from '../../ports/token.port'
 import { ICnpjLookupPort } from '../../ports/cnpj-lookup.port'
 import { DomainError } from '../../errors/domain.error'
+import { ISendEmailVerification } from './send-email-verification.use-case'
 import { isValidCnpj, normalizeCnpj } from '../../../domain/cnpj'
 
 export interface RegisterCompanyInput {
@@ -25,16 +26,18 @@ export class RegisterCompanyUseCase {
     private readonly hash: IHashPort,
     private readonly token: ITokenPort,
     private readonly cnpjLookup: ICnpjLookupPort,
+    private readonly sendVerification?: ISendEmailVerification,
   ) {}
 
   async execute(input: RegisterCompanyInput): Promise<{ accessToken: string; refreshToken: string }> {
     const cnpj = normalizeCnpj(input.cnpj)
     if (!isValidCnpj(cnpj)) throw new DomainError('CNPJ inválido', 'INVALID_CNPJ', 422)
 
-    if (await this.userRepo.findByEmail(input.email)) {
+    const existingUser = await this.userRepo.findByEmail(input.email)
+    if (existingUser && (existingUser.emailVerifiedAt || existingUser.role === 'ADMIN')) {
       throw new DomainError('Email already in use', 'CONFLICT', 409)
     }
-    if (await this.companyRepo.findByCnpj(cnpj)) {
+    if (await this.companyRepo.hasVerifiedOwner(cnpj)) {
       throw new DomainError('Já existe uma conta para este CNPJ', 'CNPJ_ALREADY_REGISTERED', 409)
     }
 
@@ -42,6 +45,14 @@ export class RegisterCompanyUseCase {
     if (!info) throw new DomainError('CNPJ não encontrado na Receita Federal', 'CNPJ_NOT_FOUND', 422)
     if (info.status !== 'ATIVA') {
       throw new DomainError(`CNPJ com situação cadastral ${info.status || 'desconhecida'}`, 'CNPJ_NOT_ACTIVE', 422)
+    }
+
+    // contas que nunca verificaram o email (email errado, cadastro abandonado) não seguram email nem CNPJ
+    if (existingUser && !(await this.userRepo.deleteUnverifiedByEmail(input.email))) {
+      throw new DomainError('Email already in use', 'CONFLICT', 409)
+    }
+    if (!(await this.companyRepo.removeUnverifiedByCnpj(cnpj))) {
+      throw new DomainError('Já existe uma conta para este CNPJ', 'CNPJ_ALREADY_REGISTERED', 409)
     }
 
     const passwordHash = await this.hash.hash(input.password)
@@ -60,11 +71,13 @@ export class RegisterCompanyUseCase {
       },
     })
 
-    const accessToken = this.token.signAccess({ id: user.id, role: user.role })
+    const accessToken = this.token.signAccess({ id: user.id, email: user.email, role: user.role, emailVerified: !!user.emailVerifiedAt })
     const { raw, hashed } = this.token.generateRefreshToken()
     const familyId = randomBytes(16).toString('hex')
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     await this.refreshTokenRepo.create({ tokenHash: hashed, familyId, userId: user.id, expiresAt })
+
+    await this.sendVerification?.execute(user.id).catch(() => undefined)
 
     return { accessToken, refreshToken: raw }
   }

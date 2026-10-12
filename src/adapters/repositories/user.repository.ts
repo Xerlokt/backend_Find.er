@@ -2,6 +2,7 @@ import { Role } from '@prisma/client'
 import { prisma } from '../../infrastructure/database/prisma'
 import { IUserRepository, UserPublic } from '../../domain/interfaces/user.repository.interface'
 import { User, UserRole } from '../../domain/entities/user.entity'
+import { DomainError } from '../../application/errors/domain.error'
 
 export class UserRepository implements IUserRepository {
   async findByEmail(email: string): Promise<User | null> {
@@ -17,6 +18,39 @@ export class UserRepository implements IUserRepository {
   async create(data: { email: string; passwordHash: string; role: UserRole }): Promise<User> {
     const row = await prisma.user.create({ data: { ...data, role: data.role as Role } })
     return this.toDomain(row)
+  }
+
+  async markEmailVerified(id: string): Promise<void> {
+    await prisma.user.update({ where: { id }, data: { emailVerifiedAt: new Date() } })
+  }
+
+  async updateEmail(id: string, email: string): Promise<void> {
+    try {
+      await prisma.user.update({ where: { id }, data: { email } })
+    } catch (e: any) {
+      if (e?.code === 'P2002') throw new DomainError('Email already in use', 'CONFLICT', 409)
+      throw e
+    }
+  }
+
+  async deleteUnverifiedByEmail(email: string): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { email },
+        include: { recruiterProfile: true },
+      })
+      if (!user || user.emailVerifiedAt || user.role === 'ADMIN') return false
+
+      await tx.user.delete({ where: { id: user.id } })
+      const companyId = user.recruiterProfile?.companyId
+      if (companyId) {
+        // conta nova nunca verificou o email, então não pode ter vagas/chats: só remove empresa órfã
+        const left = await tx.recruiterProfile.count({ where: { companyId } })
+        const jobs = await tx.job.count({ where: { companyId } })
+        if (left === 0 && jobs === 0) await tx.company.delete({ where: { id: companyId } })
+      }
+      return true
+    })
   }
 
   async updateGoogleId(id: string, googleId: string, avatarUrl?: string): Promise<User> {
@@ -46,6 +80,7 @@ export class UserRepository implements IUserRepository {
           data: {
             googleId: data.googleId,
             avatarUrl: data.avatarUrl ?? existing.avatarUrl,
+            emailVerifiedAt: existing.emailVerifiedAt ?? new Date(),
           },
         })
         return { user: this.toDomain(updated), isNew: false }
@@ -58,6 +93,7 @@ export class UserRepository implements IUserRepository {
           googleId: data.googleId,
           avatarUrl: data.avatarUrl,
           role: data.role as Role,
+          emailVerifiedAt: new Date(),
         },
       })
       return { user: this.toDomain(created), isNew: true }
@@ -68,7 +104,7 @@ export class UserRepository implements IUserRepository {
     const rows = await prisma.user.findMany({
       skip: opts.skip,
       take: opts.take,
-      select: { id: true, email: true, role: true, avatarUrl: true, createdAt: true },
+      select: { id: true, email: true, role: true, avatarUrl: true, createdAt: true, emailVerifiedAt: true },
       orderBy: { createdAt: 'desc' },
     })
     return rows as UserPublic[]
@@ -77,7 +113,7 @@ export class UserRepository implements IUserRepository {
   async findByIdPublic(id: string): Promise<UserPublic | null> {
     const row = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, role: true, avatarUrl: true, createdAt: true },
+      select: { id: true, email: true, role: true, avatarUrl: true, createdAt: true, emailVerifiedAt: true },
     })
     return row as UserPublic | null
   }
@@ -90,6 +126,7 @@ export class UserRepository implements IUserRepository {
     avatarUrl: string | null
     role: Role
     createdAt: Date
+    emailVerifiedAt: Date | null
   }): User {
     return {
       id: row.id,
@@ -99,6 +136,7 @@ export class UserRepository implements IUserRepository {
       avatarUrl: row.avatarUrl,
       role: row.role as UserRole,
       createdAt: row.createdAt,
+      emailVerifiedAt: row.emailVerifiedAt,
     }
   }
 }

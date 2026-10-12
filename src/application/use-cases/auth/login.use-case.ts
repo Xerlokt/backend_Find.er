@@ -35,7 +35,7 @@ export class LoginUseCase {
       throw new DomainError('Invalid credentials', 'INVALID_CREDENTIALS', 401)
     }
 
-    const accessToken = this.token.signAccess({ id: user.id, role: user.role })
+    const accessToken = this.token.signAccess({ id: user.id, email: user.email, role: user.role, emailVerified: !!user.emailVerifiedAt })
     const { raw, hashed } = this.token.generateRefreshToken()
     const familyId = randomBytes(16).toString('hex')
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)

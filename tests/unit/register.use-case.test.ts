@@ -8,6 +8,9 @@ const makeUserRepo = (): jest.Mocked<IUserRepository> => ({
   findByEmail: jest.fn(),
   findById: jest.fn(),
   create: jest.fn(),
+  markEmailVerified: jest.fn(),
+  updateEmail: jest.fn(),
+  deleteUnverifiedByEmail: jest.fn(),
   updateGoogleId: jest.fn(),
   findOrCreateGoogle: jest.fn(),
   findMany: jest.fn(),
@@ -40,12 +43,24 @@ describe('RegisterUseCase', () => {
 
   it('throws CONFLICT (409) when email already exists', async () => {
     const userRepo = makeUserRepo()
-    userRepo.findByEmail.mockResolvedValue({ id: 'u1' } as any)
+    userRepo.findByEmail.mockResolvedValue({ id: 'u1', emailVerifiedAt: new Date() } as any)
     const uc = new RegisterUseCase(userRepo, makeRefreshRepo(), makeHash(), makeToken())
     await expect(uc.execute({ email: 'a@b.com', password: 'pass', role: 'CANDIDATE' })).rejects.toMatchObject({
       code: 'CONFLICT',
       statusCode: 409,
     })
+  })
+
+  it('substitui a conta antiga quando o email existe mas nunca foi verificado', async () => {
+    const userRepo = makeUserRepo()
+    userRepo.findByEmail.mockResolvedValue({ id: 'old', emailVerifiedAt: null } as any)
+    userRepo.deleteUnverifiedByEmail.mockResolvedValue(true)
+    userRepo.create.mockResolvedValue({ id: 'u2', role: 'CANDIDATE' } as any)
+    const refreshRepo = makeRefreshRepo()
+    refreshRepo.create.mockResolvedValue({} as any)
+    const uc = new RegisterUseCase(userRepo, refreshRepo, makeHash(), makeToken())
+    await expect(uc.execute({ email: 'a@b.com', password: 'password1', role: 'CANDIDATE' })).resolves.toHaveProperty('accessToken')
+    expect(userRepo.deleteUnverifiedByEmail).toHaveBeenCalledWith('a@b.com')
   })
 
   it('returns accessToken and refreshToken on successful registration', async () => {

@@ -64,6 +64,9 @@ npm run test:integration      # Apenas integração (requer Docker rodando)
 | `POST` | `/auth/login` | Login — retorna access + refresh token |
 | `POST` | `/auth/refresh` | Troca refresh token por novo access token |
 | `POST` | `/auth/logout` | Invalida o refresh token |
+| `POST` | `/auth/email/send` | (logado) envia/reenvia o código de 6 dígitos por email (reenvio a cada 60s) |
+| `POST` | `/auth/email/verify` | (logado) confere o código (10 min, 5 tentativas) e devolve tokens com `emailVerified` |
+| `POST` | `/auth/email/change` | (logado, email não verificado) corrige o email, manda código novo e devolve tokens com o email atualizado |
 | `POST` | `/auth/google` | Login via Google OAuth2 |
 
 ### Candidatos
@@ -205,6 +208,19 @@ O bônus DISC é sempre aditivo — nunca penaliza, nunca filtra.
 
 ---
 
+## Verificação de email
+
+Todo usuário (candidato e recrutador) precisa validar o email com um código antes de usar a API:
+
+- `register` e `register-company` criam a conta e enviam um **código de 6 dígitos** (hash HMAC no banco, tabela `EmailVerification`; vale 10 min, 5 tentativas erradas, reenvio a cada 60 s).
+- O JWT carrega `email` e `emailVerified`. O hook `authenticate` responde `403 EMAIL_NOT_VERIFIED` para quem não validou; só `authenticateUnverified` (rotas `/auth/email/*`) deixa passar.
+- `POST /auth/email/verify` marca `emailVerifiedAt` e devolve tokens novos já verificados. Contas Google e ADMIN já nascem verificadas.
+- Conta que nunca verificou o email **não segura email nem CNPJ**: recadastrar (ou trocar para esse email) apaga a conta antiga e a empresa órfã. Contas verificadas continuam dando 409.
+- Envio: porta `IMailerPort` + `NodemailerAdapter` (SMTP genérico). Sem `SMTP_HOST`, imprime o código no log. Nos testes (`buildApp({ testing: true })`) o mailer é silencioso.
+- Migration `20261012000000_add_email_verification`: rode `npx prisma migrate deploy`. Contas existentes ficam não verificadas (exceto ADMIN e Google).
+
+---
+
 ## Variáveis de ambiente
 
 Copie `.env.example` e preencha:
@@ -221,7 +237,12 @@ GOOGLE_CLIENT_ID       # OAuth2
 GOOGLE_CLIENT_SECRET
 GOOGLE_CALLBACK_URL
 PORT                   # default 3000
-ALLOWED_ORIGINS        # CORS whitelist
+ALLOWED_ORIGINS        # CORS whitelist — inclua a origem do site (ex: http://localhost:5173)
+SMTP_HOST              # servidor SMTP do envio de email (vazio = o código vai só para o log do servidor)
+SMTP_PORT              # 587 (STARTTLS) ou 465 (SSL)
+SMTP_USER
+SMTP_PASS              # Gmail: senha de app; produção: credencial do provedor (Resend, Brevo, SES…)
+MAIL_FROM              # remetente, ex: Find.er <no-reply@seudominio.com>
 ```
 
 ---

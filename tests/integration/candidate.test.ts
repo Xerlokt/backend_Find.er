@@ -1,7 +1,7 @@
 import '../helpers/setup'
 import { buildApp } from '../../src/app'
 import supertest from 'supertest'
-import { createUser } from '../helpers/factories'
+import { createUser, registerVerified } from '../helpers/factories'
 
 describe('Candidate Routes — Integration', () => {
   // ── 401 unauthenticated access ─────────────────────────────────────────
@@ -20,18 +20,12 @@ describe('Candidate Routes — Integration', () => {
   // Helper: registra um candidato e retorna o accessToken
   async function loginAsCandidate(app: Awaited<ReturnType<typeof buildApp>>, email?: string): Promise<string> {
     const userEmail = email ?? `candidate-${Date.now()}@test.com`
-    const res = await supertest(app.server)
-      .post('/auth/register')
-      .send({ email: userEmail, password: 'password123', role: 'CANDIDATE' })
-    return res.body.accessToken
+    return registerVerified(app, { email: userEmail, role: 'CANDIDATE' })
   }
 
   // Helper: registra um recruiter e retorna o accessToken
   async function loginAsRecruiter(app: Awaited<ReturnType<typeof buildApp>>): Promise<string> {
-    const res = await supertest(app.server)
-      .post('/auth/register')
-      .send({ email: `recruiter-${Date.now()}@test.com`, password: 'password123', role: 'RECRUITER' })
-    return res.body.accessToken
+    return registerVerified(app, { email: `recruiter-${Date.now()}@test.com`, role: 'RECRUITER' })
   }
 
   const validBody = {

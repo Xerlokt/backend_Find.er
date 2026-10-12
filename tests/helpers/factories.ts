@@ -1,3 +1,4 @@
+import supertest from 'supertest'
 import { prisma } from '../../src/infrastructure/database/prisma'
 import bcrypt from 'bcryptjs'
 import { Modality, Role } from '@prisma/client'
@@ -12,6 +13,7 @@ export async function createUser(overrides: Partial<{
     data: {
       email: overrides.email ?? `user-${Date.now()}-${Math.random().toString(36).slice(2)}@test.com`,
       role: overrides.role ?? 'CANDIDATE',
+      emailVerifiedAt: new Date(),
       passwordHash: overrides.passwordHash ?? await bcrypt.hash('password123', 12),
     },
   })
@@ -167,4 +169,16 @@ export async function createMessage(
       readAt: overrides.readAt ?? null,
     },
   })
+}
+
+/** Cadastra pela API, marca o email como verificado e devolve um accessToken já com emailVerified. */
+export async function registerVerified(
+  app: { server: Parameters<typeof supertest>[0] },
+  data: { email: string; role: 'CANDIDATE' | 'RECRUITER'; password?: string },
+): Promise<string> {
+  const password = data.password ?? 'password123'
+  await supertest(app.server).post('/auth/register').send({ email: data.email, password, role: data.role })
+  await prisma.user.update({ where: { email: data.email }, data: { emailVerifiedAt: new Date() } })
+  const login = await supertest(app.server).post('/auth/login').send({ email: data.email, password })
+  return login.body.accessToken
 }

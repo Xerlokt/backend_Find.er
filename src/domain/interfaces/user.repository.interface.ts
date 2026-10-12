@@ -4,6 +4,14 @@ export interface IUserRepository {
   findByEmail(email: string): Promise<User | null>
   findById(id: string): Promise<User | null>
   create(data: { email: string; passwordHash: string; role: UserRole }): Promise<User>
+  markEmailVerified(id: string): Promise<void>
+  /** Troca o email de uma conta (só usada enquanto não verificada). Email duplicado → CONFLICT 409. */
+  updateEmail(id: string, email: string): Promise<void>
+  /**
+   * Apaga a conta com esse email se ela nunca verificou o email (e não é ADMIN), junto com a empresa
+   * que ficaria sem recrutadores. Devolve true se apagou algo.
+   */
+  deleteUnverifiedByEmail(email: string): Promise<boolean>
   updateGoogleId(id: string, googleId: string, avatarUrl?: string): Promise<User>
   findOrCreateGoogle(data: {
     googleId: string

@@ -21,6 +21,30 @@ export class CompanyRepository implements ICompanyRepository {
     return row ? this.toDomain(row) : null
   }
 
+  async hasVerifiedOwner(cnpj: string): Promise<boolean> {
+    const company = await prisma.company.findUnique({
+      where: { cnpj },
+      include: { recruiters: { include: { user: { select: { emailVerifiedAt: true } } } } },
+    })
+    return !!company?.recruiters.some((r) => r.user.emailVerifiedAt)
+  }
+
+  async removeUnverifiedByCnpj(cnpj: string): Promise<boolean> {
+    return prisma.$transaction(async (tx) => {
+      const company = await tx.company.findUnique({
+        where: { cnpj },
+        include: { recruiters: { include: { user: { select: { id: true, emailVerifiedAt: true } } } } },
+      })
+      if (!company) return true
+      if (company.recruiters.some((r) => r.user.emailVerifiedAt)) return false
+      if ((await tx.job.count({ where: { companyId: company.id } })) > 0) return false
+
+      await tx.user.deleteMany({ where: { id: { in: company.recruiters.map((r) => r.user.id) } } })
+      await tx.company.delete({ where: { id: company.id } })
+      return true
+    })
+  }
+
   async createWithRecruiter(data: Parameters<ICompanyRepository['createWithRecruiter']>[0]) {
     try {
       return await prisma.$transaction(async (tx) => {

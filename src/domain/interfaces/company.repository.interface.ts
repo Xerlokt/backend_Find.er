@@ -10,6 +10,13 @@ export interface ICompanyRepository {
   }): Promise<Company>
   findById(id: string): Promise<Company | null>
   findByCnpj(cnpj: string): Promise<Company | null>
+  /** true se o CNPJ pertence a uma empresa com ao menos um recrutador de email verificado. */
+  hasVerifiedOwner(cnpj: string): Promise<boolean>
+  /**
+   * Libera um CNPJ preso por cadastro nunca verificado: apaga a empresa e seus recrutadores,
+   * desde que nenhum tenha verificado o email. Devolve true se liberou (ou se não havia dono).
+   */
+  removeUnverifiedByCnpj(cnpj: string): Promise<boolean>
   /** Cria usuário RECRUITER + empresa + vínculo numa única transação. */
   createWithRecruiter(data: {
     email: string

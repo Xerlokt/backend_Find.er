@@ -7,6 +7,7 @@ import rateLimitPlugin from './infrastructure/http/plugins/rate-limit.plugin'
 import { schedulerPlugin } from './infrastructure/http/plugins/scheduler.plugin'
 import { errorHandler } from './infrastructure/http/plugins/error-handler'
 import { healthRoutes } from './infrastructure/http/routes/health.routes'
+import { IMailerPort } from './application/ports/mailer.port'
 import { ICnpjLookupPort } from './application/ports/cnpj-lookup.port'
 import { authRoutes } from './infrastructure/http/routes/auth.routes'
 import { candidateRoutes } from './infrastructure/http/routes/candidate.routes'
@@ -32,10 +33,15 @@ import { RedisAdapter } from './adapters/services/redis.adapter'
 import { getRedisClient, closeRedis } from './infrastructure/database/redis'
 import { WeightsRepository } from './adapters/repositories/weights.repository'
 
+// em teste nunca fala com SMTP de verdade, mesmo que o .env tenha credenciais
+const silentMailer: IMailerPort = { sendVerificationCode: async () => undefined }
+
 export interface BuildAppOptions {
   testing?: boolean
   /** injeção da consulta de CNPJ (testes); padrão: BrasilAPI */
   cnpjLookup?: ICnpjLookupPort
+  /** injeção do envio de email (testes); padrão: SMTP via nodemailer */
+  mailer?: IMailerPort
 }
 
 export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -75,7 +81,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
 
   // Routes
   await app.register(healthRoutes)
-  await app.register(authRoutes, { prefix: '/auth', cnpjLookup: opts.cnpjLookup })
+  await app.register(authRoutes, { prefix: '/auth', cnpjLookup: opts.cnpjLookup, mailer: opts.mailer ?? (opts.testing ? silentMailer : undefined) })
   await app.register(candidateRoutes, { prefix: '/candidates', cache: redisAdapter })
   await app.register(discRoutes, { prefix: '/candidates' })
   await app.register(companyRoutes, { prefix: '/companies' })

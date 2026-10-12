@@ -1,15 +1,13 @@
 import '../helpers/setup'
 import { buildApp } from '../../src/app'
 import supertest from 'supertest'
+import { registerVerified } from '../helpers/factories'
 
 describe('DISC Routes — Integration', () => {
   // Helper: register and login as a CANDIDATE, return token + candidateId
   async function setupCandidate(app: Awaited<ReturnType<typeof buildApp>>) {
     const email = `disc-test-${Date.now()}-${Math.random().toString(36).slice(2)}@test.com`
-    const regRes = await supertest(app.server)
-      .post('/auth/register')
-      .send({ email, password: 'password123', role: 'CANDIDATE' })
-    const token = regRes.body.accessToken
+    const token = await registerVerified(app, { email, role: 'CANDIDATE' })
 
     // Create CandidateProfile (required for DISC ownership check)
     const profileRes = await supertest(app.server)
@@ -30,10 +28,7 @@ describe('DISC Routes — Integration', () => {
   // Helper: register and login as a RECRUITER, return token
   async function setupRecruiter(app: Awaited<ReturnType<typeof buildApp>>) {
     const email = `disc-recruiter-${Date.now()}-${Math.random().toString(36).slice(2)}@test.com`
-    const res = await supertest(app.server)
-      .post('/auth/register')
-      .send({ email, password: 'password123', role: 'RECRUITER' })
-    return res.body.accessToken
+    return registerVerified(app, { email, role: 'RECRUITER' })
   }
 
   it('401 — POST /candidates/:id/disc without Authorization header', async () => {

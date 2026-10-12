@@ -40,12 +40,25 @@ model User {
   avatarUrl    String?
   role         Role
   createdAt    DateTime  @default(now())
+  emailVerifiedAt DateTime?
 
   candidateProfile CandidateProfile?
   recruiterProfile RecruiterProfile?
   sentMessages     Message[]         @relation("SentMessages")
   refreshTokens    RefreshToken[]
   pushTokens       PushToken[]
+  emailVerification EmailVerification?
+}
+
+model EmailVerification {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  lastSentAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 model PushToken {

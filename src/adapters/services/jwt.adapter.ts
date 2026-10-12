@@ -5,7 +5,7 @@ import { ITokenPort } from '../../application/ports/token.port'
 export class JwtAdapter implements ITokenPort {
   constructor(private readonly app: FastifyInstance) {}
 
-  signAccess(payload: { id: string; role: string }): string {
+  signAccess(payload: { id: string; email: string; role: string; emailVerified: boolean }): string {
     return this.app.jwt.sign(payload, { expiresIn: '15m' })
   }
 
@@ -15,7 +15,7 @@ export class JwtAdapter implements ITokenPort {
     return { raw, hashed }
   }
 
-  verifyAccess(token: string): { id: string; role: string } {
+  verifyAccess(token: string): { id: string; email: string; role: string; emailVerified: boolean } {
     return this.app.jwt.verify(token)
   }
 }

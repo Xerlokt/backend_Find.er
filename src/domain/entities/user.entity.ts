@@ -8,4 +8,5 @@ export interface User {
   avatarUrl: string | null
   role: UserRole
   createdAt: Date
+  emailVerifiedAt: Date | null
 }

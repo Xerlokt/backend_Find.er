@@ -38,7 +38,7 @@ export class RefreshTokenUseCase {
       throw new DomainError('User not found', 'UNAUTHORIZED', 401)
     }
 
-    const accessToken = this.token.signAccess({ id: user.id, role: user.role })
+    const accessToken = this.token.signAccess({ id: user.id, email: user.email, role: user.role, emailVerified: !!user.emailVerifiedAt })
     const { raw, hashed } = this.token.generateRefreshToken()
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     await this.refreshTokenRepo.create({
