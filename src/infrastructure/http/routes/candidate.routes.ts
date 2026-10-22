@@ -11,4 +11,5 @@ export async function candidateRoutes(app: FastifyInstance, opts: CandidateRoute
 
   app.put('/me', { preHandler: [authenticate, requireRole('CANDIDATE')] }, ctrl.upsertProfile.bind(ctrl))
   app.get('/me', { preHandler: [authenticate, requireRole('CANDIDATE')] }, ctrl.getProfile.bind(ctrl))
+  app.get('/me/metrics', { preHandler: [authenticate, requireRole('CANDIDATE')] }, ctrl.getMetrics.bind(ctrl))
 }

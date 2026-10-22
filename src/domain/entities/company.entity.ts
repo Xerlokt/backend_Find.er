@@ -13,4 +13,11 @@ export interface Company {
   planExpiresAt: Date | null
   credits: number
   createdAt: Date
+  photos?: CompanyPhoto[]
+}
+
+export interface CompanyPhoto {
+  id: string
+  url: string
+  position: number
 }

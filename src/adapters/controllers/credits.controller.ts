@@ -5,26 +5,29 @@ import { UnlockCandidateUseCase } from '../../application/use-cases/credits/unlo
 import { DomainError } from '../../application/errors/domain.error'
 import { haversineKm } from '../../application/utils/haversine'
 import { IChatPort } from '../../application/ports/chat.port'
+import { ICachePort } from '../../application/ports/cache.port'
 
 const UnlockParamsSchema = z.object({
   jobId: z.string().uuid(),
-  candidateId: z.string().uuid(),
+  // opaque unlockToken from the ranking (a raw candidate uuid is still accepted)
+  candidateId: z.string().min(1).max(512),
 })
 
 export class CreditsController {
   private readonly creditRepo: CreditRepository
   private readonly useCase: UnlockCandidateUseCase
 
-  constructor(chat: IChatPort) {
+  constructor(chat: IChatPort, cache?: ICachePort) {
     this.creditRepo = new CreditRepository()
-    this.useCase = new UnlockCandidateUseCase(this.creditRepo, chat)
+    this.useCase = new UnlockCandidateUseCase(this.creditRepo, chat, cache)
   }
 
   async unlock(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { jobId, candidateId } = UnlockParamsSchema.parse(request.params)
+    const { jobId, candidateId: candidateRef } = UnlockParamsSchema.parse(request.params)
 
     try {
-      const unlock = await this.useCase.execute(request.user.id, jobId, candidateId)
+      const unlock = await this.useCase.execute(request.user.id, jobId, candidateRef)
+      const candidateId = unlock.candidateId
 
       // Response enrichment — controller concern, not business logic
       // job cannot be null here: use case would have thrown NOT_FOUND otherwise

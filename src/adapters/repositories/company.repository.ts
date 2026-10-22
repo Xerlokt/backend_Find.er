@@ -1,7 +1,7 @@
 import { prisma } from '../../infrastructure/database/prisma'
-import { ICompanyRepository } from '../../domain/interfaces/company.repository.interface'
+import { ICompanyRepository, JobStatsRow } from '../../domain/interfaces/company.repository.interface'
 import { User } from '../../domain/entities/user.entity'
-import { Company } from '../../domain/entities/company.entity'
+import { Company, CompanyPhoto } from '../../domain/entities/company.entity'
 import { CreditTransaction } from '../../domain/entities/credit-transaction.entity'
 import { DomainError } from '../../application/errors/domain.error'
 
@@ -12,8 +12,68 @@ export class CompanyRepository implements ICompanyRepository {
   }
 
   async findById(id: string): Promise<Company | null> {
-    const row = await prisma.company.findUnique({ where: { id } })
+    const row = await prisma.company.findUnique({
+      where: { id },
+      include: { photos: { orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] } },
+    })
     return row ? this.toDomain(row) : null
+  }
+
+  async update(id: string, data: { description?: string | null; tradeName?: string | null; logoUrl?: string | null }): Promise<Company> {
+    const row = await prisma.company.update({
+      where: { id },
+      data,
+      include: { photos: { orderBy: [{ position: 'asc' }, { createdAt: 'asc' }] } },
+    })
+    return this.toDomain(row)
+  }
+
+  countPhotos(companyId: string): Promise<number> {
+    return prisma.companyPhoto.count({ where: { companyId } })
+  }
+
+  async addPhoto(companyId: string, url: string): Promise<CompanyPhoto> {
+    const last = await prisma.companyPhoto.aggregate({ where: { companyId }, _max: { position: true } })
+    const row = await prisma.companyPhoto.create({ data: { companyId, url, position: (last._max.position ?? -1) + 1 } })
+    return { id: row.id, url: row.url, position: row.position }
+  }
+
+  async findPhoto(companyId: string, photoId: string): Promise<CompanyPhoto | null> {
+    const row = await prisma.companyPhoto.findFirst({ where: { id: photoId, companyId } })
+    return row ? { id: row.id, url: row.url, position: row.position } : null
+  }
+
+  async deletePhoto(photoId: string): Promise<void> {
+    await prisma.companyPhoto.delete({ where: { id: photoId } })
+  }
+
+  async getJobStats(companyId: string): Promise<JobStatsRow[]> {
+    const jobs = await prisma.job.findMany({
+      where: { companyId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, title: true, isActive: true, createdAt: true, _count: { select: { views: true } } },
+    })
+    const swipes = await prisma.swipe.groupBy({
+      by: ['jobId', 'direction'],
+      where: { job: { companyId } },
+      _count: { _all: true },
+    })
+    const count = (jobId: string, direction: string) =>
+      swipes.find((s) => s.jobId === jobId && s.direction === direction)?._count._all ?? 0
+    return jobs.map((j) => ({
+      jobId: j.id,
+      title: j.title,
+      isActive: j.isActive,
+      createdAt: j.createdAt,
+      views: j._count.views,
+      likes: count(j.id, 'LIKE'),
+      dislikes: count(j.id, 'DISLIKE'),
+    }))
+  }
+
+  async recruiterBelongsToCompany(userId: string, companyId: string): Promise<boolean> {
+    const row = await prisma.recruiterProfile.findFirst({ where: { userId, companyId }, select: { id: true } })
+    return row !== null
   }
 
   async findByCnpj(cnpj: string): Promise<Company | null> {
@@ -110,6 +170,9 @@ export class CompanyRepository implements ICompanyRepository {
       planExpiresAt: row.planExpiresAt,
       credits: row.credits,
       createdAt: row.createdAt,
+      ...(row.photos
+        ? { photos: row.photos.map((p: any) => ({ id: p.id, url: p.url, position: p.position })) }
+        : {}),
     }
   }
 }

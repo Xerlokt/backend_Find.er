@@ -21,7 +21,8 @@ Deliver the credit unlock flow: recruiters spend company credits to reveal censo
 ### Unlock Endpoint
 - **D-04:** `POST /jobs/:jobId/candidates/:candidateId/unlock` — RECRUITER only (`requireRole('CANDIDATE')` excluded). Ownership check: authenticated recruiter must be the `recruiterId` of the job (same pattern as ranking in Phase 5).
 - **D-05:** On success, returns the **full revealed candidate profile** (name, avatarUrl, bio, skills, profession, modalities, salaryExpectation, distanceKm). The recruiter sees the result immediately without needing to reload the ranking.
-- **D-06:** The candidate targeted must have swiped `DISLIKE` on this job. Attempting to unlock a LIKE candidate (who is already visible) is an error — Claude's discretion on status code (422 or 400).
+- **D-06 (revisada):** Pode ser desbloqueado quem deu `DISLIKE` **ou nunca deu swipe** na vaga (melhores candidatos por fit, listados censurados no ranking). Desbloquear quem deu `LIKE` (já visível) é erro 422 `CANDIDATE_ALREADY_VISIBLE`. Candidato inexistente: 404. O ranking entrega aos itens censurados um `unlockToken` opaco (AES-GCM, preso à vaga, `src/application/utils/unlock-token.ts`) no lugar do `candidateId`, e o endpoint aceita o token no parâmetro `:candidateId`.
+  - *Original:* The candidate targeted must have swiped `DISLIKE` on this job.
 
 ### Credit Cost by Plan
 - **D-07:** Cost is configurable by company plan, hardcoded as a constant: `UNLOCK_COST_BY_PLAN = { FREE: 2, PRO: 1 }`. Lives in the credits module (e.g., `src/modules/credits/credits.constants.ts`).

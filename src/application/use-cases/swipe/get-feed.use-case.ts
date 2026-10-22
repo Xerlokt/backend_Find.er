@@ -44,6 +44,9 @@ export class GetFeedUseCase {
     const data = hasNext ? jobs.slice(0, limit) : jobs
     const nextCursor = hasNext ? data[data.length - 1].id : null
 
+    // Impressão para as estatísticas da empresa; falhar aqui não pode derrubar o feed
+    try { await this.repo.recordViews(candidate.id, data.map((j) => j.id)) } catch { /* ok */ }
+
     // FitScoreInput requires id field — construct explicitly (Pitfall 3 — old IRecommendationService did not require id)
     const scoredData = await Promise.all(
       data.map(async (job) => ({

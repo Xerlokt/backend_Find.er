@@ -8,9 +8,11 @@ const makeSwipeRepo = (): jest.Mocked<ISwipeRepository> => ({
   findJobById: jest.fn(),
   createSwipe: jest.fn(),
   findSwipesByJobId: jest.fn(),
+  findCandidatePoolForJob: jest.fn().mockResolvedValue([]),
   findRecruiterProfileByUserId: jest.fn(),
   findUnlocksByJobAndCompany: jest.fn(),
   findFeedJobs: jest.fn(),
+  recordViews: jest.fn().mockResolvedValue(undefined),
 } as jest.Mocked<ISwipeRepository>)
 
 const makeRecRepo = (): jest.Mocked<IRecommendationRepository> => ({
@@ -386,5 +388,112 @@ describe('buildFitReasons() pure function', () => {
       [],
     )
     expect(reasons).toContain('different profession')
+  })
+})
+
+describe('GetRankingUseCase — candidates without swipe (best-fit pool)', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    process.env.JWT_SECRET = 'test-secret'
+  })
+
+  const setup = () => {
+    const repo = makeSwipeRepo()
+    const rec = makeRecRepo()
+    const cache = makeCache()
+    repo.findRecruiterProfileByUserId.mockResolvedValue(recruiterProfile as any)
+    repo.findJobById.mockResolvedValue(jobItem as any)
+    repo.findUnlocksByJobAndCompany.mockResolvedValue(new Set<string>())
+    return { repo, rec, cache, uc: new GetRankingUseCase(repo, rec, cache) }
+  }
+  const pooled = (id: string) => ({
+    candidateId: id,
+    candidate: { ...candidateProfile, id, name: `Name-${id}`, avatarUrl: 'http://img/' + id, bio: 'secret bio', discDominant: null },
+  })
+
+  it('includes candidates who never swiped, censored, with an opaque unlockToken and no candidateId', async () => {
+    const { repo, rec, uc } = setup()
+    repo.findSwipesByJobId.mockResolvedValue([])
+    repo.findCandidatePoolForJob.mockResolvedValue([pooled('cand-9')] as any)
+    rec.computeFitScore.mockResolvedValue(0.8)
+
+    const result = await uc.execute('user-1', 'job-1')
+
+    expect(repo.findCandidatePoolForJob).toHaveBeenCalledWith('job-1', 'backend-dev', expect.any(Number))
+    expect(result).toHaveLength(1)
+    expect(result[0].status).toBe('LOCKED')
+    expect(result[0]).not.toHaveProperty('candidateId')
+    expect(result[0].unlockToken).toEqual(expect.any(String))
+    expect(result[0].profile.name).toBeNull()
+    const raw = JSON.stringify(result)
+    expect(raw).not.toContain('cand-9')
+    expect(raw).not.toContain('Name-cand-9')
+    expect(raw).not.toContain('secret bio')
+    expect(raw).not.toContain('http://img/')
+  })
+
+  it('unlockToken resolves back to the candidate for this job only', async () => {
+    const { repo, rec, uc } = setup()
+    repo.findSwipesByJobId.mockResolvedValue([])
+    repo.findCandidatePoolForJob.mockResolvedValue([pooled('cand-9')] as any)
+    rec.computeFitScore.mockResolvedValue(0.8)
+
+    const [item] = await uc.execute('user-1', 'job-1')
+
+    const { decodeUnlockToken } = await import('../../src/application/utils/unlock-token')
+    expect(decodeUnlockToken(item.unlockToken!, 'job-1')).toBe('cand-9')
+    expect(decodeUnlockToken(item.unlockToken!, 'job-2')).toBeNull()
+  })
+
+  it('LIKE is revealed (status REVEALED, candidateId present, no unlockToken); DISLIKE stays LOCKED', async () => {
+    const { repo, rec, uc } = setup()
+    const sw = (id: string, direction: string) => ({ id: 's-' + id, candidateId: id, jobId: 'job-1', direction, swipedAt: new Date(), candidate: { ...candidateProfile, id } })
+    repo.findSwipesByJobId.mockResolvedValue([sw('cand-like', 'LIKE'), sw('cand-dis', 'DISLIKE')] as any)
+    rec.computeFitScore.mockResolvedValue(0.5)
+
+    const result = await uc.execute('user-1', 'job-1')
+    const like = result.find((r: any) => r.candidateId === 'cand-like')!
+    const dis = result.find((r: any) => r.status === 'LOCKED')!
+
+    expect(like.status).toBe('REVEALED')
+    expect(like.unlockToken).toBeUndefined()
+    expect(dis).not.toHaveProperty('candidateId')
+    expect(dis.unlockToken).toEqual(expect.any(String))
+  })
+
+  it('unlocked pool candidate is revealed', async () => {
+    const { repo, rec, uc } = setup()
+    repo.findSwipesByJobId.mockResolvedValue([])
+    repo.findCandidatePoolForJob.mockResolvedValue([pooled('cand-9')] as any)
+    repo.findUnlocksByJobAndCompany.mockResolvedValue(new Set(['cand-9']))
+    rec.computeFitScore.mockResolvedValue(0.8)
+
+    const [item] = await uc.execute('user-1', 'job-1')
+    expect(item.status).toBe('REVEALED')
+    expect(item.candidateId).toBe('cand-9')
+    expect(item.profile.name).toBe('Name-cand-9')
+  })
+
+  it('merges swipes and pool, sorted by fitScore DESC with ranks', async () => {
+    const { repo, rec, uc } = setup()
+    repo.findSwipesByJobId.mockResolvedValue([
+      { id: 's1', candidateId: 'cand-1', jobId: 'job-1', direction: 'LIKE', swipedAt: new Date(), candidate: { ...candidateProfile, id: 'cand-1' } },
+    ] as any)
+    repo.findCandidatePoolForJob.mockResolvedValue([pooled('cand-9')] as any)
+    rec.computeFitScore.mockImplementation(async (c: any) => (c.id === 'cand-9' ? 0.95 : 0.4))
+
+    const result = await uc.execute('user-1', 'job-1')
+    expect(result.map((r: any) => r.rank)).toEqual([1, 2])
+    expect(result[0].status).toBe('LOCKED')
+    expect(result[1].candidateId).toBe('cand-1')
+  })
+})
+
+describe('censorProfile — no swipe', () => {
+  it('direction null is censored unless unlocked', () => {
+    const cand = { ...candidateProfile, discDominant: null } as any
+    const job = { requiredSkills: ['nodejs'], salaryMin: null, salaryMax: null, professionId: 'backend-dev' }
+    expect((censorProfile({ direction: null, candidate: cand }, job, false) as any).name).toBeNull()
+    expect((censorProfile({ direction: null, candidate: cand }, job, true) as any).name).toBe('Alice')
   })
 })

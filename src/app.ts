@@ -1,5 +1,8 @@
 import Fastify, { FastifyInstance } from 'fastify'
 import fastifyWebsocket from '@fastify/websocket'
+import fastifyMultipart from '@fastify/multipart'
+import fastifyStatic from '@fastify/static'
+import { mkdirSync } from 'fs'
 import helmetPlugin from './infrastructure/http/plugins/helmet.plugin'
 import corsPlugin from './infrastructure/http/plugins/cors.plugin'
 import jwtPlugin from './infrastructure/http/plugins/jwt.plugin'
@@ -18,7 +21,7 @@ import { CreditRepository } from './adapters/repositories/credit.repository'
 import { CreditService } from './adapters/services/credit.service'
 import { jobRoutes } from './infrastructure/http/routes/job.routes'
 import { swipeRoutes, swipeJobRoutes } from './infrastructure/http/routes/swipe.routes'
-import { creditsJobRoutes } from './infrastructure/http/routes/credits.routes'
+import { creditsJobRoutes, creditsStoreRoutes } from './infrastructure/http/routes/credits.routes'
 import { ChatRepository } from './adapters/repositories/chat.repository'
 import { ChatService } from './adapters/services/chat.service'
 import { chatRoutes } from './infrastructure/http/routes/chat.routes'
@@ -32,6 +35,8 @@ import { getNeo4jDriver } from './infrastructure/database/neo4j'
 import { RedisAdapter } from './adapters/services/redis.adapter'
 import { getRedisClient, closeRedis } from './infrastructure/database/redis'
 import { WeightsRepository } from './adapters/repositories/weights.repository'
+import { LocalFileStorage, UPLOADS_DIR } from './adapters/services/local-file-storage.adapter'
+import { IFileStorage } from './application/ports/file-storage.port'
 
 // em teste nunca fala com SMTP de verdade, mesmo que o .env tenha credenciais
 const silentMailer: IMailerPort = { sendVerificationCode: async () => undefined }
@@ -42,6 +47,8 @@ export interface BuildAppOptions {
   cnpjLookup?: ICnpjLookupPort
   /** injeção do envio de email (testes); padrão: SMTP via nodemailer */
   mailer?: IMailerPort
+  /** injeção do armazenamento de imagens (testes); padrão: disco local em /uploads */
+  storage?: IFileStorage
 }
 
 export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInstance> {
@@ -58,6 +65,11 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   // WebSocket plugin — MUST be registered before any route using { websocket: true }
   // Registering after chatRoutes would cause Fastify to throw at route definition time (RESEARCH Pitfall 1)
   await app.register(fastifyWebsocket)
+
+  // Upload de imagens (logo e fotos da empresa): 1 arquivo de até 5 MB por requisição
+  await app.register(fastifyMultipart, { limits: { fileSize: 5 * 1024 * 1024, files: 1 } })
+  mkdirSync(UPLOADS_DIR, { recursive: true })
+  await app.register(fastifyStatic, { root: UPLOADS_DIR, prefix: '/uploads/' })
 
   // Global error handler
   app.setErrorHandler(errorHandler)
@@ -84,7 +96,7 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(authRoutes, { prefix: '/auth', cnpjLookup: opts.cnpjLookup, mailer: opts.mailer ?? (opts.testing ? silentMailer : undefined) })
   await app.register(candidateRoutes, { prefix: '/candidates', cache: redisAdapter })
   await app.register(discRoutes, { prefix: '/candidates' })
-  await app.register(companyRoutes, { prefix: '/companies' })
+  await app.register(companyRoutes, { prefix: '/companies', storage: opts.storage ?? new LocalFileStorage() })
   await app.register(recruiterRoutes, { prefix: '/recruiters' })
   await app.register(jobRoutes, { prefix: '/jobs' })
 
@@ -93,7 +105,8 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(swipeJobRoutes, { prefix: '/jobs', chat: chatService, neo4j: neo4jAdapter, cache: redisAdapter, weights: weightsRepository })
 
   // Credits routes — IChatService injected via opts (D-01, ARCH-04)
-  await app.register(creditsJobRoutes, { prefix: '/jobs', chat: chatService })
+  await app.register(creditsJobRoutes, { prefix: '/jobs', chat: chatService, cache: redisAdapter })
+  await app.register(creditsStoreRoutes, { prefix: '/credits' })
 
   // Composition root: admin — CreditService for grantCredits only (unlockCandidate removed, CR-01)
   const creditRepo = new CreditRepository()

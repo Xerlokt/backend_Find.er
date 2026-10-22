@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { CandidateRepository } from '../repositories/candidate.repository'
 import { UpsertCandidateProfileUseCase } from '../../application/use-cases/candidate/upsert-candidate-profile.use-case'
 import { GetCandidateProfileUseCase } from '../../application/use-cases/candidate/get-candidate-profile.use-case'
+import { GetCandidateMetricsUseCase } from '../../application/use-cases/candidate/get-candidate-metrics.use-case'
 import { DomainError } from '../../application/errors/domain.error'
 import { ICachePort } from '../../application/ports/cache.port'
 
@@ -27,6 +28,19 @@ export class CandidateController {
     try {
       const profile = await useCase.execute(request.user.id, body)
       reply.status(200).send(profile)
+    } catch (err) {
+      if (err instanceof DomainError) {
+        reply.status(err.statusCode).send({ error: err.message, code: err.code })
+        return
+      }
+      throw err
+    }
+  }
+
+  async getMetrics(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const useCase = new GetCandidateMetricsUseCase(new CandidateRepository())
+    try {
+      reply.status(200).send(await useCase.execute(request.user.id))
     } catch (err) {
       if (err instanceof DomainError) {
         reply.status(err.statusCode).send({ error: err.message, code: err.code })

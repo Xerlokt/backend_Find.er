@@ -5,6 +5,7 @@ import type { ICachePort } from '../../src/application/ports/cache.port'
 const makeRepo = (): jest.Mocked<ICandidateRepository> => ({
   upsertProfile: jest.fn(),
   findByUserId: jest.fn(),
+  getMetrics: jest.fn(),
 } as jest.Mocked<ICandidateRepository>)
 
 const makeCache = (): jest.Mocked<ICachePort> => ({

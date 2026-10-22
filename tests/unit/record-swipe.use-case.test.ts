@@ -9,9 +9,11 @@ const makeSwipeRepo = (): jest.Mocked<ISwipeRepository> => ({
   findJobById: jest.fn(),
   createSwipe: jest.fn(),
   findSwipesByJobId: jest.fn(),
+  findCandidatePoolForJob: jest.fn(),
   findRecruiterProfileByUserId: jest.fn(),
   findUnlocksByJobAndCompany: jest.fn(),
   findFeedJobs: jest.fn(),
+  recordViews: jest.fn().mockResolvedValue(undefined),
 } as jest.Mocked<ISwipeRepository>)
 
 const makeChatPort = (): jest.Mocked<IChatPort> => ({
@@ -93,6 +95,17 @@ describe('RecordSwipeUseCase', () => {
     const uc = new RecordSwipeUseCase(repo, makeChatPort(), cache, makeWeightsRepo())
     await uc.execute('user-1', 'job-1', 'LIKE')
     expect(cache.del).toHaveBeenCalledWith('feed:cand-1')
+  })
+
+  it('invalidates the job ranking cache after a swipe (LIKE reveals the card)', async () => {
+    const repo = makeSwipeRepo()
+    repo.findCandidateProfileByUserId.mockResolvedValue({ id: 'cand-1' } as any)
+    repo.findJobById.mockResolvedValue(activeJob as any)
+    repo.createSwipe.mockResolvedValue({ candidateId: 'cand-1', jobId: 'job-1', direction: 'LIKE' } as any)
+    const cache = makeCache()
+    const uc = new RecordSwipeUseCase(repo, makeChatPort(), cache, makeWeightsRepo())
+    await uc.execute('user-1', 'job-1', 'LIKE')
+    expect(cache.del).toHaveBeenCalledWith('ranking:job-1')
   })
 
   it('calls cache.del with feed key after successful DISLIKE swipe', async () => {

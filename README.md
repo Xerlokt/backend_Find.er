@@ -75,6 +75,7 @@ npm run test:integration      # Apenas integração (requer Docker rodando)
 |--------|------|-----------|
 | `PUT` | `/candidates/me` | Criar/atualizar perfil |
 | `GET` | `/candidates/me` | Ver próprio perfil |
+| `GET` | `/candidates/me/metrics` | Métricas do candidato: swipes, taxa de like, chats (match/empresa), empresas que o desbloquearam, últimos 7 dias |
 
 ### DISC — Avaliação de Personalidade
 
@@ -120,6 +121,18 @@ npm run test:integration      # Apenas integração (requer Docker rodando)
 | Método | Rota | Descrição |
 |--------|------|-----------|
 | `POST` | `/jobs/:jobId/candidates/:candidateId/unlock` | Desbloquear candidato DISLIKE (debita créditos) |
+
+### Perfil e estatísticas da empresa (RECRUITER da própria empresa)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| `PATCH` | `/companies/:id` | Editar `description` (≤1000) e `tradeName`; string vazia limpa o campo |
+| `POST` | `/companies/:id/logo` | Upload do logo (multipart, campo `file`) |
+| `POST` | `/companies/:id/photos` | Upload de foto da galeria (máx. 8) |
+| `DELETE` | `/companies/:id/photos/:photoId` | Remover foto |
+| `GET` | `/companies/:id/stats` | Por vaga: viram, likes, dislikes, taxa de like + totais |
+
+Imagens: JPEG/PNG/WebP até 5 MB, validadas pelos bytes. Ficam em `UPLOADS_DIR` e são servidas em `/uploads/*`. "Viram" vem da tabela `JobView`, gravada quando a vaga aparece no `GET /jobs/feed`.
 
 ### Chat
 
@@ -243,6 +256,8 @@ SMTP_PORT              # 587 (STARTTLS) ou 465 (SSL)
 SMTP_USER
 SMTP_PASS              # Gmail: senha de app; produção: credencial do provedor (Resend, Brevo, SES…)
 MAIL_FROM              # remetente, ex: Find.er <no-reply@seudominio.com>
+PUBLIC_URL             # base dos links das imagens enviadas (default http://localhost:3000)
+UPLOADS_DIR            # pasta dos uploads (default ./uploads)
 ```
 
 ---

@@ -3,6 +3,7 @@ import { buildApp } from '../../src/app'
 import supertest from 'supertest'
 import { createUser, createCompany, createJob, createCandidate, createSwipe, createUnlock } from '../helpers/factories'
 import bcrypt from 'bcryptjs'
+import { encodeUnlockToken } from '../../src/application/utils/unlock-token'
 import { prisma } from '../../src/infrastructure/database/prisma'
 
 async function loginUser(
@@ -160,14 +161,32 @@ describe('POST /jobs/:jobId/candidates/:candidateId/unlock', () => {
       await app.close()
     })
 
-    it('404 quando candidateId não tem swipe neste job', async () => {
+    it('201 quando o candidato nunca deu swipe neste job (melhores por fit, desbloqueio por unlockToken)', async () => {
+      const app = await buildApp({ testing: true })
+      await app.ready()
+      const { company, job, recToken } = await setupRecruiterAndJob(app, { credits: 5 })
+      const { profile: candProfile } = await createCandidate()
+      const unlockToken = encodeUnlockToken(candProfile.id, job.id)
+
+      const res = await supertest(app.server)
+        .post(`/jobs/${job.id}/candidates/${unlockToken}/unlock`)
+        .set('Authorization', `Bearer ${recToken}`)
+
+      expect(res.status).toBe(201)
+      expect(res.body.candidateId).toBe(candProfile.id)
+      expect(res.body.profile.name).toBe('Test Candidate')
+      const updated = await prisma.company.findUnique({ where: { id: company.id } })
+      expect(updated?.credits).toBe(3)
+      await app.close()
+    })
+
+    it('404 quando o candidato não existe', async () => {
       const app = await buildApp({ testing: true })
       await app.ready()
       const { job, recToken } = await setupRecruiterAndJob(app, { credits: 5 })
-      const { profile: candProfile } = await createCandidate()
 
       const res = await supertest(app.server)
-        .post(`/jobs/${job.id}/candidates/${candProfile.id}/unlock`)
+        .post(`/jobs/${job.id}/candidates/00000000-0000-0000-0000-000000000099/unlock`)
         .set('Authorization', `Bearer ${recToken}`)
 
       expect(res.status).toBe(404)
@@ -222,5 +241,83 @@ describe('POST /jobs/:jobId/candidates/:candidateId/unlock', () => {
       expect(res.body.code).toBe('ALREADY_UNLOCKED')
       await app.close()
     })
+  })
+})
+
+describe('Credit store (simulated purchase)', () => {
+  it('GET /credits/packages lista o catálogo', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const { recToken } = await setupRecruiterAndJob(app)
+
+    const res = await supertest(app.server).get('/credits/packages').set('Authorization', `Bearer ${recToken}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.length).toBeGreaterThan(0)
+    expect(res.body[0]).toEqual(expect.objectContaining({ id: expect.any(String), credits: expect.any(Number), priceCents: expect.any(Number) }))
+    await app.close()
+  })
+
+  it('POST /credits/purchase soma o saldo e grava a transação purchase:<id>', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const { company, recToken } = await setupRecruiterAndJob(app, { credits: 1 })
+
+    const res = await supertest(app.server)
+      .post('/credits/purchase')
+      .set('Authorization', `Bearer ${recToken}`)
+      .send({ packageId: 'starter' })
+
+    expect(res.status).toBe(201)
+    expect(res.body.credits).toBe(10)
+    expect(res.body.balance).toBe(11)
+    const updated = await prisma.company.findUnique({ where: { id: company.id } })
+    expect(updated?.credits).toBe(11)
+    const tx = await prisma.creditTransaction.findFirst({ where: { companyId: company.id } })
+    expect(tx).toEqual(expect.objectContaining({ amount: 10, reason: 'purchase:starter' }))
+    await app.close()
+  })
+
+  it('POST /credits/purchase com pacote inexistente dá 404 e não credita', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const { company, recToken } = await setupRecruiterAndJob(app, { credits: 1 })
+
+    const res = await supertest(app.server)
+      .post('/credits/purchase')
+      .set('Authorization', `Bearer ${recToken}`)
+      .send({ packageId: 'nope' })
+
+    expect(res.status).toBe(404)
+    const updated = await prisma.company.findUnique({ where: { id: company.id } })
+    expect(updated?.credits).toBe(1)
+    await app.close()
+  })
+
+  it('GET /credits/transactions devolve só o extrato da própria empresa', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    const { recToken } = await setupRecruiterAndJob(app, { credits: 0 })
+    await supertest(app.server).post('/credits/purchase').set('Authorization', `Bearer ${recToken}`).send({ packageId: 'starter' })
+
+    const res = await supertest(app.server).get('/credits/transactions').set('Authorization', `Bearer ${recToken}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body).toHaveLength(1)
+    expect(res.body[0].reason).toBe('purchase:starter')
+    await app.close()
+  })
+
+  it('401 sem token e 403 para candidato', async () => {
+    const app = await buildApp({ testing: true })
+    await app.ready()
+    expect((await supertest(app.server).get('/credits/packages')).status).toBe(401)
+
+    const passwordHash = await bcrypt.hash('password123', 12)
+    const cand = await createUser({ role: 'CANDIDATE', email: `cand-store-${Date.now()}@test.com`, passwordHash })
+    const token = await loginUser(app, cand.email)
+    const res = await supertest(app.server).post('/credits/purchase').set('Authorization', `Bearer ${token}`).send({ packageId: 'starter' })
+    expect(res.status).toBe(403)
+    await app.close()
   })
 })

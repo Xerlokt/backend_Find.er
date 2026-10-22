@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '../../infrastructure/database/prisma'
-import { ISwipeRepository, SwipeWithCandidateInfo } from '../../domain/interfaces/swipe.repository.interface'
+import { ISwipeRepository, SwipeWithCandidateInfo, PoolCandidate } from '../../domain/interfaces/swipe.repository.interface'
 import { Swipe, SwipeDirection } from '../../domain/entities/swipe.entity'
 import { Job, Modality } from '../../domain/entities/job.entity'
 import { CandidateProfile } from '../../domain/entities/candidate.entity'
@@ -68,6 +68,14 @@ export class SwipeRepository implements ISwipeRepository {
     return rows.map((r) => this.toJobDomain(r))
   }
 
+  async recordViews(candidateId: string, jobIds: string[]): Promise<void> {
+    if (jobIds.length === 0) return
+    await prisma.jobView.createMany({
+      data: jobIds.map((jobId) => ({ jobId, candidateId })),
+      skipDuplicates: true,
+    })
+  }
+
   async findSwipesByJobId(jobId: string): Promise<SwipeWithCandidateInfo[]> {
     const rows = await prisma.swipe.findMany({
       where: { jobId },
@@ -90,6 +98,29 @@ export class SwipeRepository implements ISwipeRepository {
         ...this.toCandidateDomain(row.candidate),
         avatarUrl: row.candidate.user.avatarUrl, // flatten nested user relation (Pitfall 5)
         discDominant: row.candidate.discResult?.dominant ?? null, // DISC-02/04: flatten nested relation (Pitfall 10)
+      },
+    }))
+  }
+
+  async findCandidatePoolForJob(
+    jobId: string,
+    professionId: string,
+    limit: number,
+  ): Promise<PoolCandidate[]> {
+    const rows = await prisma.candidateProfile.findMany({
+      where: { professionId, swipes: { none: { jobId } } },
+      include: {
+        user: { select: { avatarUrl: true } },
+        discResult: { select: { dominant: true } },
+      },
+      take: limit,
+    })
+    return rows.map((row) => ({
+      candidateId: row.id,
+      candidate: {
+        ...this.toCandidateDomain(row),
+        avatarUrl: row.user.avatarUrl,
+        discDominant: row.discResult?.dominant ?? null,
       },
     }))
   }

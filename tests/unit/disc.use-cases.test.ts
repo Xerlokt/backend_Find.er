@@ -12,6 +12,7 @@ const makeDiscRepo = (): jest.Mocked<IDiscRepository> => ({
 const makeCandidateRepo = (): jest.Mocked<ICandidateRepository> => ({
   upsertProfile: jest.fn(),
   findByUserId: jest.fn(),
+  getMetrics: jest.fn(),
 })
 
 const makeCandidateProfile = (overrides = {}) => ({

@@ -12,6 +12,11 @@ export interface SwipeWithCandidateInfo {
   candidate: CandidateProfile & { avatarUrl: string | null; discDominant: string | null }
 }
 
+export interface PoolCandidate {
+  candidateId: string
+  candidate: CandidateProfile & { avatarUrl: string | null; discDominant: string | null }
+}
+
 export interface ISwipeRepository {
   createSwipe(data: {
     candidateId: string
@@ -27,5 +32,9 @@ export interface ISwipeRepository {
     limit: number,
   ): Promise<Job[]>
   findSwipesByJobId(jobId: string): Promise<SwipeWithCandidateInfo[]>
+  /** Candidates of the job's profession who have not swiped on it yet (best-fit pool, censored in the ranking). */
+  findCandidatePoolForJob(jobId: string, professionId: string, limit: number): Promise<PoolCandidate[]>
+  /** Registra a impressão da vaga no feed (idempotente por candidato/vaga). */
+  recordViews(candidateId: string, jobIds: string[]): Promise<void>
   findUnlocksByJobAndCompany(jobId: string, companyId: string): Promise<Set<string>>
 }

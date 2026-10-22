@@ -99,6 +99,8 @@ export class RecordSwipeUseCase {
 
     // SCALE-01: invalidate candidate's feed cache after swipe
     try { await this.cache.del(`feed:${candidate.id}`) } catch { /* Redis down — ok */ }
+    // A swipe changes who is revealed/locked in the recruiter's ranking for this job
+    try { await this.cache.del(`ranking:${jobId}`) } catch { /* Redis down — ok */ }
 
     let chatId: string | null = null
     if (direction === 'LIKE') {

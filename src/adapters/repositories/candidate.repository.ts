@@ -1,5 +1,5 @@
 import { prisma } from '../../infrastructure/database/prisma'
-import { ICandidateRepository } from '../../domain/interfaces/candidate.repository.interface'
+import { CandidateMetricsData, ICandidateRepository } from '../../domain/interfaces/candidate.repository.interface'
 import { CandidateProfile } from '../../domain/entities/candidate.entity'
 import { Modality } from '../../domain/entities/job.entity'
 
@@ -29,6 +29,27 @@ export class CandidateRepository implements ICandidateRepository {
   async findByUserId(userId: string): Promise<CandidateProfile | null> {
     const row = await prisma.candidateProfile.findUnique({ where: { userId } })
     return row ? this.toDomain(row) : null
+  }
+
+  async getMetrics(candidateId: string, since: Date): Promise<CandidateMetricsData> {
+    const [swipes, chats, unlocks, recentSwipes, disc] = await Promise.all([
+      prisma.swipe.groupBy({ by: ['direction'], where: { candidateId }, _count: { _all: true } }),
+      prisma.chat.groupBy({ by: ['initiatedBy'], where: { candidateId }, _count: { _all: true } }),
+      prisma.unlock.findMany({ where: { candidateId }, distinct: ['companyId'], select: { companyId: true } }),
+      prisma.swipe.findMany({ where: { candidateId, swipedAt: { gte: since } }, select: { direction: true, swipedAt: true } }),
+      prisma.discResult.findUnique({ where: { candidateId }, select: { dominant: true } }),
+    ])
+    const swipeCount = (d: string) => swipes.find((s) => s.direction === d)?._count._all ?? 0
+    const chatCount = (i: string) => chats.find((c) => c.initiatedBy === i)?._count._all ?? 0
+    return {
+      likes: swipeCount('LIKE'),
+      dislikes: swipeCount('DISLIKE'),
+      chatsViaMatch: chatCount('MATCH'),
+      chatsViaCredit: chatCount('CREDIT'),
+      companiesUnlockedYou: unlocks.length,
+      recentSwipes,
+      discDominant: disc?.dominant ?? null,
+    }
   }
 
   private toDomain(row: any): CandidateProfile {

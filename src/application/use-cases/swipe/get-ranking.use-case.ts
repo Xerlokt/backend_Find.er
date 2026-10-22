@@ -3,6 +3,10 @@ import { IRecommendationRepository, FitScoreInput, FitScoreJobInput } from '../.
 import { DomainError } from '../../errors/domain.error'
 import { haversineKm } from '../../utils/haversine'
 import { ICachePort } from '../../ports/cache.port'
+import { encodeUnlockToken } from '../../utils/unlock-token'
+
+// Max never-swiped candidates scored per ranking (each costs a Neo4j fit computation)
+const POOL_LIMIT = 50
 
 // ─── Phase 16: Recruiter Skill Preview — types and pure functions ────────────
 
@@ -66,12 +70,12 @@ export function buildFitReasons(
 /**
  * Single code path for all reveal/conceal decisions (REC-03, Success Criterion 4).
  * Returns FullProfile when candidate is revealed (LIKE or unlocked DISLIKE).
- * Returns CensoredProfile when candidate is locked (DISLIKE + not unlocked).
+ * Returns CensoredProfile when candidate is locked (DISLIKE or no swipe yet, and not unlocked).
  * Pure function — no side effects, no DB access.
  * RED stub: throws until 16-02 implements the body.
  */
 export function censorProfile(
-  swipe: { direction: string; candidate: { name: string; avatarUrl: string | null; bio: string | null; skills: string[]; professionId: string; preferredModalities: string[]; salaryExpectation: number | null; discDominant?: string | null } },
+  swipe: { direction: string | null; candidate: { name: string; avatarUrl: string | null; bio: string | null; skills: string[]; professionId: string; preferredModalities: string[]; salaryExpectation: number | null; discDominant?: string | null } },
   job: { requiredSkills: string[]; salaryMin: number | null; salaryMax: number | null; professionId: string },
   isUnlocked: boolean,
 ): FullProfile | CensoredProfile {
@@ -90,7 +94,7 @@ export function censorProfile(
     }
   }
 
-  // DISLIKE + locked: preview only — no identity (REC-01, REC-02, REC-03)
+  // DISLIKE / no swipe + locked: preview only — no identity (REC-01, REC-02, REC-03)
   // matchingSkills = candidate perspective: which of their skills appear in job requirements
   const matchingSkills = swipe.candidate.skills.filter(s => job.requiredSkills.includes(s))
   const fitReasons = buildFitReasons(swipe.candidate, job, matchingSkills)
@@ -146,8 +150,16 @@ export class GetRankingUseCase {
       }
     } catch { /* Redis down or corrupt cache entry — fall through */ }
 
-    // Step 4: Fetch all swipes for this job
-    const swipes = await this.repo.findSwipesByJobId(jobId)
+    // Step 4: Fetch all swipes for this job, plus never-swiped candidates of the same profession
+    // (best-fit pool). Pool entries have direction null → always censored until liked or unlocked.
+    const [swipes, pool] = await Promise.all([
+      this.repo.findSwipesByJobId(jobId),
+      this.repo.findCandidatePoolForJob(jobId, job.professionId, POOL_LIMIT),
+    ])
+    const entries: { candidateId: string; direction: string | null; candidate: (typeof swipes)[number]['candidate'] }[] = [
+      ...swipes.map((s) => ({ candidateId: s.candidateId, direction: s.direction as string | null, candidate: s.candidate })),
+      ...pool.map((p) => ({ candidateId: p.candidateId, direction: null, candidate: p.candidate })),
+    ]
 
     // Step 5: Fetch unlocked candidate IDs for this job+company
     const unlockedCandidateIds = await this.repo.findUnlocksByJobAndCompany(
@@ -157,18 +169,19 @@ export class GetRankingUseCase {
 
     // Step 6: Compute fitScore for each candidate (FitScoreInput with id — Pitfall 3)
     const items = await Promise.all(
-      swipes.map(async (swipe) => {
+      entries.map(async (entry) => {
+        const { candidate } = entry
         const fitScore = await this.rec.computeFitScore(
           {
-            id: swipe.candidate.id,
-            professionId: swipe.candidate.professionId,
-            skillIds: swipe.candidate.skills, // CandidateProfile.skills stores Neo4j skill IDs (e.g. 'nodejs') — Phase 14 convention
-            preferredModalities: swipe.candidate.preferredModalities,
-            salaryExpectation: swipe.candidate.salaryExpectation ?? null,
-            lat: swipe.candidate.lat ?? null,
-            lng: swipe.candidate.lng ?? null,
-            searchRadiusKm: swipe.candidate.searchRadiusKm ?? 50,
-            discDominant: swipe.candidate.discDominant ?? null,  // DISC-04
+            id: candidate.id,
+            professionId: candidate.professionId,
+            skillIds: candidate.skills, // CandidateProfile.skills stores Neo4j skill IDs (e.g. 'nodejs') — Phase 14 convention
+            preferredModalities: candidate.preferredModalities,
+            salaryExpectation: candidate.salaryExpectation ?? null,
+            lat: candidate.lat ?? null,
+            lng: candidate.lng ?? null,
+            searchRadiusKm: candidate.searchRadiusKm ?? 50,
+            discDominant: candidate.discDominant ?? null,  // DISC-04
           } satisfies FitScoreInput,
           {
             id: job.id,
@@ -184,24 +197,29 @@ export class GetRankingUseCase {
         )
 
         // Step 7: censorProfile() is the single code path for all reveal/conceal decisions
-        // LIKE or unlocked → FullProfile; DISLIKE + locked → CensoredProfile (Phase 16, REC-01/02/03)
-        const profile = censorProfile(swipe, job, unlockedCandidateIds.has(swipe.candidateId))
+        const isRevealed = entry.direction === 'LIKE' || unlockedCandidateIds.has(entry.candidateId)
+        const profile = censorProfile(entry, job, unlockedCandidateIds.has(entry.candidateId))
 
         // Step 8: Compute distance — returns number | null when any coordinate is null (WR-04)
-        const distanceKm: number | null = haversineKm(
-          swipe.candidate.lat,
-          swipe.candidate.lng,
-          job.lat,
-          job.lng,
-        )
+        const distanceKm: number | null = haversineKm(candidate.lat, candidate.lng, job.lat, job.lng)
 
-        // REC-03 privacy: omit candidateId for DISLIKE-locked candidates — revealed only for LIKE or unlocked
-        const isRevealed = swipe.direction === 'LIKE' || unlockedCandidateIds.has(swipe.candidateId)
+        // REC-03 privacy: the real candidateId only leaves the server for revealed candidates.
+        // Locked ones get an opaque, job-bound unlockToken to be sent to the unlock endpoint.
         return {
-          ...(isRevealed ? { candidateId: swipe.candidateId } : {}),
+          status: (isRevealed ? 'REVEALED' : 'LOCKED') as 'REVEALED' | 'LOCKED',
+          ...(isRevealed
+            ? { candidateId: entry.candidateId }
+            : { unlockToken: encodeUnlockToken(entry.candidateId, jobId) }),
           fitScore,
           distanceKm,
           profile,
+        } as {
+          status: 'REVEALED' | 'LOCKED'
+          candidateId?: string
+          unlockToken?: string
+          fitScore: number
+          distanceKm: number | null
+          profile: RankingProfile
         }
       }),
     )

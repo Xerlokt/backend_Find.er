@@ -9,9 +9,11 @@ const makeSwipeRepo = (): jest.Mocked<ISwipeRepository> => ({
   findJobById: jest.fn(),
   createSwipe: jest.fn(),
   findSwipesByJobId: jest.fn(),
+  findCandidatePoolForJob: jest.fn(),
   findRecruiterProfileByUserId: jest.fn(),
   findUnlocksByJobAndCompany: jest.fn(),
   findFeedJobs: jest.fn(),
+  recordViews: jest.fn().mockResolvedValue(undefined),
 } as jest.Mocked<ISwipeRepository>)
 
 const makeRecRepo = (): jest.Mocked<IRecommendationRepository> => ({
@@ -92,6 +94,22 @@ describe('GetFeedUseCase', () => {
     expect(repo.findFeedJobs).not.toHaveBeenCalled()
     expect(rec.computeFitScore).not.toHaveBeenCalled()
     expect(cache.get).toHaveBeenCalledWith('feed:cand-1')
+  })
+
+  it('registra a impressão das vagas exibidas e não quebra o feed se isso falhar', async () => {
+    const repo = makeSwipeRepo()
+    const rec = makeRecRepo()
+    const cache = makeCache()
+    repo.findCandidateProfileByUserId.mockResolvedValue(candidateProfile as any)
+    repo.findFeedJobs.mockResolvedValue([jobItem] as any)
+    rec.computeFitScore.mockResolvedValue(0.85)
+    repo.recordViews.mockRejectedValueOnce(new Error('db down'))
+
+    const uc = new GetFeedUseCase(repo, rec, cache, makeWeightsRepo())
+    const result = await uc.execute('user-1', undefined, 20)
+
+    expect(repo.recordViews).toHaveBeenCalledWith('cand-1', [(jobItem as any).id])
+    expect(result.data).toHaveLength(1)
   })
 
   it('fetches from repo on cache MISS (no cursor) and calls cache.set with TTL 60', async () => {

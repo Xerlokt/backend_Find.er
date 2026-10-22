@@ -38,7 +38,7 @@ export class CompanyController {
     const { id } = CompanyParamsSchema.parse(request.params)
     const useCase = new GetCompanyUseCase(new CompanyRepository())
     try {
-      const result = await useCase.execute(id)
+      const result = await useCase.execute(id, { userId: request.user.id, role: request.user.role })
       reply.status(200).send(result)
     } catch (err) {
       if (err instanceof DomainError) {
